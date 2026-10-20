@@ -1,4 +1,5 @@
 import { addDays, addMonths, format, isMonday, nextMonday, startOfDay, subDays } from 'date-fns';
+import { demoFocusNotes } from '@/focus/demo';
 import type {
   CompletedItem, Item, Label, Project, Section, Snapshot, TodoistUser,
 } from '@/domain/types';
@@ -435,6 +436,8 @@ export function buildDemoSnapshot(locale: Locale = 'en', seed = 20260914): Snaps
         is_unread: false, created_at: new Date(Date.now() - 2 * 86_400_000).toISOString(),
       },
     },
+    // Ninety days of focus blocks, kept as the Inbox comments a real account would have.
+    notes: demoFocusNotes(Object.values(items), today, 'inbox', user.id),
     user,
     syncToken: 'demo',
     syncedAt: Date.now(),
