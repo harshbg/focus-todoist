@@ -11,7 +11,6 @@ import {
   changePresentation, localisedReleases, parseChangelog, type ChangeKind, type Release,
 } from '@/domain/changelog';
 import { tourStops } from '@/domain/tour';
-import { COFFEE_URL } from '@/app-info';
 import type { TranslationKey } from '@/i18n';
 
 /**
@@ -221,10 +220,6 @@ export function WhatsNew({ scope, onClose, onShowMe, onSeeChangelog }: WhatsNewP
             footerRef.current?.querySelector<HTMLButtonElement>('[data-autofocus]')?.focus();
           }}>{t('whatsNew.seeChangelog')}</button>}
           <span className="whatsnew-end">
-            <a className="btn coffee" href={COFFEE_URL} target="_blank" rel="noreferrer noopener">
-              <Icon name="coffee" size="md" />
-              {t('coffee.offer')}
-            </a>
             <button className="btn primary" data-autofocus onClick={onClose}>
               {t('whatsNew.continue')}
             </button>

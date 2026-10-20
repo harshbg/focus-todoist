@@ -120,13 +120,13 @@ test.describe('setup and settings (v2)', () => {
     await expect(page.locator('.setup-name')).toHaveText('Robin');
   });
 
-  test('the support card is always there and cannot be closed', async ({ demo: page }) => {
-    await page.route('https://github.com/**', (route) => route.fulfill({ status: 204 }));
+  test('About credits the upstream project and the fork author', async ({ demo: page }) => {
     await go(page, '#/settings');
-    const card = page.locator('.coffee-callout');
-    await expect(card).toBeVisible();
-    await expect(card.getByRole('button')).toHaveCount(0);
-    expect((await card.getByRole('link', { name: 'Buy me a coffee' }).boundingBox())!.height).toBeGreaterThanOrEqual(46);
+    const about = page.locator('#about');
+    await expect(about).toContainText('Focus for Todoist is built on Enhanced for Todoist by Jules Bertolino (MIT licence)');
+    await expect(about.getByRole('link', { name: 'Enhanced for Todoist' })).toHaveAttribute('href', 'https://github.com/julesvbertolino/todoist-enhanced');
+    await expect(about).toContainText('Harsh Gupta');
+    await expect(page.locator('.coffee-callout')).toHaveCount(0);
   });
 
   test('Week starts on is stated, with no link and nothing to change', async ({ demo: page }) => {

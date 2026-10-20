@@ -1,7 +1,6 @@
 import { CalendarSurface } from '@/components/CalendarSurface';
 import { pageClass } from '@/domain/pageLayout';
 import { InsightsButton } from '@/components/InsightsButton';
-import { HireNote } from '@/components/HireNote';
 import { useMemo } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { SubtasksProvider } from '@/components/TaskRow';
@@ -77,7 +76,6 @@ function WeekBody({
   const { snapshot, items, childrenOf } = useData(scope === 'today' ? 'today' : 'week');
   const prefs = useStore((s) => s.prefs);
   const updateMany = useStore((s) => s.updateMany);
-  const hireNoteOpen = useStore((s) => s.hireNote);
   const confirm = useConfirm();
   /* Two pages, two sets of display preferences: a filter set on Today has no
      business following you to the rest of the week. */
@@ -198,13 +196,12 @@ function WeekBody({
 
   /* Whether one of the groups below is drawn with its own "Add task" line. */
   const hasAddLine = (scope !== 'anytime' && (
-    (prefs.showQuickGroup && groups.quick.length > 0) || groups.untimed.length > 0 || groups.timed.length > 0 || hireNoteOpen
+    (prefs.showQuickGroup && groups.quick.length > 0) || groups.untimed.length > 0 || groups.timed.length > 0
   )) || (scope !== 'today' && groups.anytime.length > 0);
 
   return (
     <div className={pageClass(current)}>
       <PageHeader
-        hireNote={current.mode === 'board'}
         title={t(scope === 'today' ? 'nav.today' : 'nav.week')}
         actions={
           <>
@@ -273,8 +270,6 @@ function WeekBody({
           <TaskGroup
             title={t('group.untimed')}
             items={sortedGroup(groups.untimed)}
-            lead={hireNoteOpen ? <HireNote /> : undefined}
-            keepWhenEmpty={hireNoteOpen}
             childrenOf={childrenOf}
             onOpen={onOpen}
             reorderable={byHand}
@@ -322,7 +317,6 @@ function WeekBody({
       ) : (
         <ModeSurface
           items={scoped}
-          firstGroupLead={hireNoteOpen ? <HireNote /> : undefined}
           childrenOf={childrenOf}
           mode={current.mode}
           group={current.group}

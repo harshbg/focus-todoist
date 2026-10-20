@@ -544,10 +544,10 @@ ul{margin:0;padding:0;list-style:none}
   border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--sh-md)}
 .menu.open{display:block;animation:popIn .14s ease-out}
 @keyframes popIn{from{opacity:0;transform:scale(.97) translateY(-4px)}}
-.menu button{width:100%;min-height:36px;padding:6px var(--s2);display:flex;align-items:center;gap:10px;
-  border-radius:var(--r-sm);font-size:var(--fs-13);text-align:left}
+.menu button,.menu a{width:100%;min-height:36px;padding:6px var(--s2);display:flex;align-items:center;gap:10px;
+  border-radius:var(--r-sm);color:inherit;font-size:var(--fs-13);text-align:left;text-decoration:none}
 .menu button small{margin-left:auto;flex:0 0 auto;color:var(--faint);font-size:var(--fs-11);white-space:nowrap}
-.menu button:hover{background:var(--subtle)}
+.menu button:hover,.menu a:hover{background:var(--subtle)}
 .menu hr{height:1px;margin:6px 0;border:0;background:var(--border)}
 
 .searchbtn{width:100%;min-height:36px;margin-bottom:var(--s3);padding:0 var(--s3);display:flex;align-items:center;gap:10px;

@@ -21,7 +21,6 @@ const SECURITY_HEADERS = {
     "manifest-src 'self'",
     "worker-src 'self'",
     "base-uri 'self'",
-    "frame-src https://tally.so",
     "form-action 'self'",
     "frame-ancestors 'none'",
     "object-src 'none'",
@@ -64,7 +63,7 @@ export const APP_DEFINE = {
 function oauthClientDocument(publicUrl: string): Plugin {
   const body = `{
   "client_id": "${publicUrl}oauth/client.json",
-  "client_name": "Enhanced for Todoist",
+  "client_name": "Focus for Todoist",
   "client_uri": "${publicUrl}",
   "logo_uri": "${publicUrl}icon-192.png",
   "redirect_uris": [
@@ -92,7 +91,7 @@ function oauthClientDocument(publicUrl: string): Plugin {
 }
 
 export default defineConfig({
-  // Relative base so the build can be dropped into any subfolder on Infomaniak.
+  // Relative base so the build can be served from a subfolder on a static host.
   base: './',
   preview: { headers: SECURITY_HEADERS },
   define: APP_DEFINE,
@@ -115,9 +114,9 @@ export default defineConfig({
            was installed from. Chromium browsers — Brave included — will not
            offer to install a manifest they cannot tell apart from another. */
         id: './',
-        name: 'Enhanced for Todoist',
-        short_name: 'Enhanced',
-        description: 'An independent project, not created by, affiliated with, or supported by Todoist. A local-first client built around planning a week.',
+        name: 'Focus for Todoist',
+        short_name: 'Focus for Todoist',
+        description: 'An independent project, not created by, affiliated with, or supported by Todoist. Plan your week and track deep work with a gamified timer.',
         theme_color: '#d1453b',
         background_color: '#ffffff',
         display: 'standalone',

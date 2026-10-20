@@ -30,7 +30,7 @@ export function SearchView({ query, onOpen }: { query: string; onOpen: (id: stri
       .map((l) => ({ key: `l${l.id}`, title: l.name, color: l.color, glyph: <Icon name="tag" size="sm" />, rank: searchRank(query, l.name), run: () => navigate('label', l.name) })),
   ].filter((hit) => hit.rank >= 0).sort((a, b) => a.rank - b.rank);
   return <div className="page search-page">
-    <PageHeader title={t('search.resultsTitle', { query })} load={summariseLoad(matches, childrenOf, null)} hireNote={false} />
+    <PageHeader title={t('search.resultsTitle', { query })} load={summariseLoad(matches, childrenOf, null)} />
     <div className="mode">
       {links.length > 0 && <nav className="search-destinations" aria-label={t('search.places')}>{links.map((hit) => <button className="search-place" style={markerStyle(hit.color)} key={hit.key} onClick={hit.run}>{hit.glyph}<span>{hit.title}</span></button>)}</nav>}
       <SubtasksProvider value={false}><TaskGroup items={matches} childrenOf={childrenOf} onOpen={onOpen} draggable={false} /></SubtasksProvider>

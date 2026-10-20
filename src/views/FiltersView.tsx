@@ -1,4 +1,3 @@
-import { HireNote } from '@/components/HireNote';
 import { useMemo, useState } from 'react';
 import { DndContext, PointerSensor, KeyboardSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -64,7 +63,6 @@ export function FiltersView() {
           </button>
         </div>
       </div>
-      <HireNote />
 
       {filters.length === 0 ? (
         <p className="empty">{t('filters.none')}</p>

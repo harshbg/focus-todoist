@@ -1,5 +1,3 @@
-import { HireNote } from '@/components/HireNote';
-import { MacAppCard } from '@/components/MacApp';
 import { EstimateConversion } from '@/components/overlays/EstimateConversion';
 import { canStoreDurations } from '@/domain/estimates';
 import { useEffect, useState } from 'react';
@@ -20,7 +18,7 @@ import { HOME_VIEWS, type HomeView } from '@/store/prefs';
 import { DEFAULT_WEEK_LABEL } from '@/domain/types';
 import { DUST_MONTHS, isDustMonths } from '@/domain/views';
 import type { Locale, TranslationKey } from '@/i18n';
-import { APP_NAME, AUTHOR, AUTHOR_AVATAR_URL, AUTHOR_GITHUB_URL, COFFEE_URL, GITHUB_URL, LINKEDIN_URL, VERSION, X_URL } from '@/app-info';
+import { APP_NAME, AUTHOR, AUTHOR_GITHUB_URL, GITHUB_URL, VERSION } from '@/app-info';
 import { karmaStanding } from '@/domain/karma';
 import { projectTree } from '@/store/selectors';
 
@@ -94,7 +92,6 @@ export function SettingsView() {
         </div>
 
       </div>
-      <HireNote />
 
       <div className="settings">
         {/* The menu navigates the page rather than replacing it, so these are
@@ -172,19 +169,6 @@ export function SettingsView() {
               )}
             </div>
 
-            {/* Always there, and not dismissible: it is the one way the project
-                is paid for. */}
-            <aside className="setfcard coffee-callout">
-              <img className="coffee-callout-avatar" src={AUTHOR_AVATAR_URL} alt="Jules-Valentin Bertolino" width={96} height={96} decoding="async" />
-              <div>
-                <strong>{t('settings.coffeeCalloutTitle')}</strong>
-                <span>{t('settings.coffeeCalloutBody')}</span>
-              </div>
-              <a className="btn coffee-btn" href={COFFEE_URL} target="_blank" rel="noreferrer noopener">
-                <Icon name="coffee" size="sm" />
-                {t('settings.coffeeCalloutAction')}
-              </a>
-            </aside>
           </section>
 
           {/* ---------------------------------------------------- General */}
@@ -531,8 +515,6 @@ export function SettingsView() {
               </div>
             </div>
 
-            <MacAppCard />
-
             <Row title={t('settings.whatsNew')} hint={t('settings.whatsNewHint')}>
               <Switch checked={prefs.whatsNew} onChange={() => setPrefs({ whatsNew: !prefs.whatsNew })} label={t('settings.whatsNew')} />
             </Row>
@@ -555,25 +537,17 @@ export function SettingsView() {
                 {t('settings.aboutCode')}
               </a>
             </div>
-            {/* The author: supporting the project first, then where to follow the author, each in its network's colours (#231). */}
             <div className="alinks social">
-              <a className="btn social coffee" href={COFFEE_URL} target="_blank" rel="noreferrer noopener">
-                <Icon name="coffee" size="sm" />
-                {t('settings.support')}
-              </a>
               <a className="btn social github" href={AUTHOR_GITHUB_URL} target="_blank" rel="noreferrer noopener">
                 <BrandIcon name="github" />
-                GitHub
-              </a>
-              <a className="btn social linkedin" href={LINKEDIN_URL} target="_blank" rel="noreferrer noopener">
-                <BrandIcon name="linkedin" />
-                LinkedIn
-              </a>
-              <a className="btn social x" href={X_URL} target="_blank" rel="noreferrer noopener" aria-label="X @julesvbertolino">
-                <BrandIcon name="x" />
-                @julesvbertolino
+                {AUTHOR}
               </a>
             </div>
+            <p className="setlegal">
+              {t('settings.upstreamCredit')}{' '}
+              <a href="https://github.com/julesvbertolino/todoist-enhanced" target="_blank" rel="noreferrer noopener">Enhanced for Todoist</a>{' '}
+              {t('settings.upstreamBy')}
+            </p>
             <p className="setlegal">
               {t('connect.legal', { author: AUTHOR })}
             </p>

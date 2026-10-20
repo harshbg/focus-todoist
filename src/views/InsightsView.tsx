@@ -1,5 +1,4 @@
 import { DashboardDisplayMenu } from '@/components/DashboardDisplayMenu';
-import { HireNote } from '@/components/HireNote';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { format } from 'date-fns';
 import { Icon } from '@/components/Icon';
@@ -451,7 +450,6 @@ export function InsightsView({ onOpen }: { onOpen?: (id: string) => void }) {
           </button>
         </div>
       </div>
-      <HireNote />
       {tab === 'overview' && editing && <div className="dashboard-layout-tools">
         <button className="btn" disabled={isDefaultDashboardOrder(order)} onClick={resetLayout}>{t('dashboard.resetLayout')}</button>
       </div>}

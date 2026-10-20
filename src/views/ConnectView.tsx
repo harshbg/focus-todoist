@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Icon } from '@/components/Icon';
-import { MacAppLine } from '@/components/MacApp';
 import { TodoistMark } from '@/components/TodoistMark';
 import { WorkspacePreview } from '@/components/WorkspacePreview';
 import { useT } from '@/hooks/useT';
@@ -117,7 +116,6 @@ export function ConnectView() {
         <button className="btn soft lg connect-demo" onClick={startDemo}>
           {t('connect.demoInstead')}
         </button>
-        <MacAppLine />
 
         <details
           className="connect-token"

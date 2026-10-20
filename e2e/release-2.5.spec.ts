@@ -23,7 +23,7 @@ async function openAccount(page: Page, projects: Array<Record<string, unknown>>,
     localStorage.setItem('onboarded', JSON.stringify(['account-test']));
     const db = await new Promise<IDBDatabase>((resolve, reject) => { const request = indexedDB.open('todoist-enhancements', 1); request.onupgradeneeded = () => { const d = request.result; for (const [name, options] of [['snapshot', undefined], ['prefs', undefined], ['queue', { keyPath: 'uuid' }]] as const) if (!d.objectStoreNames.contains(name)) d.createObjectStore(name, options); }; request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
     const tx = db.transaction('prefs', 'readwrite');
-    tx.objectStore('prefs').put({ locale: 'en', onboarded: true, setupDone: true, seenVersion: version, estimateStorage: 'tag', hireNoteSeen: true }, 'preferences');
+    tx.objectStore('prefs').put({ locale: 'en', onboarded: true, setupDone: true, seenVersion: version, estimateStorage: 'tag' }, 'preferences');
     await new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); });
     db.close();
   }, seenVersion);
@@ -48,121 +48,12 @@ test('every project is reachable by scrolling the sidebar, whatever the window h
   }
 });
 
-/* ---- #204: the Mac app ---------------------------------------------------- */
-
-const REPO = 'https://github.com/julesvbertolino/todoist-enhanced-desktop';
-const ARM = `${REPO}/releases/latest/download/Enhanced-for-Todoist-arm64.dmg`;
-const INTEL = `${REPO}/releases/latest/download/Enhanced-for-Todoist-x64.dmg`;
-
-/** Makes the browser say which computer it is on, before the app reads it. */
-async function pretend(page: Page, machine: { platform: string; uaPlatform?: string; architecture?: string; touch?: number; desktopApp?: boolean }) {
-  await page.addInitScript((m) => {
-    Object.defineProperty(navigator, 'platform', { get: () => m.platform });
-    Object.defineProperty(navigator, 'maxTouchPoints', { get: () => m.touch ?? 0 });
-    Object.defineProperty(navigator, 'userAgentData', {
-      get: () => m.uaPlatform ? { platform: m.uaPlatform, getHighEntropyValues: async () => ({ architecture: m.architecture }) } : undefined,
-    });
-    // The shell's preload adds it on DOMContentLoaded, so possibly after the first render.
-    if (m.desktopApp) window.addEventListener('DOMContentLoaded', () => document.documentElement.classList.add('desktop-app'));
-  }, machine);
-}
-
-test('a Mac that cannot say its chip: the line points at the app, and the button opens both files with the steps (#204)', async ({ page }) => {
-  await pretend(page, { platform: 'MacIntel' });
+test('the fork has no Mac app promotion on sign-in or in Settings', async ({ page }) => {
   await page.goto('/');
-  const line = page.locator('.macapp-line');
-  await expect(line).toBeVisible();
-  await expect(line.getByRole('link', { name: 'Download and install' })).toHaveAttribute('href', REPO);
-  await expect(line.locator('a[href$=".dmg"]')).toHaveCount(0);
-
+  await expect(page.locator('.macapp-line')).toHaveCount(0);
   await openAccount(page, []);
   await page.goto('/#/settings');
-  const card = page.locator('.macapp');
-  await expect(card).toContainText('Option + Space');
-  // Nothing downloads from the button itself, and the call-out starts closed.
-  const button = card.getByRole('button', { name: 'Download for Mac' });
-  await expect(button).toHaveAttribute('aria-expanded', 'false');
-  await expect(card.locator('a[href$=".dmg"]:visible')).toHaveCount(0);
-  await button.click();
-  await expect(button).toHaveAttribute('aria-expanded', 'true');
-  const callout = card.locator('.maccallout');
-  await expect(callout.getByRole('link', { name: 'Apple silicon (M1 and later)' })).toHaveAttribute('href', ARM);
-  await expect(callout.getByRole('link', { name: 'Intel' })).toHaveAttribute('href', INTEL);
-  await expect(callout).toContainText('Not sure? Apple menu, About This Mac');
-  await expect(callout.locator('li')).toHaveCount(3);
-  await expect(callout.locator('li').nth(0)).toContainText('drag Enhanced for Todoist into Applications');
-  await expect(callout.locator('li').nth(1)).toContainText('click Done');
-  await expect(callout.locator('li').nth(2)).toContainText('Open Anyway');
-  await expect(callout.getByRole('link', { name: 'Details on GitHub' })).toHaveAttribute('href', `${REPO}#install-in-three-steps`);
-});
-
-test('opening the call-out scrolls it to the middle of the screen, and the button closes it again (#204)', async ({ page }) => {
-  await pretend(page, { platform: 'MacIntel', uaPlatform: 'macOS', architecture: 'arm' });
-  await openAccount(page, []);
-  await page.setViewportSize({ width: 1200, height: 700 });
-  await page.goto('/#/settings');
-  const card = page.locator('.macapp');
-  await card.getByRole('button', { name: 'Download for Mac' }).click();
-  const callout = card.locator('.maccallout');
-  await expect(callout).toBeVisible();
-  await expect.poll(async () => {
-    const box = (await callout.boundingBox())!;
-    return Math.abs(box.y + box.height / 2 - 350);
-  }, { message: 'the call-out is centred in the window' }).toBeLessThan(60);
-  await card.getByRole('button', { name: 'Download for Mac' }).click();
-  await expect(card.locator('a[href$=".dmg"]:visible')).toHaveCount(0);
-});
-
-test('Chrome on Apple silicon gets one Download button for the right file, and a way to the other (#204)', async ({ page }) => {
-  await pretend(page, { platform: 'MacIntel', uaPlatform: 'macOS', architecture: 'arm' });
-  await openAccount(page, []);
-  await page.goto('/#/settings');
-  const card = page.locator('.macapp');
-  await card.getByRole('button', { name: 'Download for Mac' }).click();
-  await expect(card.getByRole('link', { name: 'Download', exact: true })).toHaveAttribute('href', ARM);
-  await expect(card.getByRole('link', { name: 'Other Mac (Intel / Apple silicon)' })).toHaveAttribute('href', `${REPO}/releases/latest`);
-  await expect(card.getByRole('link', { name: 'Intel', exact: true })).toHaveCount(0);
-});
-
-test('Chrome on an Intel Mac gets the Intel file (#204)', async ({ page }) => {
-  await pretend(page, { platform: 'MacIntel', uaPlatform: 'macOS', architecture: 'x86' });
-  await openAccount(page, []);
-  await page.goto('/#/settings');
-  const card = page.locator('.macapp');
-  await card.getByRole('button', { name: 'Download for Mac' }).click();
-  await expect(card.getByRole('link', { name: 'Download', exact: true })).toHaveAttribute('href', INTEL);
-});
-
-for (const [name, machine] of [
-  ['Windows', { platform: 'Win32', uaPlatform: 'Windows' }],
-  ['Linux', { platform: 'Linux x86_64', uaPlatform: 'Linux' }],
-  ['an iPhone', { platform: 'iPhone', touch: 5 }],
-  ['an iPad that says it is a Mac', { platform: 'MacIntel', touch: 5 }],
-] as const) {
-  test(`${name} sees no download button, only the repository (#204)`, async ({ page }) => {
-    await pretend(page, machine);
-    await page.goto('/');
-    await expect(page.locator('.connect-demo')).toBeVisible();
-    await expect(page.locator('.macapp-line')).toHaveCount(0);
-
-    await openAccount(page, []);
-    await page.goto('/#/settings');
-    const card = page.locator('.macapp');
-    await expect(card.getByRole('link', { name: 'Mac app on GitHub' })).toHaveAttribute('href', REPO);
-    await expect(card.locator('a[href$=".dmg"]')).toHaveCount(0);
-  });
-}
-
-test('the desktop app itself shows neither the card nor the line (#204)', async ({ page }) => {
-  await pretend(page, { platform: 'MacIntel', uaPlatform: 'macOS', architecture: 'arm', desktopApp: true });
-  await page.goto('/');
-  await expect(page.locator('.connect-demo')).toBeVisible();
-  await expect(page.locator('.macapp-line')).toBeHidden();
-
-  await openAccount(page, []);
-  await page.goto('/#/settings');
-  await expect(page.locator('#about')).toBeAttached();
-  await expect(page.locator('.macapp')).toBeHidden();
+  await expect(page.locator('.macapp')).toHaveCount(0);
 });
 
 /* ---- #194: who can access a project ---------------------------------------- */
@@ -204,7 +95,7 @@ async function openWorkspaceAccount(page: Page, options: { refuse?: string } = {
     localStorage.setItem('onboarded', JSON.stringify(['account-test']));
     const db = await new Promise<IDBDatabase>((resolve, reject) => { const request = indexedDB.open('todoist-enhancements', 1); request.onupgradeneeded = () => { const d = request.result; for (const [name, options] of [['snapshot', undefined], ['prefs', undefined], ['queue', { keyPath: 'uuid' }]] as const) if (!d.objectStoreNames.contains(name)) d.createObjectStore(name, options); }; request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
     const tx = db.transaction('prefs', 'readwrite');
-    tx.objectStore('prefs').put({ locale: 'en', onboarded: true, setupDone: true, seenVersion: version, estimateStorage: 'tag', hireNoteSeen: true }, 'preferences');
+    tx.objectStore('prefs').put({ locale: 'en', onboarded: true, setupDone: true, seenVersion: version, estimateStorage: 'tag' }, 'preferences');
     await new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); });
     db.close();
   }, VERSION);
@@ -351,7 +242,7 @@ test('acknowledged changelog stays closed after stale settings sync and reload',
   await page.route('https://api.todoist.com/api/v1/sync', async (route) => {
     await route.fulfill({ json: { full_sync: false, sync_token: 'stale', sync_status: {}, project_notes: [{
       id: 'old-settings', project_id: 'inbox', item_id: null, is_deleted: false, posted_at: '2026-10-14T00:00:00Z',
-      content: 'Enhanced for Todoist · settings (edited by the app, please leave as is)\n\n' + JSON.stringify({ savedAt: Date.now() + 60000, seenVersion: '2.6.0', onboarded: true, setupDone: true, estimateStorage: 'tag', hireNoteSeen: true }),
+      content: 'Enhanced for Todoist · settings (edited by the app, please leave as is)\n\n' + JSON.stringify({ savedAt: Date.now() + 60000, seenVersion: '2.6.0', onboarded: true, setupDone: true, estimateStorage: 'tag' }),
     }] } });
   });
   await expect.poll(() => page.evaluate(async () => {

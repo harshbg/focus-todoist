@@ -26,8 +26,7 @@ import type { TranslationKey } from '@/i18n';
 import { SyncStatus } from './SyncStatus';
 import { Droppable } from './dnd/Droppable';
 import { ProjectDropRow, ProjectRowSortable } from './dnd/ProjectRowSortable';
-import { COFFEE_URL } from '@/app-info';
-import { Feedback } from './overlays/Feedback';
+import { FEEDBACK_URL } from '@/app-info';
 import { ProjectMenu } from './ProjectMenu';
 import { DraggableTag } from './dnd/DraggableTag';
 import { dragClock } from './dnd/DragProvider';
@@ -104,7 +103,6 @@ export function Sidebar({
   const demo = useStore((s) => s.demo);
   const draggingProjectId = useStore((s) => s.draggingProjectId);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
@@ -461,7 +459,6 @@ export function Sidebar({
 
   return (
     <>
-    <Feedback open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     {/* Folded, the sidebar is still here and still drawn: it slides out
         (theme.css), and `inert` takes it out of the tab order and out of reach
         of a screen reader while it is away. */}
@@ -534,14 +531,10 @@ export function Sidebar({
               <Icon name="sparkles" />
               {t('nav.whatsNew')}
             </button>
-            <button onClick={() => { setMenuOpen(false); setFeedbackOpen(true); }}>
+            <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>
               <Icon name="comment" />
               {t('nav.feedback')}
-            </button>
-            <button onClick={() => window.open(COFFEE_URL, '_blank', 'noopener,noreferrer')}>
-              <Icon name="coffee" />
-              {t('nav.coffee')}
-            </button>
+            </a>
             <hr />
             <button onClick={() => window.open('https://app.todoist.com', '_blank', 'noopener')}>
               <Icon name="external" />

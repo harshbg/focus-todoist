@@ -28,7 +28,12 @@ export const PREFERENCES_TASK_CONTENT = '* Enhanced for Todoist settings';
  * every browser, but it is not a task — it is not in the Inbox count, in
  * Todoist's search, in filters, or in the way of an empty Inbox.
  */
-export const SETTINGS_COMMENT_MARKER = 'Enhanced for Todoist · settings (edited by the app, please leave as is)';
+export const SETTINGS_COMMENT_MARKER = 'Focus for Todoist · settings (edited by the app, please leave as is)';
+const LEGACY_SETTINGS_COMMENT_MARKER = 'Enhanced for Todoist · settings (edited by the app, please leave as is)';
+
+export function isSettingsComment(content: string): boolean {
+  return content.startsWith(SETTINGS_COMMENT_MARKER) || content.startsWith(LEGACY_SETTINGS_COMMENT_MARKER);
+}
 
 /**
  * What a project's Display control shares across devices: list or board,
@@ -95,8 +100,10 @@ export function settingsCommentContent(prefs: Preferences, savedAt = Date.now())
 export function readSettingsComment(
   content: string,
 ): (Partial<SyncedPreferences> & { savedAt?: number }) | null {
-  if (!content.startsWith(SETTINGS_COMMENT_MARKER)) return null;
-  const json = content.slice(SETTINGS_COMMENT_MARKER.length).trim();
+  const marker = content.startsWith(SETTINGS_COMMENT_MARKER) ? SETTINGS_COMMENT_MARKER
+    : content.startsWith(LEGACY_SETTINGS_COMMENT_MARKER) ? LEGACY_SETTINGS_COMMENT_MARKER : null;
+  if (!marker) return null;
+  const json = content.slice(marker.length).trim();
   try {
     const value = JSON.parse(json);
     return value && typeof value === 'object' ? value : null;
@@ -110,6 +117,8 @@ export function readSettingsComment(
  * aside — so nothing is sent when nothing changed.
  */
 export function settingsCommentMatches(content: string, prefs: Preferences): boolean {
+  // Rewriting an old comment also updates the visible name in Todoist.
+  if (!content.startsWith(SETTINGS_COMMENT_MARKER)) return false;
   const stored = readSettingsComment(content);
   if (!stored) return false;
   const { savedAt: _stamp, ...rest } = stored;
@@ -416,8 +425,6 @@ export interface Preferences {
    * account that has not been past one yet.
    */
   seenVersion: string | null;
-  /** The one-time note for Todoist's own people has been shown to this account. */
-  hireNoteSeen: boolean;
 }
 
 export const defaultPreferences = (locale: Locale): Preferences => ({
@@ -468,7 +475,6 @@ export const defaultPreferences = (locale: Locale): Preferences => ({
   workspaceOrder: [],
   whatsNew: true,
   seenVersion: null,
-  hireNoteSeen: false,
 });
 
 /**
@@ -497,7 +503,9 @@ export const viewPrefs = (prefs: Preferences, viewKey: string): ViewPrefs => {
 export function hydratePreferences(stored: unknown, locale: Locale): Preferences {
   const base = defaultPreferences(locale);
   if (!stored || typeof stored !== 'object') return base;
-  const s = stored as Partial<Preferences>;
+  const s = { ...(stored as Partial<Preferences>) };
+  // Retain other future settings, while dropping the removed hire note flag.
+  delete (s as Partial<Preferences> & { hireNoteSeen?: unknown }).hireNoteSeen;
   const storedWeekLayout = (stored as Record<string, unknown>).weekLayout;
   return {
     ...base,
@@ -567,7 +575,6 @@ export function hydratePreferences(stored: unknown, locale: Locale): Preferences
     seenVersion: typeof s.seenVersion === 'string' && /^\d+\.\d+\.\d+$/.test(s.seenVersion)
       ? s.seenVersion
       : null,
-    hireNoteSeen: s.hireNoteSeen === true,
     views: s.views ?? {},
   };
 }

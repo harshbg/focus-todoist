@@ -379,9 +379,6 @@ export interface AppState {
   openSidePanel: (panel: SidePanel) => void;
   /** Closes the panel, or only that one when it is the one that is open. */
   closeSidePanel: (panel?: SidePanel) => void;
-  /** The one-time note for Todoist's people is up on the page. Lasts until the app is reloaded. */
-  hireNote: boolean;
-  setHireNote: (open: boolean) => void;
   timeFilter: TimeFilter;
   setTimeFilter: (patch: Partial<TimeFilter>) => void;
 
@@ -399,4 +396,4 @@ export type PreferencesSlice = Pick<AppState, 'prefs' | 'walkthrough' | 'setPref
 export type TasksSlice = Pick<AppState, 'logbookEntry' | 'setLogbookEntry' | 'loadTask' | 'updateTask' | 'addComment' | 'updateComment' | 'deleteComment' | 'toggleReaction' | 'duplicateTask' | 'setRecurrence' | 'setEstimates' | 'toggleTask' | 'completeTasks' | 'removeTask' | 'removeTasks' | 'restoreTasks' | 'createTaskId' | 'createTask' | 'createTasks' | 'setTaskLabels' | 'setTaskPriority' | 'skipOccurrence' | 'skipOccurrences' | 'reorderSubtasks'>;
 export type TasksMoveSlice = Pick<AppState, 'sendTo' | 'sendManyTo' | 'updateMany' | 'moveMany' | 'nestMany' | 'moveTask'>;
 export type StructureSlice = Pick<AppState, 'createLabel' | 'renameLabel' | 'setLabelFavourite' | 'setLabelColour' | 'deleteLabel' | 'setFilterFavourite' | 'createFilter' | 'updateFilter' | 'deleteFilter' | 'reorderFilters' | 'reorderLabels' | 'reorderProjects' | 'nestProject' | 'moveProjectToWorkspace' | 'createProject' | 'archiveProject' | 'deleteProject' | 'duplicateProject' | 'updateProjectFields' | 'createSection' | 'moveSection' | 'removeSection' | 'archiveSection' | 'moveSectionToProject' | 'duplicateSection' | 'updateSectionFields'>;
-export type UiSlice = Pick<AppState, 'toasts' | 'undoStack' | 'draggingTaskId' | 'draggingSectionId' | 'nesting' | 'outdenting' | 'draggingProjectId' | 'draggingTag' | 'selection' | 'selectionAnchor' | 'toast' | 'dismissToast' | 'pushUndo' | 'undo' | 'consumeUndo' | 'setDraggingSection' | 'setDraggingTag' | 'setNesting' | 'setOutdenting' | 'setDraggingProject' | 'sidePanel' | 'openSidePanel' | 'closeSidePanel' | 'hireNote' | 'setHireNote' | 'timeFilter' | 'setTimeFilter' | 'toggleSelection' | 'setSelectionAnchor' | 'selectRange' | 'clearSelection' | 'setDragging'>;
+export type UiSlice = Pick<AppState, 'toasts' | 'undoStack' | 'draggingTaskId' | 'draggingSectionId' | 'nesting' | 'outdenting' | 'draggingProjectId' | 'draggingTag' | 'selection' | 'selectionAnchor' | 'toast' | 'dismissToast' | 'pushUndo' | 'undo' | 'consumeUndo' | 'setDraggingSection' | 'setDraggingTag' | 'setNesting' | 'setOutdenting' | 'setDraggingProject' | 'sidePanel' | 'openSidePanel' | 'closeSidePanel' | 'timeFilter' | 'setTimeFilter' | 'toggleSelection' | 'setSelectionAnchor' | 'selectRange' | 'clearSelection' | 'setDragging'>;

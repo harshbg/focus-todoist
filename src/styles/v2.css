@@ -501,7 +501,7 @@
 .setrow .segmented.choice{flex:none;width:auto}
 a.btn,a.btn:hover{text-decoration:none}
 .menu{border-radius:16px;padding:5px}
-.menu button{border-radius:11px}
+.menu button,.menu a{border-radius:11px}
 .menu button.danger,.menu button.danger .ic{color:#e5384f}
 .menu button.danger:hover{background:#fdf0f1}
 
@@ -629,7 +629,7 @@ html.dragging-row .task,html.dragging-row .subtaskrow{transition:margin .16s eas
 
 /* The profile menu hangs below the profile, narrower, like the reference. */
 .sidebar .side-top .menu{top:calc(100% - 2px);left:4px;width:max-content;min-width:198px;max-width:240px}
-.sidebar .side-top .menu button{white-space:nowrap}
+.sidebar .side-top .menu button,.sidebar .side-top .menu a{white-space:nowrap}
 
 /* Count and time on one line: "4 tasks · 5 h 30", in a group header and a column header. */
 .gcount{min-width:0;height:auto;padding:0;border-radius:0;background:transparent;box-shadow:none;

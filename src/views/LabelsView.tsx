@@ -1,4 +1,3 @@
-import { HireNote } from '@/components/HireNote';
 import { useMemo, useRef, useState } from 'react';
 import { useDndMonitor } from '@dnd-kit/core';
 import { Icon } from '@/components/Icon';
@@ -101,7 +100,6 @@ export function LabelsView() {
           </button>
         </div>
       </div>
-      <HireNote />
 
       {labels.length === 0 ? (
         <p className="empty">{t('labels.none')}</p>

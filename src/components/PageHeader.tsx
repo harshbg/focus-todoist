@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Icon } from './Icon';
 import { useT } from '@/hooks/useT';
-import { HireNote } from './HireNote';
 import { formatDuration } from '@/domain/estimates';
 import { loadTone, type LoadSummary } from '@/domain/load';
 
@@ -29,8 +28,6 @@ interface PageHeaderProps {
   onOpenUnestimated?: () => void;
   /** Offers the time filter on this page. Left out on the pages it does not belong on. */
   time?: TimePillProps;
-  /** Where the page does not put the note for Todoist's people itself, it goes under the header. */
-  hireNote?: boolean;
 }
 
 /**
@@ -40,7 +37,7 @@ interface PageHeaderProps {
  * which the caller decides by passing it or not (#173).
  */
 export function PageHeader({
-  title, subtitle, actions, load, onOpenUnestimated, time, hireNote = true, hideMetrics = false,
+  title, subtitle, actions, load, onOpenUnestimated, time, hideMetrics = false,
 }: PageHeaderProps) {
   const { t, locale } = useT();
 
@@ -126,7 +123,6 @@ export function PageHeader({
           </>
         )}
       </div>}
-      {hireNote && <HireNote />}
     </>
   );
 }

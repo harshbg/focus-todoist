@@ -8,7 +8,7 @@ import { setWeekLabel, type Note, type Snapshot } from '@/domain/types';
 import { defaultSidebarNav } from '@/domain/sidebar';
 import { detectLocale } from '@/i18n';
 import { buildDemoSnapshot } from '@/demo/demoData';
-import { defaultPreferences, hydratePreferences, viewPrefs as readViewPrefs, PREFERENCES_TASK_CONTENT, SETTINGS_COMMENT_MARKER, mergeSynced, readSettingsComment, settingsCommentContent, settingsCommentMatches, syncedPreferences, type Preferences } from './prefs';
+import { defaultPreferences, hydratePreferences, viewPrefs as readViewPrefs, PREFERENCES_TASK_CONTENT, isSettingsComment, mergeSynced, readSettingsComment, settingsCommentContent, settingsCommentMatches, syncedPreferences, type Preferences } from './prefs';
 import { schedulePersist } from './helpers';
 import type { AppState } from './types';
 import { hasOnboarded, markOnboarded } from '@/domain/onboarding';
@@ -60,7 +60,7 @@ export function settingsComments(snapshot: Snapshot): Note[] {
   const stamp = (note: Note) => readSettingsComment(note.content)?.savedAt ?? 0;
   return Object.values(snapshot.notes)
     .filter((note) => !note.is_deleted && note.project_id === inbox && !note.item_id
-      && note.content.startsWith(SETTINGS_COMMENT_MARKER))
+      && isSettingsComment(note.content))
     /* Todoist keeps no edit date on a comment, so the settings carry their
        own; a comment written before they did falls back to when it was posted. */
     .sort((a, b) => stamp(b) - stamp(a) || b.posted_at.localeCompare(a.posted_at));
@@ -137,7 +137,7 @@ export async function fetchSettingsComments(inbox: string): Promise<Note[] | nul
       const page = await request<{ results: Note[]; next_cursor?: string | null }>(
         '/comments', { query: { project_id: inbox, limit: 100, cursor } },
       );
-      found.push(...page.results.filter((note) => note.content.startsWith(SETTINGS_COMMENT_MARKER)));
+      found.push(...page.results.filter((note) => isSettingsComment(note.content)));
       cursor = page.next_cursor ?? undefined;
     } while (cursor);
     return found;

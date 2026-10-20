@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  defaultPreferences, hydratePreferences, mergeSynced, readSettingsComment, SETTINGS_COMMENT_MARKER,
+  defaultPreferences, hydratePreferences, isSettingsComment, mergeSynced, readSettingsComment, SETTINGS_COMMENT_MARKER,
   settingsCommentContent, settingsCommentMatches, syncedPreferences, type Preferences,
 } from './prefs';
 import { defaultViewPrefs } from '@/domain/types';
@@ -54,6 +54,17 @@ describe('the settings comment', () => {
     expect(settingsCommentMatches(settingsCommentContent(current, 1), current)).toBe(true);
     expect(settingsCommentMatches(settingsCommentContent(current, 1), prefs({ theme: 'light' })))
       .toBe(false);
+  });
+
+  it('reads an upstream settings comment and rewrites its visible marker', () => {
+    const current = prefs({ theme: 'dark' });
+    const legacy = settingsCommentContent(current, 1)
+      .replace('Focus for Todoist', 'Enhanced for Todoist')
+      .replace('"savedAt":1', '"hireNoteSeen":true,"savedAt":1');
+    expect(isSettingsComment(legacy)).toBe(true);
+    expect(readSettingsComment(legacy)).toMatchObject({ theme: 'dark', savedAt: 1 });
+    expect(settingsCommentMatches(legacy, current)).toBe(false);
+    expect(mergeSynced(current, readSettingsComment(legacy)!, 'en')).not.toHaveProperty('hireNoteSeen');
   });
 });
 
