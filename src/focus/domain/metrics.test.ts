@@ -37,6 +37,7 @@ describe('daily and weekly totals', () => {
     expect(todayProgress([entry('2026-10-20T09:00', 300)], settings, now))
       .toMatchObject({ remaining: 0, share: 1 });
     expect(todayProgress([], settings, now)).toMatchObject({ remaining: 240, share: 0 });
+    expect(todayProgress([], { ...settings, dailyTargetMin: 0 }, now)).toMatchObject({ remaining: 0, share: 1 });
   });
 
   it('counts only full temple hours and caps blocks at the target', () => {
@@ -152,10 +153,12 @@ describe('attention and cadence', () => {
 });
 
 describe('year grid and momentum', () => {
-  it('shows exempt status over focus, future days, and exactly 52 weeks', () => {
+  it('shows exempt status over focus and ahead of time, future days, and exactly 52 weeks', () => {
     const leave: FocusSettings = {
       ...settings,
-      exemptDays: [{ date: '2026-10-19', kind: 'pto' }, { date: '2026-10-20', kind: 'holiday' }],
+      exemptDays: [
+        { date: '2026-10-19', kind: 'pto' }, { date: '2026-10-20', kind: 'holiday' }, { date: '2026-10-22', kind: 'pto' },
+      ],
     };
     const entries = [entry('2026-10-19T09:00', 60), entry('2026-10-20T09:00', 60)];
     const grid = yearGrid(entries, leave, now);
@@ -166,7 +169,7 @@ describe('year grid and momentum', () => {
         { date: '2026-10-19', state: 'pto' },
         { date: '2026-10-20', state: 'holiday' },
         { date: '2026-10-21', state: 'future' },
-        { date: '2026-10-22', state: 'future' },
+        { date: '2026-10-22', state: 'pto' },
         { date: '2026-10-23', state: 'future' },
       ],
     });

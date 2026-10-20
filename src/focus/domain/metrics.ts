@@ -50,7 +50,8 @@ export function todayProgress(entries: FocusEntry[], settings: FocusSettings, no
     minutes,
     target,
     remaining: Math.max(0, target - minutes),
-    share: Math.min(1, minutes / target),
+    // A target of 0 would read as NaN; treat it as already met.
+    share: target > 0 ? Math.min(1, minutes / target) : 1,
     pips: [1, 2, 3, 4].map((quarter) => minutes >= quarter * target / 4) as TodayProgress['pips'],
   };
 }
@@ -280,7 +281,8 @@ export type YearCell = 'focused' | 'pto' | 'holiday' | 'none' | 'future';
 /**
  * The year grid: the 52 weeks ending with this one, oldest first, each listing
  * its workdays (settings.workdays only) with their state. An exempt day shows
- * its kind even when focus was logged on it.
+ * its kind even when focus was logged on it, and ahead of time, so planned
+ * leave is visible before it starts.
  */
 export function yearGrid(
   entries: FocusEntry[],
@@ -296,8 +298,8 @@ export function yearGrid(
       .filter((date) => settings.workdays.includes(getISODay(parseISO(date))))
       .map((date) => {
         const exempt = settings.exemptDays.find((day) => day.date === date);
-        const state: YearCell = date > today ? 'future'
-          : exempt ? exempt.kind
+        const state: YearCell = exempt ? exempt.kind
+          : date > today ? 'future'
             : (totals.get(date) ?? 0) >= settings.runThresholdMin ? 'focused' : 'none';
         return { date, state };
       });
