@@ -1,0 +1,986 @@
+@import './focus.css';
+
+/* ==========================================================================
+   Progress page visual system (SPEC §5.2, docs/focus/PROGRESS-PAGE.md §3–§4)
+   Scoped under .focus-theme so the rest of the app is untouched.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Page Root (.pg-page)
+   -------------------------------------------------------------------------- */
+.focus-theme.pg-page,
+.focus-theme .pg-page {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+/* --------------------------------------------------------------------------
+   2. Responsive Card Grid & Stat Cards (.pg-cards, .pg-stat, etc.)
+   -------------------------------------------------------------------------- */
+.focus-theme .pg-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  align-items: stretch;
+}
+
+.focus-theme .pg-stat {
+  background-color: var(--fx-card);
+  border: 1px solid var(--fx-hairline);
+  border-radius: 2px;
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 140px;
+  position: relative;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.focus-theme .pg-stat:hover {
+  border-color: var(--fx-border-strong, #c8c2b7);
+}
+
+:root[data-theme="dark"] .focus-theme .pg-stat:hover {
+  border-color: #4a453e;
+}
+
+.focus-theme .pg-stat-value {
+  font-family: var(--fx-serif, "Newsreader", "Instrument Serif", Georgia, serif);
+  font-size: clamp(38px, 4.2vw, 48px);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--fx-ink);
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.focus-theme .pg-stat-unit {
+  font-family: var(--fx-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fx-muted);
+  margin-left: 6px;
+}
+
+.focus-theme .pg-stat-note {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--fx-muted);
+  margin-top: 10px;
+}
+
+.focus-theme .pg-stat .fx-bar {
+  margin: 12px 0 8px;
+}
+
+/* --------------------------------------------------------------------------
+   3. Seven-day Cadence (.pg-bars, .pg-bars-labels)
+   -------------------------------------------------------------------------- */
+.focus-theme .pg-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  height: 80px;
+  padding: 12px 4px 0;
+  margin-top: auto;
+  border-bottom: 1px solid var(--fx-hairline);
+  box-sizing: border-box;
+}
+
+.focus-theme .pg-bars > span {
+  flex: 1;
+  min-width: 8px;
+  background-color: var(--fx-rust);
+  border-radius: 2px 2px 0 0;
+  display: block;
+  min-height: 3px;
+  transition: background-color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.focus-theme .pg-bars > span:hover {
+  background-color: var(--fx-rust-hover);
+  opacity: 0.88;
+  transform: scaleY(1.04);
+  transform-origin: bottom;
+}
+
+.focus-theme .pg-bars > span[style*="height: 0%"],
+.focus-theme .pg-bars > span[style*="height:0%"],
+.focus-theme .pg-bars > span[data-minutes="0"] {
+  background-color: var(--fx-hairline);
+  opacity: 0.6;
+}
+
+.focus-theme .pg-bars-labels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 0 4px;
+}
+
+.focus-theme .pg-bars-labels > span,
+.focus-theme .pg-bars-labels > div {
+  flex: 1;
+  font-family: var(--fx-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--fx-muted);
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   4. Weekly Recap (.pg-recap, .pg-recap-total, .pg-recap-line)
+   -------------------------------------------------------------------------- */
+.focus-theme .pg-recap {
+  background-color: var(--fx-card);
+  border: 1px solid var(--fx-hairline);
+  border-radius: 2px;
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.focus-theme .pg-recap-total {
+  font-family: var(--fx-serif, "Newsreader", "Instrument Serif", Georgia, serif);
+  font-size: clamp(36px, 4vw, 44px);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--fx-ink);
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.focus-theme .pg-recap-total .pg-stat-unit {
+  margin-left: 0;
+}
+
+.focus-theme .pg-recap-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fx-muted);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--fx-hairline);
+}
+
+.focus-theme .pg-recap-line:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.focus-theme .pg-recap-line strong,
+.focus-theme .pg-recap-line b {
+  color: var(--fx-ink);
+  font-weight: 600;
+}
+
+.focus-theme .pg-recap-line span:first-child:not(:only-child) {
+  font-family: var(--fx-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.focus-theme .pg-recap-line span:last-child:not(:only-child) {
+  color: var(--fx-ink);
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   5. Attention Map (.pg-heat, .pg-heat-row, .pg-heat-cell, etc.)
+   -------------------------------------------------------------------------- */
+.focus-theme .pg-heat {
+  background-color: var(--fx-card);
+  border: 1px solid var(--fx-hairline);
+  border-radius: 2px;
+  padding: 24px;
+  box-sizing: border-box;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.focus-theme .pg-heat-wrap,
+.focus-theme .pg-heat-container {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: start;
+}
+
+.focus-theme .pg-heat-labels,
+.focus-theme .pg-heat-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: max-content;
+}
+
+.focus-theme .pg-heat-row {
+  margin-bottom: 4px;
+}
+
+.focus-theme .pg-heat-row:last-child {
+  margin-bottom: 0;
+}
+
+.focus-theme .pg-heat-labels {
+  margin-bottom: 8px;
+  font-family: var(--fx-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--fx-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.focus-theme .pg-heat-labels > span,
+.focus-theme .pg-heat-labels > div {
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.focus-theme .pg-heat-row > span:not(.pg-heat-cell),
+.focus-theme .pg-heat-row > .pg-heat-day,
+.focus-theme .pg-heat-labels > .pg-heat-day,
+.focus-theme .pg-heat-labels > span:first-child:not(:nth-last-child(18)) {
+  width: 32px;
+  font-family: var(--fx-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--fx-muted);
+  flex-shrink: 0;
+  text-align: left;
+}
+
+.focus-theme .pg-heat-cell {
+  width: 24px;
+  height: 24px;
+  border-radius: 2px;
+  background-color: #e7e3da;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  transition: transform 0.12s ease, outline-color 0.12s ease;
+  cursor: pointer;
+}
+
+.focus-theme .pg-heat-cell:hover {
+  outline: 2px solid var(--fx-navy);
+  outline-offset: -1px;
+  z-index: 2;
+  position: relative;
+}
+
+/* Light mode heat-map levels 0..4 (PROGRESS-PAGE.md §4) */
+.focus-theme .pg-heat-cell[data-level="0"] {
+  background-color: #e7e3da;
+}
+
+.focus-theme .pg-heat-cell[data-level="1"] {
+  background-color: #dfe6d8;
+}
+
+.focus-theme .pg-heat-cell[data-level="2"] {
+  background-color: #a9c19c;
+}
+
+.focus-theme .pg-heat-cell[data-level="3"] {
+  background-color: #6f9a62;
+}
+
+.focus-theme .pg-heat-cell[data-level="4"] {
+  background-color: #3f6e3a;
+}
+
+/* Dark mode heat-map levels 0..4 */
+:root[data-theme="dark"] .focus-theme .pg-heat-cell[data-level="0"] {
+  background-color: #2a2723;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-heat-cell[data-level="1"] {
+  background-color: #274324;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-heat-cell[data-level="2"] {
+  background-color: #366532;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-heat-cell[data-level="3"] {
+  background-color: #488a42;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-heat-cell[data-level="4"] {
+  background-color: #5da655;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-heat-cell:hover {
+  outline-color: #ece6da;
+}
+
+/* Attention map best window panel */
+.focus-theme .pg-heat-best {
+  background-color: var(--fx-paper);
+  border: 1px solid var(--fx-hairline);
+  border-radius: 2px;
+  padding: 16px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+  flex-shrink: 0;
+}
+
+.focus-theme .pg-heat-best .fx-eyebrow {
+  margin: 0;
+}
+
+.focus-theme .pg-heat-best strong,
+.focus-theme .pg-heat-best-value {
+  font-family: var(--fx-serif, "Newsreader", "Instrument Serif", Georgia, serif);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--fx-ink);
+}
+
+.focus-theme .pg-heat-best p,
+.focus-theme .pg-heat-best-note {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--fx-muted);
+  margin: 0;
+}
+
+/* Heat-map & Year grid legend (.pg-legend) */
+.focus-theme .pg-legend {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-family: var(--fx-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--fx-muted);
+  margin-top: 16px;
+}
+
+.focus-theme .pg-legend > span,
+.focus-theme .pg-legend > div,
+.focus-theme .pg-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.focus-theme .pg-legend i,
+.focus-theme .pg-legend-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   6. Year Grid & Weekly Momentum (.pg-year, .pg-momentum, etc.)
+   -------------------------------------------------------------------------- */
+.focus-theme .pg-year {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 6px 2px 14px;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.focus-theme .pg-year-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.focus-theme .pg-year-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 1px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: transform 0.12s ease;
+  cursor: pointer;
+}
+
+.focus-theme .pg-year-cell:hover {
+  transform: scale(1.35);
+  z-index: 3;
+  position: relative;
+}
+
+/* Year grid cell states (PROGRESS-PAGE.md §4) */
+.focus-theme .pg-year-cell[data-state="focused"] {
+  background-color: #3f6e3a;
+  border: 1px solid #3f6e3a;
+}
+
+.focus-theme .pg-year-cell[data-state="pto"] {
+  background-color: #c9773a;
+  border: 1px solid #c9773a;
+}
+
+.focus-theme .pg-year-cell[data-state="holiday"] {
+  background-color: #6f8fb0;
+  border: 1px solid #6f8fb0;
+}
+
+.focus-theme .pg-year-cell[data-state="none"] {
+  background-color: transparent;
+  border: 1px solid var(--fx-hairline);
+}
+
+.focus-theme .pg-year-cell[data-state="future"] {
+  background-color: transparent;
+  border: 1px dotted var(--fx-hairline);
+  opacity: 0.55;
+}
+
+/* Dark mode year cell states */
+:root[data-theme="dark"] .focus-theme .pg-year-cell[data-state="focused"] {
+  background-color: #5da655;
+  border-color: #5da655;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-year-cell[data-state="pto"] {
+  background-color: #d98243;
+  border-color: #d98243;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-year-cell[data-state="holiday"] {
+  background-color: #7fa2c4;
+  border-color: #7fa2c4;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-year-cell[data-state="none"] {
+  background-color: transparent;
+  border-color: var(--fx-hairline);
+}
+
+:root[data-theme="dark"] .focus-theme .pg-year-cell[data-state="future"] {
+  background-color: transparent;
+  border: 1px dotted var(--fx-hairline);
+  opacity: 0.45;
+}
+
+/* Weekly momentum strip (.pg-momentum) */
+.focus-theme .pg-momentum {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 2px 10px;
+  margin-top: 8px;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.focus-theme .pg-momentum-cell {
+  width: 12px;
+  height: 6px;
+  border-radius: 1px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: transform 0.12s ease;
+  cursor: pointer;
+}
+
+.focus-theme .pg-momentum-cell:hover {
+  transform: scale(1.4);
+  z-index: 3;
+  position: relative;
+}
+
+/* Momentum days 0..5 (PROGRESS-PAGE.md §4: shades of green) */
+.focus-theme .pg-momentum-cell[data-days="0"] {
+  background-color: #e7e3da;
+}
+
+.focus-theme .pg-momentum-cell[data-days="1"] {
+  background-color: #dfe6d8;
+}
+
+.focus-theme .pg-momentum-cell[data-days="2"] {
+  background-color: #b8cfad;
+}
+
+.focus-theme .pg-momentum-cell[data-days="3"] {
+  background-color: #8bb07e;
+}
+
+.focus-theme .pg-momentum-cell[data-days="4"] {
+  background-color: #5e8d53;
+}
+
+.focus-theme .pg-momentum-cell[data-days="5"] {
+  background-color: #3f6e3a;
+}
+
+/* Dark mode momentum days 0..5 */
+:root[data-theme="dark"] .focus-theme .pg-momentum-cell[data-days="0"] {
+  background-color: #2a2723;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-momentum-cell[data-days="1"] {
+  background-color: #233d20;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-momentum-cell[data-days="2"] {
+  background-color: #2f562b;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-momentum-cell[data-days="3"] {
+  background-color: #3d7138;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-momentum-cell[data-days="4"] {
+  background-color: #4c8d45;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-momentum-cell[data-days="5"] {
+  background-color: #5da655;
+}
+
+/* --------------------------------------------------------------------------
+   7. Excuse a Workday (.pg-exempt, .pg-exempt-chips)
+   -------------------------------------------------------------------------- */
+.focus-theme .pg-exempt {
+  background-color: var(--fx-card);
+  border: 1px solid var(--fx-hairline);
+  border-radius: 2px;
+  padding: 20px 24px;
+  margin-top: 24px;
+  box-sizing: border-box;
+}
+
+.focus-theme .pg-exempt form,
+.focus-theme .pg-exempt-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.focus-theme .pg-exempt input[type="date"] {
+  appearance: none;
+  padding: 7px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--fx-ink);
+  background-color: var(--fx-paper);
+  border: 1px solid var(--fx-hairline);
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.focus-theme .pg-exempt input[type="date"]:focus {
+  border-color: var(--fx-rust);
+}
+
+.focus-theme .pg-exempt .fx-seg {
+  margin-bottom: 0;
+}
+
+.focus-theme .pg-exempt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.focus-theme .pg-exempt-chips:empty {
+  display: none;
+}
+
+.focus-theme .pg-exempt-chips .fx-chip,
+.focus-theme .pg-exempt-chips > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 10px;
+  font-family: var(--fx-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-size: 11px;
+  border-radius: 2px;
+  background-color: var(--fx-paper);
+  border: 1px solid var(--fx-hairline);
+  color: var(--fx-ink);
+}
+
+.focus-theme .pg-exempt-chips .fx-icon-btn,
+.focus-theme .pg-exempt-chips button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--fx-muted);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 14px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  transition: color 0.15s ease;
+}
+
+.focus-theme .pg-exempt-chips button:hover {
+  color: var(--fx-rust);
+}
+
+/* --------------------------------------------------------------------------
+   8. Current World Panel (.pg-world, .pg-world-copy, .pg-next)
+   -------------------------------------------------------------------------- */
+.focus-theme .pg-world {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.1fr) minmax(320px, 1.4fr);
+  gap: 32px;
+  align-items: center;
+  background-color: var(--fx-card);
+  border: 1px solid var(--fx-hairline);
+  border-radius: 2px;
+  padding: 32px;
+  margin-bottom: 36px;
+  box-sizing: border-box;
+}
+
+.focus-theme .pg-world-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.focus-theme .pg-world-copy h3,
+.focus-theme .pg-world-copy .fx-h3 {
+  font-family: var(--fx-serif, "Newsreader", "Instrument Serif", Georgia, serif);
+  font-size: clamp(26px, 3vw, 32px);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--fx-ink);
+  margin: 0;
+}
+
+.focus-theme .pg-world-copy p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--fx-muted);
+  margin: 0;
+}
+
+.focus-theme .pg-next {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--fx-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.focus-theme .pg-next .fx-eyebrow {
+  margin: 0 0 4px 0;
+}
+
+.focus-theme .pg-next-items,
+.focus-theme .pg-next-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.focus-theme .pg-next-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--fx-muted);
+  background-color: var(--fx-paper);
+  border: 1px solid var(--fx-hairline);
+  border-radius: 2px;
+  padding: 6px 12px;
+}
+
+.focus-theme .pg-next-item strong {
+  color: var(--fx-ink);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   9. Trophy Grid (.pg-trophies, .pg-trophy, .is-unlocked, etc.)
+   -------------------------------------------------------------------------- */
+.focus-theme .pg-trophies {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.focus-theme .pg-trophy {
+  background-color: var(--fx-paper);
+  border: 1px solid var(--fx-hairline);
+  border-radius: 2px;
+  padding: 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 180px;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.focus-theme .pg-trophy:hover {
+  border-color: var(--fx-border-strong, #c8c2b7);
+}
+
+/* Unlocked trophy card: warm tint #f6e9df, 1px rust-tinted border, 4px navy offset shadow */
+.focus-theme .pg-trophy.is-unlocked {
+  background-color: #f6e9df;
+  border: 1px solid rgba(168, 64, 46, 0.45);
+  box-shadow: 4px 4px 0 var(--fx-navy);
+}
+
+.focus-theme .pg-trophy.is-unlocked:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--fx-navy);
+}
+
+/* Dark mode trophy cards */
+:root[data-theme="dark"] .focus-theme .pg-trophy {
+  background-color: var(--fx-card);
+  border-color: var(--fx-hairline);
+}
+
+:root[data-theme="dark"] .focus-theme .pg-trophy:hover {
+  border-color: #4a453e;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-trophy.is-unlocked {
+  background-color: #2e2320;
+  border-color: rgba(168, 64, 46, 0.65);
+  box-shadow: 4px 4px 0 #0e141b;
+}
+
+:root[data-theme="dark"] .focus-theme .pg-trophy.is-unlocked:hover {
+  box-shadow: 5px 5px 0 #0e141b;
+}
+
+/* Trophy card sub-elements */
+.focus-theme .pg-trophy-tier {
+  font-family: var(--fx-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fx-muted);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.focus-theme .pg-trophy.is-unlocked .pg-trophy-tier {
+  color: var(--fx-rust);
+}
+
+.focus-theme .pg-trophy-title {
+  font-family: var(--fx-serif, "Newsreader", "Instrument Serif", Georgia, serif);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--fx-ink);
+  margin: 0 0 8px 0;
+}
+
+.focus-theme .pg-trophy-blurb {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--fx-muted);
+  margin: 0 0 14px 0;
+  flex: 1;
+}
+
+.focus-theme .pg-trophy-bar {
+  width: 100%;
+  height: 6px;
+  background-color: var(--fx-hairline);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+/* Bar fill: rust when unlocked, slate otherwise */
+.focus-theme .pg-trophy-bar > span {
+  display: block;
+  height: 100%;
+  background-color: #7c8698; /* slate */
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
+.focus-theme .pg-trophy.is-unlocked .pg-trophy-bar > span {
+  background-color: var(--fx-rust);
+}
+
+:root[data-theme="dark"] .focus-theme .pg-trophy-bar {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="dark"] .focus-theme .pg-trophy-bar > span {
+  background-color: #636d7e; /* dark slate */
+}
+
+:root[data-theme="dark"] .focus-theme .pg-trophy.is-unlocked .pg-trophy-bar > span {
+  background-color: var(--fx-rust);
+}
+
+.focus-theme .pg-trophy-count {
+  font-family: var(--fx-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--fx-muted);
+  text-align: right;
+  line-height: 1.2;
+}
+
+.focus-theme .pg-trophy.is-unlocked .pg-trophy-count {
+  color: var(--fx-ink);
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   10. Scrollbar Refinements for Grids
+   -------------------------------------------------------------------------- */
+.focus-theme .pg-heat::-webkit-scrollbar,
+.focus-theme .pg-year::-webkit-scrollbar,
+.focus-theme .pg-momentum::-webkit-scrollbar {
+  height: 6px;
+}
+
+.focus-theme .pg-heat::-webkit-scrollbar-track,
+.focus-theme .pg-year::-webkit-scrollbar-track,
+.focus-theme .pg-momentum::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.focus-theme .pg-heat::-webkit-scrollbar-thumb,
+.focus-theme .pg-year::-webkit-scrollbar-thumb,
+.focus-theme .pg-momentum::-webkit-scrollbar-thumb {
+  background: var(--fx-hairline);
+  border-radius: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   11. Responsive Media Queries
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .focus-theme .pg-trophies {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .focus-theme .pg-heat-wrap,
+  .focus-theme .pg-heat-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 800px) {
+  .focus-theme .pg-cards {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .focus-theme .pg-world {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .focus-theme.pg-page,
+  .focus-theme .pg-page {
+    padding: 24px 16px 48px;
+    overflow-x: hidden;
+  }
+
+  /* Trophy grid: 2 on phone (PROGRESS-PAGE.md §3) */
+  .focus-theme .pg-trophies {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .focus-theme .pg-trophy {
+    padding: 12px;
+    min-height: 160px;
+  }
+
+  .focus-theme .pg-trophy-title {
+    font-size: 15px;
+  }
+
+  .focus-theme .pg-trophy-blurb {
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+
+  /* Every grid scrolls inside its own box, never the page (PROGRESS-PAGE.md §4) */
+  .focus-theme .pg-heat,
+  .focus-theme .pg-year,
+  .focus-theme .pg-momentum {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .focus-theme .pg-recap {
+    padding: 16px;
+  }
+
+  .focus-theme .pg-exempt {
+    padding: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-theme .pg-bars > span,
+  .focus-theme .pg-trophy,
+  .focus-theme .pg-trophy-bar > span,
+  .focus-theme .pg-year-cell,
+  .focus-theme .pg-momentum-cell,
+  .focus-theme .pg-heat-cell {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
