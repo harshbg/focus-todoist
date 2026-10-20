@@ -239,7 +239,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
         const taskLane = prefs.lanes.find((name) => item.labels.some((label) => label.toLowerCase() === name.toLowerCase()));
         return <li key={item.id} className="fx-queue-item"><button className="fx-queue-title" onClick={() => onOpen(item.id)}>{item.content}</button>
           <span className="fx-queue-meta">{[estimateOf(item) !== null ? formatDuration(estimateOf(item)!, locale) : null, taskLane].filter(Boolean).join(' · ')}</span>
-          <button className="fx-icon-btn" disabled={Boolean(active)} aria-label={t('focus.startTaskNamed', { title: item.content })} onClick={() => startFor(item, item.content, 'focus', estimateOf(item) ?? length)}>▶</button>
+          <button className="fx-icon-btn" disabled={Boolean(active)} aria-label={t('focus.startTaskNamed', { title: item.content })} onClick={() => startFor(item, item.content, 'focus', length)}>▶</button>
           {pinned.includes(item.id) && <button className="fx-icon-btn" aria-label={t('focus.removeQueue', { title: item.content })} onClick={() => saveQueue(pinned.filter((id) => id !== item.id))}>×</button>}
         </li>;
       })}</ul>
