@@ -1,0 +1,371 @@
+/* ==========================================================================
+   Focus pixel art visual system (SPEC §5, §6, docs/focus/PIXEL.md)
+   ========================================================================== */
+
+.focus-theme,
+.px-scene,
+.px-footprint-chart {
+  --px-sky: #a9c9e3;
+  --px-cloud: #f4f4f0;
+  --px-brick: #e08a3c;
+  --px-brick-light: #f2b55a;
+  --px-brick-dark: #c95f2a;
+  --px-mortar: #7a3b1a;
+  --px-leaf: #3e8a3a;
+  --px-leaf-dark: #2c6b2a;
+  --px-trunk: #6b3d1e;
+  --px-ground: #c9773a;
+  --px-ground-dark: #9c5426;
+  --px-frame: #1e2a36;
+  --px-paper: #f4f1ea;
+  --px-ink: #1f1d1a;
+  --px-ghost: rgba(30, 42, 54, 0.14);
+  --px-gold: #f2c94c;
+  --px-stone: #9aa3ab;
+  --px-water: #5b9bd5;
+  --px-flower: #e05a6d;
+  --px-font: "Silkscreen", "Press Start 2P", ui-monospace, monospace;
+}
+
+:root[data-theme="dark"] .focus-theme,
+:root[data-theme="dark"] .px-scene,
+:root[data-theme="dark"] .px-footprint-chart {
+  --px-sky: #3a4a66;
+  --px-cloud: #8a96ad;
+  --px-brick: #c4742f;
+  --px-brick-light: #d9a04c;
+  --px-brick-dark: #a84f23;
+  --px-mortar: #5a2a12;
+  --px-leaf: #2f6e2c;
+  --px-leaf-dark: #20501f;
+  --px-trunk: #4f2c15;
+  --px-ground: #8f5326;
+  --px-ground-dark: #6b3c1b;
+  --px-frame: #0e141b;
+  --px-paper: #24221e;
+  --px-ink: #ece6da;
+  --px-ghost: rgba(236, 230, 218, 0.12);
+  --px-gold: #d9b343;
+  --px-stone: #6f777e;
+  --px-water: #3f6f9c;
+  --px-flower: #b8475a;
+}
+
+/* Pixel panels */
+.px-panel {
+  border: 4px solid var(--px-frame);
+  box-shadow: 6px 6px 0 var(--px-frame);
+  border-radius: 0;
+  image-rendering: pixelated;
+  box-sizing: border-box;
+}
+
+/* Scene container */
+.px-scene {
+  position: relative;
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+  user-select: none;
+}
+
+.px-scene svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  shape-rendering: crispEdges;
+}
+
+/* Timer box (top right) */
+.px-timer-box {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: var(--px-paper);
+  border: 2px solid var(--px-frame);
+  border-radius: 0;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: text;
+  z-index: 2;
+}
+
+.px-scene--wide .px-timer-box {
+  top: 6px;
+  right: 8px;
+  padding: 3px 6px;
+}
+
+.px-timer-digits {
+  font-family: var(--px-font, "Silkscreen", "Press Start 2P", ui-monospace, monospace);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--px-ink);
+  letter-spacing: 0.04em;
+}
+
+.px-scene--wide .px-timer-digits {
+  font-size: 14px;
+}
+
+/* Quest overlay (top left) */
+.px-quest {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  user-select: text;
+  z-index: 2;
+}
+
+.px-scene--wide .px-quest {
+  top: 6px;
+  left: 8px;
+  gap: 2px;
+}
+
+.px-quest-label {
+  font-family: var(--px-font, "Silkscreen", "Press Start 2P", ui-monospace, monospace);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--px-ink);
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.px-quest-minutes {
+  font-family: var(--px-font, "Silkscreen", "Press Start 2P", ui-monospace, monospace);
+  font-size: 8px;
+  color: var(--px-ink);
+  opacity: 0.85;
+  line-height: 1.2;
+}
+
+.px-quest-pips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.px-quest-pip {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  border: 1px solid var(--px-frame);
+  box-sizing: border-box;
+}
+
+.px-quest-pip--lit {
+  background-color: var(--px-leaf);
+}
+
+.px-quest-pip--unlit {
+  background-color: var(--px-stone);
+}
+
+/* Fireworks celebration */
+.px-fireworks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 3;
+}
+
+.px-fireworks-animated {
+  position: absolute;
+  inset: 0;
+}
+
+.px-burst {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.px-burst--1 {
+  top: 25%;
+  left: 28%;
+  animation: px-burst-anim 1.6s ease-out infinite;
+}
+
+.px-burst--2 {
+  top: 20%;
+  left: 55%;
+  animation: px-burst-anim 1.6s ease-out 0.55s infinite;
+}
+
+.px-burst--3 {
+  top: 30%;
+  left: 78%;
+  animation: px-burst-anim 1.6s ease-out 1.1s infinite;
+}
+
+.px-spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  image-rendering: pixelated;
+}
+
+.px-spark--gold {
+  background-color: var(--px-gold);
+}
+
+.px-spark--flower {
+  background-color: var(--px-flower);
+}
+
+.px-spark--cloud {
+  background-color: var(--px-cloud);
+}
+
+.px-spark--pos-1 {
+  transform: translate(-10px, -12px);
+}
+
+.px-spark--pos-2 {
+  transform: translate(12px, -10px);
+}
+
+.px-spark--pos-3 {
+  transform: translate(-12px, 8px);
+}
+
+.px-spark--pos-4 {
+  transform: translate(10px, 10px);
+}
+
+.px-spark--pos-5 {
+  transform: translate(0px, -15px);
+}
+
+@keyframes px-burst-anim {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  15% {
+    opacity: 1;
+    transform: scale(0.6);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
+.px-static-sparkle {
+  display: none;
+  position: absolute;
+  inset: 0;
+}
+
+.px-spark--static-1 {
+  top: 25%;
+  left: 30%;
+}
+
+.px-spark--static-2 {
+  top: 20%;
+  left: 55%;
+}
+
+.px-spark--static-3 {
+  top: 28%;
+  left: 75%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .px-fireworks-animated {
+    display: none;
+  }
+  .px-static-sparkle {
+    display: block;
+  }
+}
+
+/* Scene caption overlay (top left) */
+.px-scene-caption {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  user-select: text;
+  z-index: 2;
+}
+
+.px-scene-caption-text {
+  font-family: var(--px-font, "Silkscreen", "Press Start 2P", ui-monospace, monospace);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--px-ink);
+  text-transform: uppercase;
+  line-height: 1.2;
+  white-space: pre-line;
+}
+
+/* Scene counter overlay (top right) */
+.px-scene-counter {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: var(--px-paper);
+  border: 2px solid var(--px-frame);
+  border-radius: 0;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: text;
+  z-index: 2;
+}
+
+.px-scene-counter-digits {
+  font-family: var(--px-font, "Silkscreen", "Press Start 2P", ui-monospace, monospace);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--px-ink);
+  letter-spacing: 0.04em;
+}
+
+/* Footprint chart (standalone on page) */
+.px-footprint-chart {
+  position: relative;
+  width: 100%;
+  height: auto;
+  user-select: none;
+}
+
+.px-footprint-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  shape-rendering: crispEdges;
+}
+
+/* Temple scene */
+.px-temple-scene {
+  background-color: var(--px-sky);
+}
+
+/* World scene */
+.px-world-scene {
+  background-color: var(--px-sky);
+}
+
