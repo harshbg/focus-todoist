@@ -54,3 +54,24 @@ export const DEFAULT_FOCUS_SETTINGS: FocusSettings = {
   workdays: [1, 2, 3, 4, 5],
   exemptDays: [],
 };
+
+/** Everything the focus feature keeps in the app's preferences (SPEC §2.2). */
+export interface FocusPreferences extends FocusSettings {
+  /** Todoist label names offered as lanes, in the order shown. */
+  lanes: string[];
+  /** Block lengths offered, in minutes. */
+  blockLengths: number[];
+  breakMin: number;
+  /** Also leave a readable comment on the task when a block ends. */
+  taskComment: boolean;
+  sound: boolean;
+}
+
+export const DEFAULT_FOCUS_PREFERENCES: FocusPreferences = {
+  ...DEFAULT_FOCUS_SETTINGS,
+  lanes: ['Deep Dive', 'Analysis', 'Planning', 'Communication', 'Documentation'],
+  blockLengths: [30, 60, 120],
+  breakMin: 5,
+  taskComment: false,
+  sound: true,
+};
