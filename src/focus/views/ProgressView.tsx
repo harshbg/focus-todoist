@@ -1,3 +1,4 @@
+import '@/focus/fonts';
 import { useMemo, useState } from 'react';
 import { format, getISODay, parseISO, startOfISOWeek } from 'date-fns';
 import { useT } from '@/hooks/useT';

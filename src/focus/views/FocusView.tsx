@@ -1,3 +1,4 @@
+import '@/focus/fonts';
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { useConfirm } from '@/components/overlays/Confirm';
