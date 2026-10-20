@@ -18,6 +18,8 @@ export const ENTRY: Record<SidebarItemId, { icon: IconName; label: TranslationKe
   week: { icon: 'week', label: 'nav.week' },
   upcoming: { icon: 'upcoming', label: 'nav.upcoming' },
   someday: { icon: 'someday', label: 'nav.someday' },
+  focus: { icon: 'clock', label: 'nav.focus' },
+  progress: { icon: 'trend', label: 'nav.progress' },
   review: { icon: 'check', label: 'nav.review' },
   dashboard: { icon: 'trend', label: 'nav.dashboard' },
   logbook: { icon: 'tasks', label: 'insights.logbook' },

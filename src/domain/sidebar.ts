@@ -14,7 +14,7 @@
 
 export const SIDEBAR_ITEMS = [
   'inbox', 'today', 'week', 'upcoming', 'someday',
-  'review', 'dashboard', 'logbook', 'matrix', 'labels', 'filters',
+  'focus', 'progress', 'review', 'dashboard', 'logbook', 'matrix', 'labels', 'filters',
 ] as const;
 export type SidebarItemId = (typeof SIDEBAR_ITEMS)[number];
 
@@ -29,7 +29,7 @@ export interface SidebarNav {
 }
 
 const MAIN: SidebarItemId[] = ['inbox', 'today', 'week', 'upcoming', 'someday'];
-const OTHER: SidebarItemId[] = ['review', 'dashboard', 'logbook', 'matrix', 'labels', 'filters'];
+const OTHER: SidebarItemId[] = ['focus', 'progress', 'review', 'dashboard', 'logbook', 'matrix', 'labels', 'filters'];
 
 export const defaultSidebarNav = (): SidebarNav => ({
   main: MAIN.map((id) => ({ id, on: true })),

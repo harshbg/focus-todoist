@@ -21,6 +21,8 @@ import { ConfirmProvider } from './components/overlays/Confirm';
 import { Overlay } from './components/overlays/Overlay';
 import { QUICK_ADD, QuickAdd } from './QuickAdd';
 import { WeekView } from './views/WeekView';
+import { FocusView } from './focus/views/FocusView';
+import { ProgressView } from './focus/views/ProgressView';
 import { SearchView } from './views/SearchView';
 import { UpcomingView } from './views/UpcomingView';
 import { SimpleListView } from './views/SimpleListView';
@@ -832,6 +834,8 @@ function AppShell({
           {route.view === 'week' && (
             <WeekView {...viewProps} scope="all" />
           )}
+          {route.view === 'focus' && <FocusView onOpen={openTask} />}
+          {route.view === 'progress' && <ProgressView />}
           {route.view === 'today' && <WeekView {...viewProps} scope="today" />}
           {route.view === 'search' && <SearchView query={route.query ?? ''} onOpen={openTask} />}
           {route.view === 'upcoming' && <UpcomingView {...viewProps} />}

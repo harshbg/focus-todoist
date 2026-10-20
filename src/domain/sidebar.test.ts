@@ -20,7 +20,8 @@ describe('readSidebarNav', () => {
     });
     expect(ids(nav.main)).toEqual(['week', 'inbox', 'today', 'upcoming', 'someday']);
     expect(nav.main.find((e) => e.id === 'inbox')?.on).toBe(false);
-    expect(ids(nav.other)[0]).toBe('labels');
+    expect(ids(nav.other).slice(0, 2)).toEqual(['focus', 'progress']);
+    expect(ids(nav.other)[2]).toBe('labels');
   });
 
   it('drops ids it does not know and entries listed twice', () => {
@@ -37,14 +38,14 @@ describe('readSidebarNav', () => {
     const nav = readSidebarNav({
       other: [{ id: 'review', on: true }, { id: 'dashboard', on: true }, { id: 'matrix', on: true }, { id: 'labels', on: true }],
     });
-    expect(ids(nav.other)).toEqual(['review', 'dashboard', 'logbook', 'matrix', 'labels', 'filters']);
+    expect(ids(nav.other)).toEqual(['focus', 'progress', 'review', 'dashboard', 'logbook', 'matrix', 'labels', 'filters']);
   });
 
   it('lists every entry exactly once, whatever it is given', () => {
     const nav = readSidebarNav({ main: [{ id: 'review' }], other: [{ id: 'inbox' }] });
     const all = ids([...nav.main, ...nav.other]);
     expect(new Set(all).size).toBe(all.length);
-    expect(all).toHaveLength(11);
+    expect(all).toHaveLength(13);
     // Moved across blocks: it stays where the user put it.
     expect(ids(nav.main)).toContain('review');
     expect(ids(nav.other)).toContain('inbox');

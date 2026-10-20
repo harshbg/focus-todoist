@@ -287,6 +287,8 @@ export function Sidebar({
       case 'week': return navItem('week', 'week', 'nav.week', counts.week, { kind: 'anytime' });
       case 'upcoming': return navItem('upcoming', 'upcoming', 'nav.upcoming', counts.upcoming);
       case 'someday': return navItem('someday', 'someday', 'nav.someday', counts.someday, { kind: 'someday' });
+      case 'focus': return navItem('focus', 'clock', 'nav.focus', 0);
+      case 'progress': return navItem('progress', 'trend', 'nav.progress', 0);
       case 'review': return navItem('review', 'check', 'nav.review', 0);
       case 'dashboard':
         return navItem('insights', 'trend', 'nav.dashboard', 0, undefined,

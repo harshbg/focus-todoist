@@ -369,6 +369,8 @@ export type ViewId =
   | 'upcoming'
   | 'someday'
   | 'review'
+  | 'focus'
+  | 'progress'
   | 'dashboard'
   | 'settings'
   | 'project'
