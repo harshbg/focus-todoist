@@ -1,5 +1,6 @@
 import { isMatch } from 'date-fns';
-import { DEFAULT_FOCUS_PREFERENCES, type ExemptDay, type FocusPreferences } from './types';
+import type { Mode } from './mode';
+import { DEFAULT_FOCUS_PREFERENCES, type ExemptDay, type FocusPreferences, type FocusSettings } from './types';
 
 function integerInRange(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
@@ -9,6 +10,30 @@ function sortedUniqueIntegers(value: unknown, min: number, max: number): number[
   if (!Array.isArray(value)) return null;
   const result = [...new Set(value.filter((item) => integerInRange(item, min, max)))];
   return result.length ? result.sort((a, b) => a - b) : null;
+}
+
+function lanesOf(value: unknown, fallback: readonly string[]): string[] {
+  if (!Array.isArray(value)) return [...fallback];
+  const seen = new Set<string>();
+  const lanes: string[] = [];
+  for (const item of value) {
+    if (typeof item !== 'string') continue;
+    const lane = item.trim();
+    const key = lane.toLowerCase();
+    if (!lane || seen.has(key)) continue;
+    seen.add(key);
+    lanes.push(lane);
+    if (lanes.length === 12) break;
+  }
+  return lanes;
+}
+
+/** The targets and lanes used by one mode; time off applies to both. */
+export function settingsFor(prefs: FocusPreferences, mode: Mode): FocusSettings & { lanes: string[] } {
+  return mode === 'work'
+    ? { dailyTargetMin: prefs.dailyTargetMin, weeklyTargetMin: prefs.weeklyTargetMin,
+      runThresholdMin: prefs.runThresholdMin, workdays: prefs.workdays, exemptDays: prefs.exemptDays, lanes: prefs.lanes }
+    : { ...prefs.personal, exemptDays: prefs.exemptDays };
 }
 
 /**
@@ -36,6 +61,8 @@ export function readFocusPreferences(stored: unknown): FocusPreferences {
     exemptDays: [...defaults.exemptDays],
     lanes: [...defaults.lanes],
     blockLengths: [...defaults.blockLengths],
+    workProjectIds: [...defaults.workProjectIds],
+    personal: { ...defaults.personal, workdays: [...defaults.personal.workdays], lanes: [...defaults.personal.lanes] },
   };
   if (stored === null || typeof stored !== 'object' || Array.isArray(stored)) return result;
 
@@ -47,6 +74,23 @@ export function readFocusPreferences(stored: unknown): FocusPreferences {
 
   result.workdays = sortedUniqueIntegers(fields.workdays, 1, 7) ?? result.workdays;
   result.blockLengths = sortedUniqueIntegers(fields.blockLengths, 5, 240) ?? result.blockLengths;
+
+  if (Array.isArray(fields.workProjectIds)) {
+    result.workProjectIds = [...new Set(
+      fields.workProjectIds
+        .filter((id): id is string => typeof id === 'string')
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0),
+    )];
+  }
+  if (fields.personal !== null && typeof fields.personal === 'object' && !Array.isArray(fields.personal)) {
+    const personal = fields.personal as Record<string, unknown>;
+    if (integerInRange(personal.dailyTargetMin, 15, 1440)) result.personal.dailyTargetMin = personal.dailyTargetMin;
+    if (integerInRange(personal.weeklyTargetMin, 60, 10080)) result.personal.weeklyTargetMin = personal.weeklyTargetMin;
+    if (integerInRange(personal.runThresholdMin, 1, 480)) result.personal.runThresholdMin = personal.runThresholdMin;
+    result.personal.workdays = sortedUniqueIntegers(personal.workdays, 1, 7) ?? result.personal.workdays;
+    result.personal.lanes = lanesOf(personal.lanes, result.personal.lanes);
+  }
 
   if (Array.isArray(fields.exemptDays)) {
     const byDate = new Map<string, ExemptDay>();
@@ -60,19 +104,7 @@ export function readFocusPreferences(stored: unknown): FocusPreferences {
     result.exemptDays = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
   }
 
-  if (Array.isArray(fields.lanes)) {
-    const seen = new Set<string>();
-    result.lanes = [];
-    for (const item of fields.lanes) {
-      if (typeof item !== 'string') continue;
-      const lane = item.trim();
-      const key = lane.toLowerCase();
-      if (!lane || seen.has(key)) continue;
-      seen.add(key);
-      result.lanes.push(lane);
-      if (result.lanes.length === 12) break;
-    }
-  }
+  result.lanes = lanesOf(fields.lanes, result.lanes);
 
   if (typeof fields.taskComment === 'boolean') result.taskComment = fields.taskComment;
   if (typeof fields.sound === 'boolean') result.sound = fields.sound;

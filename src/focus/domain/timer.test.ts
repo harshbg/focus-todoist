@@ -8,6 +8,7 @@ const minute = 60_000;
 const startedAt = new Date(2026, 9, 20, 9, 10).getTime();
 const input = {
   mode: 'focus' as const,
+  focusMode: 'work' as const,
   taskId: '8123456789',
   title: 'Causal analysis setup',
   lane: 'Deep Dive',
@@ -61,6 +62,7 @@ describe('logging a finished block', () => {
       start: '2026-10-20T09:10', minutes: 5,
       taskId: input.taskId, title: input.title, lane: input.lane,
       rating: null, source: 'timed',
+      mode: 'work',
     });
     expect(blockEntry(block, startedAt + 5 * minute + 30_000)?.minutes).toBe(6);
     expect(blockEntry(block, startedAt + 40 * minute)?.minutes).toBe(30);
@@ -89,6 +91,8 @@ describe('stored blocks', () => {
   it.each([
     null, [], 'not an object', {},
     { ...valid, mode: 'break' },
+    { ...valid, focusMode: 'other' },
+    { ...valid, focusMode: undefined },
     { ...valid, taskId: 12 },
     { ...valid, title: null },
     { ...valid, lane: false },

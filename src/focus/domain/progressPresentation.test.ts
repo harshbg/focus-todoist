@@ -3,6 +3,7 @@ import { recentFocusedDays, worldStage } from './progressPresentation';
 import type { FocusEntry } from './types';
 
 const entry = (start: string, minutes: number): FocusEntry => ({
+  mode: 'work',
   start, minutes, taskId: null, title: 'Work', lane: null, rating: null, source: 'timed',
 });
 

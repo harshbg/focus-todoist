@@ -32,7 +32,7 @@ describe('focus store', () => {
     useStore.setState({ snapshot, apply });
 
     const focus = useFocusStore.getState();
-    focus.start({ mode: 'focus', taskId: 'task-1', title: 'Draft notes', lane: 'Deep Dive', plannedMin: 30 });
+    focus.start({ mode: 'focus', focusMode: 'work', taskId: 'task-1', title: 'Draft notes', lane: 'Deep Dive', plannedMin: 30 });
     vi.advanceTimersByTime(6 * 60_000);
     focus.pause();
     vi.advanceTimersByTime(2 * 60_000);
@@ -40,14 +40,14 @@ describe('focus store', () => {
     vi.advanceTimersByTime(24 * 60_000);
     const logged = await focus.finish();
 
-    expect(logged).toMatchObject({ minutes: 30, taskId: 'task-1', source: 'timed' });
+    expect(logged).toMatchObject({ minutes: 30, taskId: 'task-1', source: 'timed', mode: 'work' });
     expect(readFocusLog(useStore.getState().snapshot)).toEqual([logged]);
     await focus.rate(5);
     expect(readFocusLog(useStore.getState().snapshot)[0].rating).toBe(5);
 
     await focus.editEntry(entryKey(logged!), { start: '2026-10-27T09:00', minutes: 25 });
     const moved = readFocusLog(useStore.getState().snapshot);
-    expect(moved).toMatchObject([{ start: '2026-10-27T09:00', minutes: 25, rating: 5 }]);
+    expect(moved).toMatchObject([{ start: '2026-10-27T09:00', minutes: 25, rating: 5, mode: 'work' }]);
     await focus.deleteEntry(entryKey(moved[0]));
     expect(readFocusLog(useStore.getState().snapshot)).toEqual([]);
     expect(apply).toHaveBeenCalledTimes(4);
@@ -60,10 +60,10 @@ describe('focus store', () => {
     useStore.setState({ snapshot: emptySnapshot(), apply });
     const focus = useFocusStore.getState();
 
-    focus.start({ mode: 'unwind', taskId: null, title: 'Break', lane: null, plannedMin: 5 });
+    focus.start({ mode: 'unwind', focusMode: 'work', taskId: null, title: 'Break', lane: null, plannedMin: 5 });
     vi.advanceTimersByTime(5 * 60_000);
     expect(await focus.finish()).toBeNull();
-    focus.start({ mode: 'focus', taskId: null, title: 'Draft', lane: null, plannedMin: 30 });
+    focus.start({ mode: 'focus', focusMode: 'work', taskId: null, title: 'Draft', lane: null, plannedMin: 30 });
     vi.advanceTimersByTime(4 * 60_000);
     expect(await focus.finish()).toBeNull();
     expect(apply).not.toHaveBeenCalled();

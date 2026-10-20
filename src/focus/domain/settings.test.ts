@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFocusPreferences } from './settings';
+import { readFocusPreferences, settingsFor } from './settings';
 import { DEFAULT_FOCUS_PREFERENCES } from './types';
 
 describe('readFocusPreferences', () => {
@@ -91,6 +91,75 @@ describe('readFocusPreferences', () => {
       workdays: [2, 4],
       lanes: ['Writing'],
       taskComment: true,
+    });
+  });
+
+  it('keeps valid workProjectIds, filters out non-strings and empty strings, and de-duplicates', () => {
+    expect(readFocusPreferences({}).workProjectIds).toEqual([]);
+    expect(readFocusPreferences({ workProjectIds: ['p1', '', 'p2', 123, null, 'p1', 'p3'] }).workProjectIds)
+      .toEqual(['p1', 'p2', 'p3']);
+    expect(readFocusPreferences({ workProjectIds: 'not-an-array' }).workProjectIds).toEqual([]);
+  });
+
+  it('validates personal settings with defaults and same ranges as work', () => {
+    expect(readFocusPreferences({}).personal).toEqual(DEFAULT_FOCUS_PREFERENCES.personal);
+
+    const valid = {
+      dailyTargetMin: 120,
+      weeklyTargetMin: 600,
+      runThresholdMin: 20,
+      workdays: [1, 3, 5],
+      lanes: ['Personal Project', 'Exercise'],
+    };
+    expect(readFocusPreferences({ personal: valid }).personal).toEqual(valid);
+
+    // Invalid values fall back to defaults
+    expect(readFocusPreferences({
+      personal: {
+        dailyTargetMin: 10, // below 15
+        weeklyTargetMin: 20000, // above 10080
+        runThresholdMin: 0, // below 1
+        workdays: [0, 8], // out of 1-7
+        lanes: 'bad',
+      },
+    }).personal).toEqual(DEFAULT_FOCUS_PREFERENCES.personal);
+  });
+});
+
+describe('settingsFor', () => {
+  it('returns work targets and lanes for work mode, personal for personal mode, and shared exemptDays', () => {
+    const prefs = readFocusPreferences({
+      dailyTargetMin: 300,
+      weeklyTargetMin: 1500,
+      runThresholdMin: 45,
+      workdays: [1, 2, 3, 4],
+      lanes: ['Coding', 'Meetings'],
+      exemptDays: [{ date: '2026-10-24', kind: 'pto' }],
+      personal: {
+        dailyTargetMin: 90,
+        weeklyTargetMin: 450,
+        runThresholdMin: 20,
+        workdays: [6, 7],
+        lanes: ['Guitar', 'Reading'],
+      },
+    });
+
+    expect(settingsFor(prefs, 'work')).toEqual({
+      dailyTargetMin: 300,
+      weeklyTargetMin: 1500,
+      runThresholdMin: 45,
+      workdays: [1, 2, 3, 4],
+      exemptDays: [{ date: '2026-10-24', kind: 'pto' }],
+      lanes: ['Coding', 'Meetings'],
+    });
+
+    expect(settingsFor(prefs, 'personal')).toEqual({
+      dailyTargetMin: 90,
+      weeklyTargetMin: 450,
+      runThresholdMin: 20,
+      workdays: [6, 7],
+      exemptDays: [{ date: '2026-10-24', kind: 'pto' }],
+      lanes: ['Guitar', 'Reading'],
     });
   });
 });

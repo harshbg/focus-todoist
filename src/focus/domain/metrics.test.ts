@@ -12,6 +12,7 @@ const now = new Date(2026, 9, 20, 15, 0);
 
 function entry(start: string, minutes: number, fields: Partial<FocusEntry> = {}): FocusEntry {
   return {
+    mode: 'work',
     start, minutes, taskId: null, title: 'Focus', lane: null, rating: null, source: 'timed', ...fields,
   };
 }

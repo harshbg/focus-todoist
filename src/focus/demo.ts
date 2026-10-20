@@ -1,6 +1,7 @@
 import { addDays, format, getISODay, startOfDay } from 'date-fns';
 import type { Item, Note } from '@/domain/types';
 import { weekKeyOf, writeLogComments } from './domain/log';
+import { itemMode } from './domain/mode';
 import { DEFAULT_FOCUS_PREFERENCES, type FocusEntry, type FocusRating } from './domain/types';
 
 /**
@@ -17,6 +18,8 @@ export function demoFocusEntries(items: Item[], today: Date, seed = 43): FocusEn
   const tasks = items.filter((item) => !item.parent_id).slice(0, 10);
   const lanes = DEFAULT_FOCUS_PREFERENCES.lanes;
   const entries: FocusEntry[] = [];
+  // The demo's Website project is Work regardless of its translated name.
+  const workProjects = new Set(['site']);
 
   for (let back = 90; back >= 1; back -= 1) {
     const day = startOfDay(addDays(today, -back));
@@ -37,6 +40,7 @@ export function demoFocusEntries(items: Item[], today: Date, seed = 43): FocusEn
         lane: lanes[Math.floor(random() * lanes.length)] ?? null,
         rating: rated ? (2 + Math.floor(random() * 4)) as FocusRating : null,
         source: 'timed',
+        mode: task ? itemMode(task, workProjects) : 'personal',
       });
       hour += Math.ceil(minutes / 60) + Math.floor(random() * 3);
     }

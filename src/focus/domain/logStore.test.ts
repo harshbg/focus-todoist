@@ -11,6 +11,7 @@ const at = (year: number, month: number, day: number, hour = 9, minute = 0): str
   format(new Date(year, month - 1, day, hour, minute), "yyyy-MM-dd'T'HH:mm");
 
 const entry = (start: string, extra: Partial<FocusEntry> = {}): FocusEntry => ({
+  mode: 'work',
   start, minutes: 30, taskId: 'task-1', title: 'Draft notes', lane: 'Deep Dive',
   rating: 4, source: 'timed', ...extra,
 });

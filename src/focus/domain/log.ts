@@ -22,12 +22,12 @@ export const LOG_COMMENT_LIMIT = 12000;
 /** Longest title kept in an entry; longer ones are cut, ending with "…". */
 export const LOG_TITLE_LIMIT = 120;
 
-type CompactEntry = [string, number, string | null, string, string | null, number | null, 't' | 'm'];
+type CompactEntry = [string, number, string | null, string, string | null, number | null, 't' | 'm', ('w' | 'p')?];
 
 const headerPattern = /^Focus log · (\d{4}-W\d{2}) · part ([1-9]\d*) \(edited by the app, please leave as is\)$/;
 
 function isCompactEntry(value: unknown): value is CompactEntry {
-  if (!Array.isArray(value) || value.length !== 7) return false;
+  if (!Array.isArray(value) || (value.length !== 7 && value.length !== 8)) return false;
   const [start, minutes, taskId, title, lane, rating, source] = value;
   return typeof start === 'string'
     && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(start)
@@ -37,14 +37,15 @@ function isCompactEntry(value: unknown): value is CompactEntry {
     && typeof title === 'string'
     && (typeof lane === 'string' || lane === null)
     && (rating === null || (typeof rating === 'number' && Number.isInteger(rating) && rating >= 1 && rating <= 5))
-    && (source === 't' || source === 'm');
+    && (source === 't' || source === 'm')
+    && (value.length === 7 || value[7] === 'w' || value[7] === 'p');
 }
 
 function compactEntry(entry: FocusEntry): CompactEntry {
   const title = entry.title.length > LOG_TITLE_LIMIT
     ? `${entry.title.slice(0, LOG_TITLE_LIMIT - 1)}…`
     : entry.title;
-  return [entry.start, entry.minutes, entry.taskId, title, entry.lane, entry.rating, entry.source === 'timed' ? 't' : 'm'];
+  return [entry.start, entry.minutes, entry.taskId, title, entry.lane, entry.rating, entry.source === 'timed' ? 't' : 'm', entry.mode === 'work' ? 'w' : 'p'];
 }
 
 function commentContent(week: string, part: number, entries: CompactEntry[]): string {
@@ -85,6 +86,7 @@ export function readLogComment(content: string): { week: string; part: number; e
   const entries: FocusEntry[] = payload.e.filter(isCompactEntry).map((row) => ({
     start: row[0], minutes: row[1], taskId: row[2], title: row[3], lane: row[4],
     rating: row[5] as FocusEntry['rating'], source: row[6] === 't' ? 'timed' : 'manual',
+    mode: row[7] === 'w' ? 'work' : 'personal',
   }));
   return { week: match[1], part: Number(match[2]), entries };
 }

@@ -14,6 +14,8 @@ import { todayProgress } from '../domain/metrics';
 import { focusQueue } from '../domain/queue';
 import { elapsedMs, formatClock, MIN_LOGGED_MINUTES, remainingMs } from '../domain/timer';
 import type { FocusEntry, FocusRating } from '../domain/types';
+import type { Mode } from '../domain/mode';
+import { useMode } from '../mode-store';
 import { useFocusLog, useFocusNow, useFocusPreferences, useFocusStore } from '../store';
 import { TaskSearch } from './TaskSearch';
 import './focus.css';
@@ -41,11 +43,12 @@ function Rating({ value, onChange }: { value: FocusRating | null; onChange: (nex
 interface ManualDialogProps {
   items: Item[];
   lanes: string[];
+  focusMode: Mode;
   onClose: () => void;
   onSave: (entry: Omit<FocusEntry, 'source'>) => Promise<void>;
 }
 
-function ManualDialog({ items, lanes, onClose, onSave }: ManualDialogProps) {
+function ManualDialog({ items, lanes, focusMode, onClose, onSave }: ManualDialogProps) {
   const { t } = useT();
   const [title, setTitle] = useState('');
   const [taskId, setTaskId] = useState<string | null>(null);
@@ -59,7 +62,7 @@ function ManualDialog({ items, lanes, onClose, onSave }: ManualDialogProps) {
       event.preventDefault();
       if (!title.trim() || !date || !time || minutes < 1 || saving) return;
       setSaving(true);
-      void onSave({ start: `${date}T${time}`, minutes: Math.round(minutes), taskId, title: title.trim(), lane, rating: null })
+      void onSave({ start: `${date}T${time}`, minutes: Math.round(minutes), taskId, title: title.trim(), lane, rating: null, mode: focusMode })
         .then(onClose).finally(() => setSaving(false));
     }}>
       <h2 className="fx-h2">{t('focus.logPast')}</h2>
@@ -90,6 +93,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   const { t, locale } = useT();
   const { items } = useData();
   const prefs = useFocusPreferences();
+  const focusMode = useMode();
   const logs = useFocusLog();
   const now = useFocusNow();
   const { active, justLogged, start, pause, resume, finish, discard, rate, dismiss, logManual, editEntry, deleteEntry } = useFocusStore();
@@ -135,10 +139,10 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   const startFor = (item: Item | null, title = query.trim(), startMode: 'focus' | 'unwind' = mode, minutes = length) => {
     if (active || (startMode === 'focus' && !item && !title)) return;
     if (startMode === 'unwind') {
-      start({ mode: 'unwind', taskId: null, title: t('focus.unwind'), lane: null, plannedMin: minutes });
+      start({ mode: 'unwind', focusMode, taskId: null, title: t('focus.unwind'), lane: null, plannedMin: minutes });
       return;
     }
-    start({ mode: startMode, taskId: item?.id ?? null, title: item?.content ?? title,
+    start({ mode: startMode, focusMode, taskId: item?.id ?? null, title: item?.content ?? title,
       lane: item ? prefs.lanes.find((name) => item.labels.some((label) => label.toLowerCase() === name.toLowerCase())) ?? null : lane,
       plannedMin: minutes });
   };
@@ -215,10 +219,10 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
             ? <button onClick={() => onOpen(justLogged.taskId!)}>{justLogged.title}</button> : justLogged.title}</h3>
           <Rating value={justLogged.rating} onChange={(value) => void rate(value)} />
           <div className="fx-actions"><span>{t('focus.continueSame')}</span>
-            {prefs.blockLengths.map((minutes) => <button key={minutes} className="fx-btn fx-btn--secondary" onClick={() => start({ mode: 'focus', taskId: justLogged.taskId, title: justLogged.title, lane: justLogged.lane, plannedMin: minutes })}>{formatDuration(minutes, locale)}</button>)}
+            {prefs.blockLengths.map((minutes) => <button key={minutes} className="fx-btn fx-btn--secondary" onClick={() => start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: justLogged.title, lane: justLogged.lane, plannedMin: minutes })}>{formatDuration(minutes, locale)}</button>)}
           </div>
           <div className="fx-actions"><button className="fx-btn fx-btn--ghost" onClick={() => { dismiss(); setSelectedId(null); setQuery(''); setLane(null); }}>{t('focus.newTask')}</button>
-            <button className="fx-btn fx-btn--secondary" onClick={() => start({ mode: 'unwind', taskId: null, title: t('focus.unwind'), lane: null, plannedMin: prefs.breakMin })}>{t('focus.takeBreak', { minutes: prefs.breakMin })}</button>
+            <button className="fx-btn fx-btn--secondary" onClick={() => start({ mode: 'unwind', focusMode, taskId: null, title: t('focus.unwind'), lane: null, plannedMin: prefs.breakMin })}>{t('focus.takeBreak', { minutes: prefs.breakMin })}</button>
           </div>
         </div>}
         <div className="fx-hint"><button className="fx-btn fx-btn--ghost" disabled>{t('focus.openSidecar')}</button><span>· {t('focus.hint')}</span></div>
@@ -265,6 +269,6 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
         }}>×</button>
       </li>)}</ul>
     </section>
-    {manualOpen && <ManualDialog items={items} lanes={prefs.lanes} onClose={() => setManualOpen(false)} onSave={logManual} />}
+    {manualOpen && <ManualDialog items={items} lanes={prefs.lanes} focusMode={focusMode} onClose={() => setManualOpen(false)} onSave={logManual} />}
   </div>;
 }

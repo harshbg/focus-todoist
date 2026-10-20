@@ -2,6 +2,7 @@
  * The focus feature's data. A focus entry is the only fact stored (in a
  * Todoist comment, see log.ts); everything shown about it is derived.
  */
+import type { Mode } from './mode';
 
 export type FocusRating = 1 | 2 | 3 | 4 | 5;
 
@@ -9,6 +10,7 @@ export type FocusRating = 1 | 2 | 3 | 4 | 5;
 export type FocusSource = 'timed' | 'manual';
 
 export interface FocusEntry {
+  mode: Mode;
   /**
    * When the block started, as a floating local time `yyyy-MM-ddTHH:mm`.
    * Floating like Todoist's own due times: 9:10 stays 9:10 on a trip.
@@ -57,6 +59,8 @@ export const DEFAULT_FOCUS_SETTINGS: FocusSettings = {
 
 /** Everything the focus feature keeps in the app's preferences (SPEC §2.2). */
 export interface FocusPreferences extends FocusSettings {
+  workProjectIds: string[];
+  personal: Pick<FocusSettings, 'dailyTargetMin' | 'weeklyTargetMin' | 'runThresholdMin' | 'workdays'> & { lanes: string[] };
   /** Todoist label names offered as lanes, in the order shown. */
   lanes: string[];
   /** Block lengths offered, in minutes. */
@@ -69,6 +73,14 @@ export interface FocusPreferences extends FocusSettings {
 
 export const DEFAULT_FOCUS_PREFERENCES: FocusPreferences = {
   ...DEFAULT_FOCUS_SETTINGS,
+  workProjectIds: [],
+  personal: {
+    dailyTargetMin: 60,
+    weeklyTargetMin: 300,
+    runThresholdMin: 15,
+    workdays: [1, 2, 3, 4, 5, 6, 7],
+    lanes: ['Reading', 'Learning', 'Writing', 'Health', 'Home'],
+  },
   lanes: ['Deep Dive', 'Analysis', 'Planning', 'Communication', 'Documentation'],
   blockLengths: [30, 60, 120],
   breakMin: 5,

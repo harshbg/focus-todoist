@@ -10,6 +10,7 @@ const startAt = (year: number, month: number, day: number, hour = 9, minute = 0)
   format(new Date(year, month - 1, day, hour, minute), "yyyy-MM-dd'T'HH:mm");
 
 const entry = (start: string, extra: Partial<FocusEntry> = {}): FocusEntry => ({
+  mode: 'work',
   start, minutes: 30, taskId: 'task-1', title: 'Draft notes', lane: 'Deep Dive',
   rating: 4, source: 'timed', ...extra,
 });
@@ -20,14 +21,14 @@ describe('the focus log', () => {
     const rows = [
       entry(startAt(2026, 10, 20, 9, 10)),
       entry(startAt(2026, 10, 20, 10, 0), {
-        taskId: null, title: 'Review', lane: null, rating: null, source: 'manual',
+        taskId: null, title: 'Review', lane: null, rating: null, source: 'manual', mode: 'personal',
       }),
     ];
     const [comment] = writeLogComments(week, rows);
 
     expect(comment).toBe(`${logHeader(week, 1)}\n\n${JSON.stringify({ v: 1, e: [
-      [rows[0].start, 30, 'task-1', 'Draft notes', 'Deep Dive', 4, 't'],
-      [rows[1].start, 30, null, 'Review', null, null, 'm'],
+      [rows[0].start, 30, 'task-1', 'Draft notes', 'Deep Dive', 4, 't', 'w'],
+      [rows[1].start, 30, null, 'Review', null, null, 'm', 'p'],
     ] })}`);
     expect(readLogComment(comment)).toEqual({ week, part: 1, entries: rows });
   });
@@ -43,15 +44,18 @@ describe('the focus log', () => {
   });
 
   it('skips malformed rows and keeps valid ones', () => {
-    const good = entry(startAt(2026, 10, 20));
+    const personalRow = entry(startAt(2026, 10, 20), { mode: 'personal' });
+    const workRow = entry(startAt(2026, 10, 20, 9, 30), { mode: 'work' });
     const content = `${logHeader('2026-W43', 1)}\n\n${JSON.stringify({ v: 1, e: [
-      [good.start, 30, good.taskId, good.title, good.lane, 4, 't'],
-      [good.start, '30', null, 'wrong minutes', null, null, 'm'],
-      [good.start, 30, null, 'missing source', null, null],
-      [good.start, 30, null, 'wrong source', null, null, 'x'],
-      [good.start, 30, null, 'wrong rating', null, 6, 'm'],
+      [personalRow.start, 30, personalRow.taskId, personalRow.title, personalRow.lane, 4, 't'],
+      [workRow.start, 30, workRow.taskId, workRow.title, workRow.lane, 4, 't', 'w'],
+      [personalRow.start, 30, personalRow.taskId, personalRow.title, personalRow.lane, 4, 't', 'x'],
+      [personalRow.start, '30', null, 'wrong minutes', null, null, 'm'],
+      [personalRow.start, 30, null, 'missing source', null, null],
+      [personalRow.start, 30, null, 'wrong source', null, null, 'x'],
+      [personalRow.start, 30, null, 'wrong rating', null, 6, 'm'],
     ] })}`;
-    expect(readLogComment(content)).toEqual({ week: '2026-W43', part: 1, entries: [good] });
+    expect(readLogComment(content)).toEqual({ week: '2026-W43', part: 1, entries: [personalRow, workRow] });
   });
 
   it('cuts long titles to 120 characters including the ellipsis', () => {

@@ -33,7 +33,7 @@ export interface FocusStore {
   /** The block just logged, for the "Block logged" card; cleared by dismiss() or the next start(). */
   justLogged: FocusEntry | null;
 
-  start(input: Pick<ActiveBlock, 'mode' | 'taskId' | 'title' | 'lane' | 'plannedMin'>): void;
+  start(input: Pick<ActiveBlock, 'mode' | 'focusMode' | 'taskId' | 'title' | 'lane' | 'plannedMin'>): void;
   pause(): void;
   resume(): void;
   /**

@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import type { FocusEntry } from './types';
+import type { Mode } from './mode';
 
 /**
  * The block that is running. Time is always worked out from timestamps, never
@@ -9,6 +10,7 @@ import type { FocusEntry } from './types';
 export interface ActiveBlock {
   /** `focus` blocks are logged; `unwind` breaks never are. */
   mode: 'focus' | 'unwind';
+  focusMode: Mode;
   taskId: string | null;
   title: string;
   lane: string | null;
@@ -24,7 +26,7 @@ export interface ActiveBlock {
 export const MIN_LOGGED_MINUTES = 5;
 
 export function startBlock(
-  input: Pick<ActiveBlock, 'mode' | 'taskId' | 'title' | 'lane' | 'plannedMin'>,
+  input: Pick<ActiveBlock, 'mode' | 'focusMode' | 'taskId' | 'title' | 'lane' | 'plannedMin'>,
   now: number,
 ): ActiveBlock {
   return { ...input, startedAt: now, pausedMs: 0, pausedAt: null };
@@ -77,6 +79,7 @@ export function blockEntry(block: ActiveBlock, now: number): FocusEntry | null {
     lane: block.lane,
     rating: null,
     source: 'timed',
+    mode: block.focusMode,
   };
 }
 
@@ -100,6 +103,7 @@ export function readActiveBlock(stored: unknown): ActiveBlock | null {
   const block = stored as Record<string, unknown>;
   if (
     (block.mode !== 'focus' && block.mode !== 'unwind')
+    || (block.focusMode !== 'work' && block.focusMode !== 'personal')
     || (block.taskId !== null && typeof block.taskId !== 'string')
     || typeof block.title !== 'string'
     || (block.lane !== null && typeof block.lane !== 'string')
