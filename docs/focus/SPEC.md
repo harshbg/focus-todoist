@@ -362,15 +362,18 @@ A switch at the top of the app: **Work** or **Personal**. It works like a
 filter over the whole app, built on Todoist's own labels (free on every plan),
 so nothing costs a project slot:
 
-- A task is **Work** when it has the `work` label, or sits in a project the
-  user marked as Work in Settings (optional, so a whole project needs no
-  tagging). Everything else is **Personal**.
+- A task is **Work** when it sits in a project marked as Work, or has the
+  `work` label (for a work task kept elsewhere, e.g. the Inbox). Everything
+  else is **Personal**. A project named exactly "Work" is marked as Work by
+  default (the account has one: the former "Travels", renamed); Settings can
+  mark others. On Free there are no project slots to spare, so work is
+  organised with **sections** inside the Work project rather than sub-projects.
 - In Work mode, every view (Week, Today, Inbox, projects, search, the matrix,
   the focus pages) shows only Work tasks; the sidebar shows only projects that
   are marked Work or hold Work tasks. Personal mode is the mirror image.
-- A task added in Work mode gets the `work` label automatically (and lands in
-  the default Work project if one is set). Added in Personal mode, it gets
-  none.
+- A task added in Work mode lands in the Work project by default (no label
+  needed); one added to another project while in Work mode gets the `work`
+  label so it stays Work. Added in Personal mode, it gets neither.
 - Focus entries record their mode (an optional 8th field `"w"` / `"p"` in the
   compact row; rows without it read as Personal), so tracking, targets,
   streaks and trophies are per mode. Each mode has its own targets, workdays
