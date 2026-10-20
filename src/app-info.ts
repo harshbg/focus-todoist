@@ -14,7 +14,7 @@ export const AUTHOR = 'julesbertolino';
 export const AUTHOR_AVATAR_URL = `${import.meta.env.BASE_URL}author.png`;
 
 /** The official site, for the About section. A self-hosted copy's own address is PUBLIC_URL (vite.config.ts). */
-export const SITE_URL = 'https://todoistenhanced.julesbertolino.fr';
+export const SITE_URL = 'https://todo.harshgupta.com';
 export const GITHUB_URL = 'https://github.com/julesvbertolino/todoist-enhanced';
 export const LINKEDIN_URL = 'https://www.linkedin.com/in/julesbertolino/';
 export const X_URL = 'https://x.com/julesvbertolino';

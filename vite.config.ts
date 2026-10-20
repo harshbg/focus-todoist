@@ -42,7 +42,7 @@ const SECURITY_HEADERS = {
  * with `PUBLIC_URL=https://example.com/ npm run build` describes itself
  * instead. Left unset, the file is exactly the official site's, as before.
  */
-const OFFICIAL_URL = 'https://todoistenhanced.julesbertolino.fr/';
+const OFFICIAL_URL = 'https://todo.harshgupta.com/';
 const PUBLIC_URL = (() => {
   const url = (process.env.PUBLIC_URL ?? '').trim() || OFFICIAL_URL;
   return url.endsWith('/') ? url : `${url}/`;
