@@ -9,22 +9,15 @@ import type { FocusEntry } from './types';
  * change at once, queues it offline and sends it to Todoist.
  */
 
-/** The personal project that holds the log's comments. */
-export const FOCUS_LOG_PROJECT = 'Focus log';
-
-/** The project's colour in Todoist's own palette. */
-export const FOCUS_LOG_COLOR = 'charcoal';
-
 /**
- * The account's focus-log project: named FOCUS_LOG_PROJECT, not deleted, not
- * archived, not in a workspace. With more than one, the lowest child_order
- * wins, then the lowest id. Null when there is none.
+ * The project whose comments hold the log: the Inbox. On Todoist Free an
+ * account has 5 projects and may have used them all, while the Inbox never
+ * counts; the settings comment lives there too. Null before the first sync.
  */
 export function focusLogProject(snapshot: Snapshot): Project | null {
-  return Object.values(snapshot.projects)
-    .filter((project) => project.name === FOCUS_LOG_PROJECT && !project.is_deleted
-      && !project.is_archived && !project.workspace_id)
-    .sort((a, b) => a.child_order - b.child_order || a.id.localeCompare(b.id))[0] ?? null;
+  const inboxId = snapshot.user?.inbox_project_id;
+  const byId = inboxId ? snapshot.projects[inboxId] : undefined;
+  return byId ?? Object.values(snapshot.projects).find((project) => project.inbox_project && !project.is_deleted) ?? null;
 }
 
 function logNotes(snapshot: Snapshot, projectId: string) {
@@ -68,36 +61,25 @@ export interface LogWrite {
  * touched: for each, writeLogComments gives the wanted parts; an existing part
  * with different content gets `note_update`, a missing part `note_add` (with a
  * temp id), a part no longer needed `note_delete`, and a second comment for
- * the same week and part is deleted. Without a project, a `project_add`
- * (temp id, name FOCUS_LOG_PROJECT, color FOCUS_LOG_COLOR) comes first and
- * the new comments use its temp id — Todoist resolves it within the call.
- * The optimistic snapshot shows the project and the notes (posted_at = now,
- * posted_uid = the user's id) exactly as the commands leave them.
- * Null when nothing would change.
+ * the same week and part is deleted. The optimistic snapshot shows the notes
+ * (posted_at = now, posted_uid = the user's id) exactly as the commands leave
+ * them. Null when nothing would change, or before the Inbox is known.
  */
 export function planLogWrite(snapshot: Snapshot, after: FocusEntry[], now: Date): LogWrite | null {
-  const existingProject = focusLogProject(snapshot);
-  const current = existingProject ? logNotes(snapshot, existingProject.id) : [];
+  const project = focusLogProject(snapshot);
+  if (!project) return null;
+  const projectId = project.id;
+  const current = logNotes(snapshot, projectId);
   const byWeek = new Map<string, FocusEntry[]>();
   for (const entry of after) {
     const week = weekKeyOf(entry.start);
     byWeek.set(week, [...(byWeek.get(week) ?? []), entry]);
   }
   const weeks = new Set([...current.map(({ parsed }) => parsed.week), ...byWeek.keys()]);
-  if (!existingProject && weeks.size === 0) return null;
-
-  const projectTempId = existingProject ? null : newUuid();
-  const projectId = existingProject?.id ?? projectTempId;
-  if (!projectId) return null;
   const commands: Command[] = [];
   const updates = new Map<string, string>();
   const additions = new Map<string, string>();
   const deletions = new Set<string>();
-
-  if (projectTempId) {
-    commands.push({ type: 'project_add', uuid: newUuid(), temp_id: projectTempId,
-      args: { name: FOCUS_LOG_PROJECT, color: FOCUS_LOG_COLOR } });
-  }
 
   for (const week of [...weeks].sort()) {
     const wanted = writeLogComments(week, byWeek.get(week) ?? []);
@@ -138,14 +120,6 @@ export function planLogWrite(snapshot: Snapshot, after: FocusEntry[], now: Date)
   return {
     commands,
     optimistic: (state) => {
-      const projects = projectTempId ? {
-        ...state.projects,
-        [projectTempId]: {
-          id: projectTempId, name: FOCUS_LOG_PROJECT, color: FOCUS_LOG_COLOR,
-          parent_id: null, child_order: 0, is_archived: false, is_deleted: false,
-          is_favorite: false, workspace_id: null,
-        },
-      } : state.projects;
       const notes = { ...state.notes };
       for (const [id, content] of updates) {
         const note = notes[id] ?? snapshot.notes[id];
@@ -162,7 +136,7 @@ export function planLogWrite(snapshot: Snapshot, after: FocusEntry[], now: Date)
         const note = notes[id] ?? snapshot.notes[id];
         if (note) notes[id] = { ...note, is_deleted: true };
       }
-      return { ...state, projects, notes };
+      return { ...state, notes };
     },
   };
 }

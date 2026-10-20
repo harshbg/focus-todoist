@@ -3,8 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { emptySnapshot, type Note, type Project, type Snapshot } from '@/domain/types';
 import { entryKey, readLogComment, weekKeyOf, writeLogComments } from './log';
 import {
-  FOCUS_LOG_COLOR, FOCUS_LOG_PROJECT, focusLogProject, planLogWrite,
-  readFocusLog, removeEntry, upsertEntry,
+  focusLogProject, planLogWrite, readFocusLog, removeEntry, upsertEntry,
 } from './logStore';
 import type { FocusEntry } from './types';
 
@@ -17,7 +16,7 @@ const entry = (start: string, extra: Partial<FocusEntry> = {}): FocusEntry => ({
 });
 
 const project = (id: string, extra: Partial<Project> = {}): Project => ({
-  id, name: FOCUS_LOG_PROJECT, color: FOCUS_LOG_COLOR, parent_id: null,
+  id, name: 'Inbox', color: 'charcoal', parent_id: null,
   child_order: 1, is_archived: false, is_deleted: false, is_favorite: false,
   ...extra,
 });
@@ -29,23 +28,16 @@ const note = (id: string, projectId: string, content: string, extra: Partial<Not
 });
 
 const snapshotWithProject = (): Snapshot => ({
-  ...emptySnapshot(), projects: { p: project('p') },
-  user: { id: 'user-1' } as Snapshot['user'],
+  ...emptySnapshot(), projects: { p: project('p', { inbox_project: true }) },
+  user: { id: 'user-1', inbox_project_id: 'p' } as Snapshot['user'],
 });
 
 describe('focus log store', () => {
-  it('selects the first personal active log project by order then id', () => {
-    const snapshot = emptySnapshot();
-    snapshot.projects = {
-      archived: project('archived', { child_order: 0, is_archived: true }),
-      deleted: project('deleted', { child_order: 0, is_deleted: true }),
-      workspace: project('workspace', { child_order: 0, workspace_id: 'team' }),
-      other: project('other', { child_order: 0, name: 'Other' }),
-      c: project('c', { child_order: 1 }),
-      b: project('b', { child_order: 1 }),
-      a: project('a', { child_order: 2 }),
-    };
-    expect(focusLogProject(snapshot)?.id).toBe('b');
+  it('keeps the log on the Inbox, which never counts against the Free plan', () => {
+    expect(focusLogProject(snapshotWithProject())?.id).toBe('p');
+    const flagged = emptySnapshot();
+    flagged.projects = { other: project('other', { name: 'Work' }), inbox: project('inbox', { inbox_project: true }) };
+    expect(focusLogProject(flagged)?.id).toBe('inbox');
     expect(focusLogProject(emptySnapshot())).toBeNull();
   });
 
@@ -69,24 +61,22 @@ describe('focus log store', () => {
     expect(readFocusLog(emptySnapshot())).toEqual([]);
   });
 
-  it('creates a project first and uses its temp id for the new note', () => {
-    const snapshot = emptySnapshot();
-    snapshot.user = { id: 'user-1' } as Snapshot['user'];
+  it('adds the first comment of a week to the Inbox, and waits for the Inbox to be known', () => {
+    const snapshot = snapshotWithProject();
     const row = entry(at(2026, 10, 20, 9, 10));
     const now = new Date(2026, 9, 20, 10);
     const plan = planLogWrite(snapshot, [row], now);
-    expect(plan?.commands.map((cmd) => cmd.type)).toEqual(['project_add', 'note_add']);
-    const [addProject, addNote] = plan!.commands;
-    expect(addProject.args).toEqual({ name: FOCUS_LOG_PROJECT, color: FOCUS_LOG_COLOR });
-    expect(addNote.args.project_id).toBe(addProject.temp_id);
+    expect(plan?.commands.map((cmd) => cmd.type)).toEqual(['note_add']);
+    const [addNote] = plan!.commands;
+    expect(addNote.args.project_id).toBe('p');
     const optimistic = plan!.optimistic(snapshot);
-    expect(optimistic.projects[addProject.temp_id!].name).toBe(FOCUS_LOG_PROJECT);
     expect(optimistic.notes[addNote.temp_id!]).toMatchObject({
-      project_id: addProject.temp_id, item_id: null, posted_at: now.toISOString(),
+      project_id: 'p', item_id: null, posted_at: now.toISOString(),
       posted_uid: 'user-1', is_deleted: false,
     });
     expect(readFocusLog(optimistic)).toEqual([row]);
-    expect(planLogWrite(emptySnapshot(), [], now)).toBeNull();
+    expect(planLogWrite(snapshot, [], now)).toBeNull();
+    expect(planLogWrite(emptySnapshot(), [row], now)).toBeNull();
   });
 
   it('updates one existing part when an entry is added to its week', () => {
