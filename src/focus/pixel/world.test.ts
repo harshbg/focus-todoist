@@ -75,11 +75,23 @@ describe('world', () => {
     expect(Math.abs(centreX - 80)).toBeLessThanOrEqual(1);
   });
 
-  it('contains the first stone for sessions-1', () => {
+  it('contains the first stone for sessions-1 and sits with sessions-10 in the centre foreground', () => {
     const firstStone = WORLD_DETAILS['sessions-1'];
+    const secondStone = WORLD_DETAILS['sessions-10'];
     expect(firstStone).toBeDefined();
-    const { w, h } = spriteSize(firstStone.sprite);
-    expect(w).toBeGreaterThan(0);
-    expect(h).toBeGreaterThan(0);
+    expect(secondStone).toBeDefined();
+
+    const size1 = spriteSize(firstStone.sprite);
+    const size10 = spriteSize(secondStone.sprite);
+    expect(size1.w).toBeGreaterThan(0);
+    expect(size1.h).toBeGreaterThan(0);
+    expect(size10.w).toBeGreaterThan(0);
+    expect(size10.h).toBeGreaterThan(0);
+
+    // Both details sit in the centre foreground
+    expect(Math.abs(firstStone.x + size1.w / 2 - 80)).toBeLessThanOrEqual(2);
+    expect(Math.abs(secondStone.x + size10.w / 2 - 80)).toBeLessThanOrEqual(2);
+    expect(firstStone.y).toBeGreaterThanOrEqual(70);
+    expect(secondStone.y).toBeGreaterThanOrEqual(70);
   });
 });

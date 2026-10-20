@@ -30,22 +30,24 @@ export function templeBlocks(total: number): Array<{ col: number; row: number }>
   if (total === 4) return [{ col: 0, row: 0 }, { col: 1, row: 0 }, { col: 2, row: 0 }, { col: 1, row: 1 }];
   if (total === 5) return [{ col: 0, row: 0 }, { col: 1, row: 0 }, { col: 2, row: 0 }, { col: 0, row: 1 }, { col: 2, row: 1 }];
 
-  // Canonical 20-block temple (default): stepped base (6 + 4), columns (2 + 2), roof (4 + 2)
+  // Canonical 20-block classical temple (default):
+  // 3-step base (5 + 4 + 3), columns (2 + 2), triangular pediment roof (3 + 1)
   if (total === 20) {
     return [
-      // Row 0: wide stepped base (6 blocks)
-      { col: 0, row: 0 }, { col: 1, row: 0 }, { col: 2, row: 0 },
-      { col: 3, row: 0 }, { col: 4, row: 0 }, { col: 5, row: 0 },
-      // Row 1: upper base (4 blocks)
-      { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 3, row: 1 }, { col: 4, row: 1 },
-      // Row 2: columns (2 blocks)
-      { col: 1, row: 2 }, { col: 4, row: 2 },
+      // Row 0: wide stepped base - bottom step (5 blocks)
+      { col: 0, row: 0 }, { col: 1, row: 0 }, { col: 2, row: 0 }, { col: 3, row: 0 }, { col: 4, row: 0 },
+      // Row 1: middle step (4 blocks)
+      { col: 0.5, row: 1 }, { col: 1.5, row: 1 }, { col: 2.5, row: 1 }, { col: 3.5, row: 1 },
+      // Row 2: top step (3 blocks)
+      { col: 1, row: 2 }, { col: 2, row: 2 }, { col: 3, row: 2 },
       // Row 3: columns (2 blocks)
-      { col: 1, row: 3 }, { col: 4, row: 3 },
-      // Row 4: roof entablature / beam (4 blocks)
-      { col: 1, row: 4 }, { col: 2, row: 4 }, { col: 3, row: 4 }, { col: 4, row: 4 },
-      // Row 5: roof pediment / peak (2 blocks)
-      { col: 2, row: 5 }, { col: 3, row: 5 },
+      { col: 1, row: 3 }, { col: 3, row: 3 },
+      // Row 4: columns (2 blocks)
+      { col: 1, row: 4 }, { col: 3, row: 4 },
+      // Row 5: roof entablature / pediment base (3 blocks)
+      { col: 1, row: 5 }, { col: 2, row: 5 }, { col: 3, row: 5 },
+      // Row 6: roof pediment peak (1 block)
+      { col: 2, row: 6 },
     ];
   }
 

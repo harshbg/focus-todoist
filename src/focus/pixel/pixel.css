@@ -20,6 +20,7 @@
   --px-paper: #f4f1ea;
   --px-ink: #1f1d1a;
   --px-ghost: rgba(30, 42, 54, 0.14);
+  --px-slot-outline: rgba(30, 42, 54, 0.15);
   --px-gold: #f2c94c;
   --px-stone: #9aa3ab;
   --px-water: #5b9bd5;
@@ -45,6 +46,7 @@
   --px-paper: #24221e;
   --px-ink: #ece6da;
   --px-ghost: rgba(236, 230, 218, 0.12);
+  --px-slot-outline: rgba(236, 230, 218, 0.08);
   --px-gold: #d9b343;
   --px-stone: #6f777e;
   --px-water: #3f6f9c;
@@ -131,9 +133,9 @@
 
 .px-quest-label {
   font-family: var(--px-font, "Silkscreen", "Press Start 2P", ui-monospace, monospace);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.14em;
   color: var(--px-ink);
   text-transform: uppercase;
   line-height: 1.2;
@@ -141,7 +143,7 @@
 
 .px-quest-minutes {
   font-family: var(--px-font, "Silkscreen", "Press Start 2P", ui-monospace, monospace);
-  font-size: 8px;
+  font-size: 12px;
   color: var(--px-ink);
   opacity: 0.85;
   line-height: 1.2;
@@ -156,8 +158,8 @@
 
 .px-quest-pip {
   display: inline-block;
-  width: 7px;
-  height: 7px;
+  width: 10px;
+  height: 10px;
   border-radius: 2px;
   border: 1px solid var(--px-frame);
   box-sizing: border-box;
@@ -192,27 +194,27 @@
 }
 
 .px-burst--1 {
-  top: 25%;
+  top: 22%;
   left: 28%;
   animation: px-burst-anim 1.6s ease-out infinite;
 }
 
 .px-burst--2 {
-  top: 20%;
-  left: 55%;
+  top: 16%;
+  left: 52%;
   animation: px-burst-anim 1.6s ease-out 0.55s infinite;
 }
 
 .px-burst--3 {
-  top: 30%;
-  left: 78%;
+  top: 26%;
+  left: 74%;
   animation: px-burst-anim 1.6s ease-out 1.1s infinite;
 }
 
 .px-spark {
   position: absolute;
-  width: 4px;
-  height: 4px;
+  width: 7px;
+  height: 7px;
   image-rendering: pixelated;
 }
 
@@ -228,42 +230,63 @@
   background-color: var(--px-cloud);
 }
 
+/* Radiating spark positions outward from burst center */
 .px-spark--pos-1 {
-  transform: translate(-10px, -12px);
+  transform: translate(0px, -24px);
 }
 
 .px-spark--pos-2 {
-  transform: translate(12px, -10px);
+  transform: translate(14px, -19px);
 }
 
 .px-spark--pos-3 {
-  transform: translate(-12px, 8px);
+  transform: translate(23px, -7px);
 }
 
 .px-spark--pos-4 {
-  transform: translate(10px, 10px);
+  transform: translate(23px, 7px);
 }
 
 .px-spark--pos-5 {
-  transform: translate(0px, -15px);
+  transform: translate(14px, 19px);
+}
+
+.px-spark--pos-6 {
+  transform: translate(0px, 24px);
+}
+
+.px-spark--pos-7 {
+  transform: translate(-14px, 19px);
+}
+
+.px-spark--pos-8 {
+  transform: translate(-23px, 7px);
+}
+
+.px-spark--pos-9 {
+  transform: translate(-23px, -7px);
+}
+
+.px-spark--pos-10 {
+  transform: translate(-14px, -19px);
 }
 
 @keyframes px-burst-anim {
   0% {
     opacity: 0;
-    transform: scale(0.2);
+    transform: scale(0.15);
   }
   15% {
     opacity: 1;
-    transform: scale(0.6);
+    transform: scale(0.5);
   }
-  70% {
+  65% {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1.05);
   }
   100% {
     opacity: 0;
-    transform: scale(1.2);
+    transform: scale(1.35);
   }
 }
 
@@ -273,18 +296,49 @@
   inset: 0;
 }
 
+/* Static sparkles centered over the upper half of scene */
 .px-spark--static-1 {
-  top: 25%;
-  left: 30%;
+  top: 20%;
+  left: 26%;
 }
 
 .px-spark--static-2 {
-  top: 20%;
-  left: 55%;
+  top: 24%;
+  left: 31%;
 }
 
 .px-spark--static-3 {
+  top: 17%;
+  left: 29%;
+}
+
+.px-spark--static-4 {
+  top: 14%;
+  left: 50%;
+}
+
+.px-spark--static-5 {
+  top: 18%;
+  left: 54%;
+}
+
+.px-spark--static-6 {
+  top: 20%;
+  left: 49%;
+}
+
+.px-spark--static-7 {
+  top: 24%;
+  left: 72%;
+}
+
+.px-spark--static-8 {
   top: 28%;
+  left: 77%;
+}
+
+.px-spark--static-9 {
+  top: 22%;
   left: 75%;
 }
 
@@ -348,15 +402,23 @@
 .px-footprint-chart {
   position: relative;
   width: 100%;
-  height: auto;
+  max-width: 100%;
   user-select: none;
 }
 
 .px-footprint-chart svg {
   display: block;
-  width: 100%;
-  height: auto;
+  height: 140px;
+  width: auto;
+  max-width: 100%;
   shape-rendering: crispEdges;
+}
+
+.px-footprint-label {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  fill: var(--px-ink);
+  fill-opacity: 0.6;
 }
 
 /* Temple scene */
@@ -368,4 +430,3 @@
 .px-world-scene {
   background-color: var(--px-sky);
 }
-

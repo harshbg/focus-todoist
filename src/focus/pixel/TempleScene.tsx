@@ -38,7 +38,11 @@ export function TempleScene({
 
   const minCol = allBlocks.length > 0 ? Math.min(...allBlocks.map((b) => b.col)) : 0;
   const maxCol = allBlocks.length > 0 ? Math.max(...allBlocks.map((b) => b.col)) : 0;
-  const templeWidth = (maxCol - minCol + 1) * 8;
+  const unscaledTempleWidth = (maxCol - minCol + 1) * 8;
+
+  // Scale temple to span about 40% of the scene width
+  const scale = unscaledTempleWidth > 0 ? (width * 0.4) / unscaledTempleWidth : 1;
+  const templeWidth = unscaledTempleWidth * scale;
   const templeLeft = Math.round((width - templeWidth) / 2);
 
   return (
@@ -72,11 +76,14 @@ export function TempleScene({
           )}
         </g>
 
-        {/* Temple: laid blocks as bricks, unlaid ones in --px-ghost */}
-        <g className="px-temple">
+        {/* Temple: laid blocks as bricks, unlaid ones with ghost fill and 1px darker outline */}
+        <g
+          className="px-temple"
+          transform={`translate(${templeLeft}, ${groundY}) scale(${scale})`}
+        >
           {allBlocks.map((b, i) => {
-            const x = templeLeft + Math.round((b.col - minCol) * 8);
-            const y = groundY - (b.row + 1) * 5;
+            const x = (b.col - minCol) * 8;
+            const y = -(b.row + 1) * 5;
             const isLaid = i < clampedBlocks;
 
             return isLaid ? (
@@ -95,6 +102,9 @@ export function TempleScene({
                 width={8}
                 height={5}
                 fill="var(--px-ghost)"
+                stroke="var(--px-frame)"
+                strokeOpacity={0.65}
+                strokeWidth={1 / scale}
               />
             );
           })}

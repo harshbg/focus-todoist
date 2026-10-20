@@ -16,7 +16,7 @@ export interface FocusSceneProps {
   };
   /** Shows <Fireworks/> over the scene. */
   celebrating?: boolean;
-  /** 'wide' for the sidecar banner (≈ 3.5:1), 'card' for the main page (≈ 1.4:1). */
+  /** 'wide' for the sidecar banner (≈ 3.5:1), 'card' for the main page (≈ 1.6:1). */
   variant?: 'card' | 'wide';
   /** Accessible description, already translated. */
   ariaLabel: string;
@@ -35,26 +35,35 @@ export function FocusScene({
   ariaLabel,
 }: FocusSceneProps) {
   const isWide = variant === 'wide';
-  // Wide: 280×80 (3.5:1), Card: 168×120 (1.4:1)
-  const width = isWide ? 280 : 168;
+  // Wide: 280×80 (3.5:1), Card: 192×120 (1.6:1)
+  const width = isWide ? 280 : 192;
   const height = isWide ? 80 : 120;
   const groundHeight = 12;
   const groundY = height - groundHeight;
+  const skyHeight = groundY;
 
-  // Pyramid: 8 rows of 8×5 bricks = 64px wide × 40px high
-  const pyramidWidth = 64;
-  const pyramidHeight = 40;
+  // Pyramid scaling:
+  // Complete 8-row pyramid spans about 45% of scene width and about 60% of sky height in card.
+  // In wide, apply the same pyramid scale relative to its height.
+  const scaleY = (skyHeight * 0.6) / 40;
+  const scaleX = isWide ? scaleY : (width * 0.45) / 64;
+
+  const pyramidWidth = 64 * scaleX;
+  const pyramidHeight = 40 * scaleY;
   const pyramidLeft = Math.round((width - pyramidWidth) / 2);
   const pyramidTop = groundY - pyramidHeight;
 
-  // Trees: 11×14 pixels, standing on the ground strip
-  const treeY = groundY - 14;
+  // Trees: 1.5× bigger, standing on the ground strip
+  const treeScale = 1.5;
+  const treeW = 11 * treeScale;
+  const treeH = 14 * treeScale;
+  const treeY = groundY - treeH;
   const leftTreeX = isWide ? 16 : 10;
-  const rightTreeX = width - leftTreeX - 11;
+  const rightTreeX = width - leftTreeX - treeW;
 
-  // Clouds: 12×4 pixels in the sky
-  const cloud1 = isWide ? { x: 42, y: 10 } : { x: 22, y: 14 };
-  const cloud2 = isWide ? { x: 196, y: 14 } : { x: 110, y: 20 };
+  // Clouds: in the sky
+  const cloud1 = isWide ? { x: 42, y: 10 } : { x: 26, y: 14 };
+  const cloud2 = isWide ? { x: 196, y: 14 } : { x: 130, y: 20 };
 
   // Pyramid bricks to render at current progress
   const laidCount = bricksLaid(progress, TOTAL_BRICKS);
@@ -100,19 +109,26 @@ export function FocusScene({
           )}
         </g>
 
-        {/* Trees */}
-        <PixelSprite sprite={TREE} palette={PALETTE} x={leftTreeX} y={treeY} />
-        <PixelSprite sprite={TREE} palette={PALETTE} x={rightTreeX} y={treeY} />
+        {/* Trees (1.5× bigger) */}
+        <g transform={`translate(${leftTreeX}, ${treeY}) scale(${treeScale})`}>
+          <PixelSprite sprite={TREE} palette={PALETTE} />
+        </g>
+        <g transform={`translate(${rightTreeX}, ${treeY}) scale(${treeScale})`}>
+          <PixelSprite sprite={TREE} palette={PALETTE} />
+        </g>
 
         {/* Centred pyramid */}
-        <g className="px-pyramid">
+        <g
+          className="px-pyramid"
+          transform={`translate(${pyramidLeft}, ${pyramidTop}) scale(${scaleX}, ${scaleY})`}
+        >
           {visibleBricks.map((b) => (
             <PixelSprite
               key={`${b.col}-${b.row}`}
               sprite={BRICK}
               palette={PALETTE}
-              x={pyramidLeft + b.col * 8}
-              y={pyramidTop + (PYRAMID_ROWS - 1 - b.row) * 5}
+              x={b.col * 8}
+              y={(PYRAMID_ROWS - 1 - b.row) * 5}
             />
           ))}
         </g>

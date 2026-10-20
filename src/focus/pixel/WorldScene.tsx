@@ -14,7 +14,7 @@ export interface WorldSceneProps {
 export function WorldScene({ unlocked, ariaLabel }: WorldSceneProps) {
   const width = 160;
   const height = 90;
-  const groundY = 38;
+  const groundY = 50;
 
   // Deduplicate unlocked trophy ids and retrieve corresponding details
   const seen = new Set<string>();

@@ -19,8 +19,8 @@ export function FootprintChart({
   const slotWidth = 8;
   const slotHeight = 5;
   const colGap = 2;
-  const rowGap = 1;
-  const labelHeight = 14;
+  const rowGap = 2;
+  const labelHeight = 30;
 
   const numDays = days.length;
   const chartWidth = numDays > 0 ? numDays * slotWidth + (numDays - 1) * colGap : 0;
@@ -39,7 +39,7 @@ export function FootprintChart({
         aria-hidden="true"
         shapeRendering="crispEdges"
         viewBox={`0 0 ${chartWidth} ${totalHeight}`}
-        style={{ width: '100%', height: 'auto', display: 'block' }}
+        style={{ height: 140, width: 'auto', maxWidth: '100%', display: 'block' }}
       >
         {days.map((d, dayIndex) => {
           const colX = dayIndex * (slotWidth + colGap);
@@ -69,7 +69,7 @@ export function FootprintChart({
                     width={slotWidth}
                     height={slotHeight}
                     fill="none"
-                    stroke="var(--px-ghost)"
+                    stroke="var(--px-slot-outline)"
                     strokeWidth={1}
                   />
                 );
@@ -78,11 +78,13 @@ export function FootprintChart({
               {showLabel && (
                 <text
                   x={colX}
-                  y={chartHeight + 11}
+                  y={chartHeight + 16}
                   fill="var(--px-ink)"
-                  fontSize={7}
+                  fillOpacity={0.6}
+                  fontSize={10}
                   textAnchor="start"
-                  fontFamily='var(--px-font, "Silkscreen", "Press Start 2P", ui-monospace, monospace)'
+                  fontFamily="ui-monospace, monospace"
+                  className="px-footprint-label"
                 >
                   {d.label}
                 </text>

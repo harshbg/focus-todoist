@@ -77,7 +77,7 @@ describe('templeBlocks', () => {
     expect(templeBlocks(-5)).toEqual([]);
   });
 
-  it('builds canonical 20-block temple with stepped base, columns, and roof', () => {
+  it('builds canonical 20-block classical temple with 3-step base, columns, and pediment roof', () => {
     const blocks = templeBlocks(20);
     expect(blocks).toHaveLength(20);
 
@@ -90,27 +90,53 @@ describe('templeBlocks', () => {
       expect(blocks[i].row).toBeGreaterThanOrEqual(blocks[i - 1].row);
     }
 
-    // Row 0 has 6 bricks (stepped base)
+    // Row 0 has 5 bricks (bottom step of wide 3-step base)
     const row0 = blocks.filter((b) => b.row === 0);
-    expect(row0).toHaveLength(6);
+    expect(row0).toHaveLength(5);
+    expect(row0).toEqual([
+      { col: 0, row: 0 },
+      { col: 1, row: 0 },
+      { col: 2, row: 0 },
+      { col: 3, row: 0 },
+      { col: 4, row: 0 },
+    ]);
 
-    // Row 1 has 4 bricks (upper base)
+    // Row 1 has 4 bricks (middle step)
     const row1 = blocks.filter((b) => b.row === 1);
     expect(row1).toHaveLength(4);
+    expect(row1).toEqual([
+      { col: 0.5, row: 1 },
+      { col: 1.5, row: 1 },
+      { col: 2.5, row: 1 },
+      { col: 3.5, row: 1 },
+    ]);
 
-    // Rows 2 & 3 have 2 bricks each (left and right columns)
+    // Row 2 has 3 bricks (top step)
     const row2 = blocks.filter((b) => b.row === 2);
+    expect(row2).toHaveLength(3);
+    expect(row2).toEqual([
+      { col: 1, row: 2 },
+      { col: 2, row: 2 },
+      { col: 3, row: 2 },
+    ]);
+
+    // Rows 3 & 4 have 2 bricks each (columns)
     const row3 = blocks.filter((b) => b.row === 3);
-    expect(row2).toEqual([{ col: 1, row: 2 }, { col: 4, row: 2 }]);
-    expect(row3).toEqual([{ col: 1, row: 3 }, { col: 4, row: 3 }]);
-
-    // Row 4 has 4 bricks (roof beam)
     const row4 = blocks.filter((b) => b.row === 4);
-    expect(row4).toHaveLength(4);
+    expect(row3).toEqual([{ col: 1, row: 3 }, { col: 3, row: 3 }]);
+    expect(row4).toEqual([{ col: 1, row: 4 }, { col: 3, row: 4 }]);
 
-    // Row 5 has 2 bricks (roof peak)
+    // Row 5 has 3 bricks (pediment roof base)
     const row5 = blocks.filter((b) => b.row === 5);
-    expect(row5).toEqual([{ col: 2, row: 5 }, { col: 3, row: 5 }]);
+    expect(row5).toEqual([
+      { col: 1, row: 5 },
+      { col: 2, row: 5 },
+      { col: 3, row: 5 },
+    ]);
+
+    // Row 6 has 1 brick (triangular pediment peak)
+    const row6 = blocks.filter((b) => b.row === 6);
+    expect(row6).toEqual([{ col: 2, row: 6 }]);
   });
 
   it('returns exactly total positions without duplicates for various counts', () => {
