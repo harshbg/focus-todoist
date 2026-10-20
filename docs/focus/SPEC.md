@@ -343,3 +343,38 @@ prefixed `focus.`.
 7. `src/focus/views/ProgressView.tsx` + components.
 8. Sidecar (Document PiP + fallback).
 9. Settings, route, sidebar, i18n wiring, demo data, e2e.
+
+---
+
+## 10. Changes after the first review (2026-10-20)
+
+### 10.1 The log lives on the Inbox, not in its own project
+
+The account is on Todoist Free, which allows 5 active personal projects, and
+it already has 5. A "Focus log" project would not fit. The log's weekly
+comments therefore sit on the **Inbox** (which never counts against the
+limit), next to the settings comment, told apart by their `Focus log ·` first
+line. `focusLogProject` returns the Inbox; `planLogWrite` never adds a project.
+
+### 10.2 Work / Personal mode (all features free)
+
+A switch at the top of the app: **Work** or **Personal**. It works like a
+filter over the whole app, built on Todoist's own labels (free on every plan),
+so nothing costs a project slot:
+
+- A task is **Work** when it has the `work` label, or sits in a project the
+  user marked as Work in Settings (optional, so a whole project needs no
+  tagging). Everything else is **Personal**.
+- In Work mode, every view (Week, Today, Inbox, projects, search, the matrix,
+  the focus pages) shows only Work tasks; the sidebar shows only projects that
+  are marked Work or hold Work tasks. Personal mode is the mirror image.
+- A task added in Work mode gets the `work` label automatically (and lands in
+  the default Work project if one is set). Added in Personal mode, it gets
+  none.
+- Focus entries record their mode (an optional 8th field `"w"` / `"p"` in the
+  compact row; rows without it read as Personal), so tracking, targets,
+  streaks and trophies are per mode. Each mode has its own targets, workdays
+  and lanes: Work defaults to 4 h a day / 20 h a week on Mon–Fri with
+  PTO/holidays; Personal defaults to 1 h a day / 5 h a week, every day.
+- The current mode is remembered per device; the mode settings travel in the
+  settings comment.
