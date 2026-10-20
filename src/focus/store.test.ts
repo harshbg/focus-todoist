@@ -1,0 +1,71 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { emptySnapshot, type Snapshot } from '@/domain/types';
+import { useStore } from '@/store/store';
+import { entryKey } from './domain/log';
+import { readFocusLog } from './domain/logStore';
+import { useFocusStore } from './store';
+
+const originalApply = useStore.getState().apply;
+
+afterEach(() => {
+  useFocusStore.getState().discard();
+  useFocusStore.getState().dismiss();
+  useStore.setState({ apply: originalApply });
+  vi.useRealTimers();
+});
+
+describe('focus store', () => {
+  it('logs worked time without pauses, then rates, moves and deletes the entry', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 20, 9));
+    const apply = vi.fn(async (_commands, optimistic) => {
+      useStore.setState({ snapshot: optimistic(useStore.getState().snapshot) });
+      return {};
+    });
+    const snapshot = emptySnapshot();
+    snapshot.projects.inbox = {
+      id: 'inbox', name: 'Inbox', color: 'charcoal', parent_id: null,
+      child_order: 1, is_archived: false, is_deleted: false, is_favorite: false,
+      inbox_project: true,
+    };
+    snapshot.user = { id: 'user-1', inbox_project_id: 'inbox' } as Snapshot['user'];
+    useStore.setState({ snapshot, apply });
+
+    const focus = useFocusStore.getState();
+    focus.start({ mode: 'focus', taskId: 'task-1', title: 'Draft notes', lane: 'Deep Dive', plannedMin: 30 });
+    vi.advanceTimersByTime(6 * 60_000);
+    focus.pause();
+    vi.advanceTimersByTime(2 * 60_000);
+    focus.resume();
+    vi.advanceTimersByTime(24 * 60_000);
+    const logged = await focus.finish();
+
+    expect(logged).toMatchObject({ minutes: 30, taskId: 'task-1', source: 'timed' });
+    expect(readFocusLog(useStore.getState().snapshot)).toEqual([logged]);
+    await focus.rate(5);
+    expect(readFocusLog(useStore.getState().snapshot)[0].rating).toBe(5);
+
+    await focus.editEntry(entryKey(logged!), { start: '2026-10-27T09:00', minutes: 25 });
+    const moved = readFocusLog(useStore.getState().snapshot);
+    expect(moved).toMatchObject([{ start: '2026-10-27T09:00', minutes: 25, rating: 5 }]);
+    await focus.deleteEntry(entryKey(moved[0]));
+    expect(readFocusLog(useStore.getState().snapshot)).toEqual([]);
+    expect(apply).toHaveBeenCalledTimes(4);
+  });
+
+  it('leaves unwind blocks and short focus blocks out of the log', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 20, 9));
+    const apply = vi.fn();
+    useStore.setState({ snapshot: emptySnapshot(), apply });
+    const focus = useFocusStore.getState();
+
+    focus.start({ mode: 'unwind', taskId: null, title: 'Break', lane: null, plannedMin: 5 });
+    vi.advanceTimersByTime(5 * 60_000);
+    expect(await focus.finish()).toBeNull();
+    focus.start({ mode: 'focus', taskId: null, title: 'Draft', lane: null, plannedMin: 30 });
+    vi.advanceTimersByTime(4 * 60_000);
+    expect(await focus.finish()).toBeNull();
+    expect(apply).not.toHaveBeenCalled();
+  });
+});

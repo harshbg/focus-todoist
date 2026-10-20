@@ -10,6 +10,8 @@ import { defaultSidebarNav, readSidebarNav, type SidebarNav } from '@/domain/sid
 import {
   defaultDetailOrder, defaultTaskFields, readDetailOrder, readTaskFields, type DetailChip, type TaskFields,
 } from '@/domain/taskDetails';
+import { DEFAULT_FOCUS_PREFERENCES, type FocusPreferences } from '@/focus/domain/types';
+import { readFocusPreferences } from '@/focus/domain/settings';
 
 /**
  * The Todoist task that held the settings up to 1.12.
@@ -292,6 +294,8 @@ export const isWeekLayout = (value: unknown): value is WeekLayout =>
 /** Everything the user can tune. Stored on the device, never on a server. */
 export interface Preferences {
   locale: Locale;
+  /** Focus targets, timer choices and lanes shared with the account. */
+  focus: FocusPreferences;
   /** Null means this account has not yet chosen; reads and writes default to tags. */
   estimateStorage: EstimateStorage | null;
   /** Where the app opens when no destination is in the address bar. */
@@ -418,6 +422,7 @@ export interface Preferences {
 
 export const defaultPreferences = (locale: Locale): Preferences => ({
   locale,
+  focus: DEFAULT_FOCUS_PREFERENCES,
   estimateStorage: null,
   homepage: 'week',
   naturalDates: true,
@@ -497,6 +502,7 @@ export function hydratePreferences(stored: unknown, locale: Locale): Preferences
   return {
     ...base,
     ...s,
+    focus: readFocusPreferences(s.focus),
     estimateStorage: s.estimateStorage === 'tag' || s.estimateStorage === 'duration' ? s.estimateStorage : null,
     dailyCapacity: Array.isArray(s.dailyCapacity) && s.dailyCapacity.length === 7
       ? (s.dailyCapacity as DailyCapacity)
