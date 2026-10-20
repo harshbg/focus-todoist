@@ -408,9 +408,8 @@
 
 .px-footprint-chart svg {
   display: block;
-  height: 140px;
-  width: auto;
-  max-width: 100%;
+  width: 100%;
+  height: auto;
   shape-rendering: crispEdges;
 }
 

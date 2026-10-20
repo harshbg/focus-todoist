@@ -16,11 +16,12 @@ export function FootprintChart({
   maxBricks = 16,
   ariaLabel,
 }: FootprintChartProps) {
-  const slotWidth = 8;
-  const slotHeight = 5;
-  const colGap = 2;
+  // Narrow columns with wide gaps keep 30 days readable as one wide strip.
+  const slotWidth = 14;
+  const slotHeight = 4;
+  const colGap = 26;
   const rowGap = 2;
-  const labelHeight = 30;
+  const labelHeight = 18;
 
   const numDays = days.length;
   const chartWidth = numDays > 0 ? numDays * slotWidth + (numDays - 1) * colGap : 0;
@@ -39,7 +40,7 @@ export function FootprintChart({
         aria-hidden="true"
         shapeRendering="crispEdges"
         viewBox={`0 0 ${chartWidth} ${totalHeight}`}
-        style={{ height: 140, width: 'auto', maxWidth: '100%', display: 'block' }}
+        style={{ width: '100%', height: 'auto', display: 'block' }}
       >
         {days.map((d, dayIndex) => {
           const colX = dayIndex * (slotWidth + colGap);
