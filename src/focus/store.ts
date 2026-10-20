@@ -212,7 +212,9 @@ if (typeof window !== 'undefined') {
 export function useFocusLog(): FocusEntry[] {
   const notes = useStore((state) => state.snapshot.notes);
   const projects = useStore((state) => state.snapshot.projects);
-  return useMemo(() => readFocusLog({ ...useStore.getState().snapshot, notes, projects }), [notes, projects]);
+  // The user names the Inbox, which holds the log; it can arrive after the notes.
+  const user = useStore((state) => state.snapshot.user);
+  return useMemo(() => readFocusLog({ ...useStore.getState().snapshot, notes, projects, user }), [notes, projects, user]);
 }
 
 export function useFocusPreferences(): FocusPreferences {
