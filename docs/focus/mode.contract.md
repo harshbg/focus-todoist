@@ -1,3 +1,8 @@
+# Work / Personal mode — the `src/focus/domain/mode.ts` contract
+
+Create `src/focus/domain/mode.ts` with exactly these exports; the doc comments are the rules.
+
+```ts
 import type { Item, Project, Snapshot } from '@/domain/types';
 
 /**
@@ -62,3 +67,4 @@ export function newTaskPlacement(
 ): { projectId: string; addLabels: string[] } {
   throw new Error('not implemented');
 }
+```

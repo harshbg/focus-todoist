@@ -6,7 +6,7 @@ projects and the `work` label. Two Codex jobs, in order.
 
 ## Job M1 — rules and data (no UI)
 
-1. Create `src/focus/domain/mode.ts` from `docs/focus/mode.contract.ts` (its exports and doc comments are the contract) with
+1. Create `src/focus/domain/mode.ts` from `docs/focus/mode.contract.md` (its exports and doc comments are the contract) with
    `mode.test.ts`.
 2. Focus entries carry their mode:
    - `FocusEntry.mode: Mode` in `src/focus/domain/types.ts`.
