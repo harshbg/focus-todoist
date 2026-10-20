@@ -1,14 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img"
-     aria-label="Enhanced for Todoist">
-  <!--
-    Three capsules of different heights on one baseline: a week, read as the
-    load it carries. The app's own accent, and its own mark: nothing here is
-    borrowed from Todoist's branding.
-  -->
-  <rect width="512" height="512" rx="115" fill="#d1453b"/>
-  <g fill="#fff">
-    <rect x="104" y="234" width="74" height="150" rx="37"/>
-    <rect x="219" y="130" width="74" height="254" rx="37"/>
-    <rect x="334" y="188" width="74" height="196" rx="37"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" aria-label="Enhanced for Todoist" role="img" viewBox="0 0 512 512"><rect width="512" height="512" fill="#d1453b" rx="115"/><g fill="#fff"><rect width="74" height="150" x="104" y="234" rx="37"/><rect width="74" height="254" x="219" y="130" rx="37"/><rect width="74" height="196" x="334" y="188" rx="37"/></g></svg>
