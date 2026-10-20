@@ -294,7 +294,7 @@ export const isWeekLayout = (value: unknown): value is WeekLayout =>
 /** Everything the user can tune. Stored on the device, never on a server. */
 export interface Preferences {
   locale: Locale;
-  /** Focus targets, timer choices and lanes shared with the account. */
+  /** Focus targets, timer choices and lanes; like the rest, they travel in the settings comment. */
   focus: FocusPreferences;
   /** Null means this account has not yet chosen; reads and writes default to tags. */
   estimateStorage: EstimateStorage | null;

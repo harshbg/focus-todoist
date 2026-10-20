@@ -29,8 +29,8 @@ from the screenshots, the spec wins.
 
 ### 2.1 The focus log (durable, in Todoist)
 
-A personal Todoist project named **`Focus log`** (created on first use; its id
-remembered in settings). The app hides it from its own sidebar.
+Comments on the **Inbox** (see §10.1: on Todoist Free there is no project slot
+to spare, and the Inbox never counts), next to the settings comment.
 
 One **project comment per ISO week** (Mon–Sun, user's timezone), found by its
 first line:
@@ -62,7 +62,8 @@ Rules:
 - A comment holds at most **12,000 characters**; when the next entry would
   overflow, start `part 2`, `part 3`… of the same week.
 - Writes go through the app's existing command queue (`note_add` /
-  `note_update` on `project_notes`), so they work offline and retry.
+  `note_update` / `note_delete` on the Inbox's project comments), so they work
+  offline and retry.
 - Editing a rating or deleting an entry rewrites that week's comment.
 - Read every week comment on sync; merge parts; de-duplicate on
   `start + taskId`.
@@ -76,7 +77,6 @@ existing Inbox settings comment:
 
 ```ts
 focus: {
-  logProjectId: string | null;
   dailyTargetMin: number;      // default 240 (4 h)
   weeklyTargetMin: number;     // default 1200 (20 h)
   runThresholdMin: number;     // default 30 — minutes that keep a workday alive
