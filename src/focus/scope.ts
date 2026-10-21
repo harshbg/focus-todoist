@@ -8,6 +8,11 @@ import { useMode } from './mode-store';
 const DEMO_WORK_PROJECT = 'site';
 const NO_EXTRA: readonly string[] = [];
 
+/** The e2e journeys predate Work mode and expect every demo task in one list; they switch this off. */
+const demoWorkOff = (() => {
+  try { return typeof localStorage !== 'undefined' && localStorage.getItem('tde.demoWork') === 'off'; } catch { return false; }
+})();
+
 /**
  * The projects marked as Work. The demo has no project named Work, so its
  * Website project counts as one there — only for the demo, never written
@@ -15,7 +20,7 @@ const NO_EXTRA: readonly string[] = [];
  */
 export function markedWorkProjects(state: Pick<AppState, 'demo' | 'prefs'>): readonly string[] {
   const marked = state.prefs.focus.workProjectIds;
-  return state.demo ? [...marked, DEMO_WORK_PROJECT] : marked.length ? marked : NO_EXTRA;
+  return state.demo && !demoWorkOff ? [...marked, DEMO_WORK_PROJECT] : marked.length ? marked : NO_EXTRA;
 }
 
 /** markedWorkProjects for components, stable between renders. */

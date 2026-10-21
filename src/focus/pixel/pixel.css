@@ -429,3 +429,14 @@
 .px-world-scene {
   background-color: var(--px-sky);
 }
+
+/* Fidelity pass (docs/focus/FIDELITY.md §3–4): a big timer and a quiet quest, both scaling with the scene. */
+.px-scene { container-type: inline-size; }
+.px-timer-box { border-width: 3px; padding: clamp(4px, 1.2cqw, 10px) clamp(8px, 2.2cqw, 16px); top: clamp(8px, 2.5cqw, 20px); right: clamp(8px, 2.5cqw, 20px); }
+.px-timer-digits { font-size: clamp(16px, 6.4cqw, 46px); letter-spacing: 0.06em; }
+.px-quest { top: clamp(8px, 2.5cqw, 20px); left: clamp(8px, 2.5cqw, 20px); }
+.px-quest-label, .px-quest-minutes {
+  font-family: var(--fx-mono, "IBM Plex Mono", ui-monospace, monospace);
+  font-size: clamp(9px, 1.5cqw, 11px); letter-spacing: 0.12em;
+}
+.px-quest-minutes { opacity: 0.9; }

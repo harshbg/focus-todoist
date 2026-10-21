@@ -23,6 +23,7 @@ async function openAccount(page: Page, projects: Array<Record<string, unknown>>,
     localStorage.setItem('onboarded', JSON.stringify(['account-test']));
     // These projects are not Work projects, so Personal mode is the one that lists them.
     localStorage.setItem('tde.mode', 'personal');
+      localStorage.setItem('tde.demoWork', 'off');
     const db = await new Promise<IDBDatabase>((resolve, reject) => { const request = indexedDB.open('todoist-enhancements', 1); request.onupgradeneeded = () => { const d = request.result; for (const [name, options] of [['snapshot', undefined], ['prefs', undefined], ['queue', { keyPath: 'uuid' }]] as const) if (!d.objectStoreNames.contains(name)) d.createObjectStore(name, options); }; request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
     const tx = db.transaction('prefs', 'readwrite');
     tx.objectStore('prefs').put({ locale: 'en', onboarded: true, setupDone: true, seenVersion: version, estimateStorage: 'tag' }, 'preferences');
@@ -97,6 +98,7 @@ async function openWorkspaceAccount(page: Page, options: { refuse?: string } = {
     localStorage.setItem('onboarded', JSON.stringify(['account-test']));
     // These projects are not Work projects, so Personal mode is the one that lists them.
     localStorage.setItem('tde.mode', 'personal');
+      localStorage.setItem('tde.demoWork', 'off');
     const db = await new Promise<IDBDatabase>((resolve, reject) => { const request = indexedDB.open('todoist-enhancements', 1); request.onupgradeneeded = () => { const d = request.result; for (const [name, options] of [['snapshot', undefined], ['prefs', undefined], ['queue', { keyPath: 'uuid' }]] as const) if (!d.objectStoreNames.contains(name)) d.createObjectStore(name, options); }; request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
     const tx = db.transaction('prefs', 'readwrite');
     tx.objectStore('prefs').put({ locale: 'en', onboarded: true, setupDone: true, seenVersion: version, estimateStorage: 'tag' }, 'preferences');

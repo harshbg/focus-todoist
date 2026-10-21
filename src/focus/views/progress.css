@@ -984,3 +984,26 @@
     animation-duration: 0.01ms !important;
   }
 }
+
+/* Fidelity pass (docs/focus/FIDELITY.md §14–17). */
+.focus-theme .pg-year { display: grid; grid-template-columns: repeat(52, minmax(0, 1fr)); gap: 2px; width: 100%; overflow: visible; }
+.focus-theme .pg-year-col { display: grid; gap: 2px; }
+.focus-theme .pg-year-cell { width: auto; height: auto; aspect-ratio: 1; }
+.focus-theme .pg-momentum { display: grid; grid-template-columns: repeat(52, minmax(0, 1fr)); gap: 2px; width: 100%; }
+.focus-theme .pg-momentum-cell { width: auto; height: 14px; }
+@media (max-width: 700px) {
+  .focus-theme .pg-year, .focus-theme .pg-momentum { grid-template-columns: repeat(52, 10px); overflow-x: auto; }
+}
+.focus-theme .pg-trophy-title { display: flex; align-items: center; gap: 8px; }
+.focus-theme .pg-trophy-icon { width: 18px; height: 18px; flex: none; color: #b9b3a7; image-rendering: pixelated; }
+.focus-theme .pg-trophy.is-unlocked .pg-trophy-icon[data-tier="bronze"] { color: #b8743a; }
+.focus-theme .pg-trophy.is-unlocked .pg-trophy-icon[data-tier="silver"] { color: #9aa3ab; }
+.focus-theme .pg-trophy.is-unlocked .pg-trophy-icon[data-tier="gold"] { color: #d9a93a; }
+.focus-theme .pg-trophy.is-unlocked .pg-trophy-icon[data-tier="platinum"] { color: #8fb3c9; }
+.focus-theme .pg-trophy.is-unlocked .pg-trophy-icon[data-tier="palladium"] { color: #a3a8b5; }
+.focus-theme .pg-trophy.is-unlocked .pg-trophy-icon[data-tier="rhodium"] { color: #c9cfd6; }
+.focus-theme .pg-trophy.is-unlocked .pg-trophy-icon[data-tier="iridium"] { color: #6b7a8f; }
+.focus-theme .pg-trophy.is-unlocked .pg-trophy-icon[data-tier="osmium"] { color: #3d5a73; }
+.focus-theme .pg-cards .pg-stat { box-shadow: 4px 4px 0 var(--fx-navy); border: 1px solid var(--fx-navy); }
+.focus-theme .pg-stat-value { font-family: var(--fx-serif); font-weight: 400; font-size: 44px; line-height: 1.05; }
+.focus-theme .pg-stat-unit { font-family: var(--fx-mono); font-size: 12px; color: var(--fx-muted); margin-left: 6px; }

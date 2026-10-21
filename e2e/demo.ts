@@ -17,6 +17,7 @@ export const test = base.extend<{ demo: Page }>({
       localStorage.setItem('skipSetup', '1');
       // The demo has no Work project, so Personal mode is the one that lists its tasks.
       localStorage.setItem('tde.mode', 'personal');
+      localStorage.setItem('tde.demoWork', 'off');
     });
     await page.goto('/');
     await page.getByRole('button', { name: 'Explore with demo data' }).click();

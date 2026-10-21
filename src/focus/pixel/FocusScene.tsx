@@ -1,4 +1,5 @@
-import { BRICK, CLOUD, PALETTE, TREE } from './sprites';
+import { useEffect, useState } from 'react';
+import { CLOUD, PALETTE, TREE } from './sprites';
 import { bricksLaid, pyramidBricks } from './layout';
 import { PixelSprite } from './PixelSprite';
 import { Fireworks } from './Fireworks';
@@ -26,6 +27,33 @@ const TOTAL_BRICKS = 36;
 const PYRAMID_ROWS = 8;
 const ALL_BRICKS = pyramidBricks(PYRAMID_ROWS);
 
+/** A brick in pyramid units, outline included; bricks sit edge to edge, so seams read twice as thick. */
+const BRICK_W = 12;
+const BRICK_H = 9;
+
+/**
+ * The three faces a classic platformer block comes in: [face, highlight, shadow].
+ * Picked per brick from its position, so the pyramid looks hand-laid but never changes.
+ */
+const BRICK_SHADES: ReadonlyArray<readonly [string, string, string]> = [
+  ['var(--px-brick-a, #f2ad45)', 'var(--px-brick-a-hi, #fde29c)', 'var(--px-brick-a-lo, #c9701f)'],
+  ['var(--px-brick-b, #ec9238)', 'var(--px-brick-b-hi, #f8c46a)', 'var(--px-brick-b-lo, #b85a1c)'],
+  ['var(--px-brick-c, #dc6a2a)', 'var(--px-brick-c-hi, #f29a55)', 'var(--px-brick-c-lo, #9e3f16)'],
+];
+
+function Brick({ x, y, shade }: { x: number; y: number; shade: readonly [string, string, string] }) {
+  const [face, hi, lo] = shade;
+  return <g>
+    <rect x={x} y={y} width={BRICK_W} height={BRICK_H} fill="var(--px-brick-outline, #1b130c)" />
+    <rect x={x + 1} y={y + 1} width={BRICK_W - 2} height={BRICK_H - 2} fill={lo} />
+    <rect x={x + 1} y={y + 1} width={BRICK_W - 3} height={BRICK_H - 3} fill={hi} />
+    <rect x={x + 2} y={y + 2} width={BRICK_W - 4} height={BRICK_H - 4} fill={face} />
+  </g>;
+}
+
+/** Fireworks run for this long after a block completes, then the sky goes quiet. */
+const CELEBRATION_MS = 5000;
+
 export function FocusScene({
   progress,
   time,
@@ -35,6 +63,13 @@ export function FocusScene({
   ariaLabel,
 }: FocusSceneProps) {
   const isWide = variant === 'wide';
+  const [bursting, setBursting] = useState(false);
+  useEffect(() => {
+    if (!celebrating) { setBursting(false); return; }
+    setBursting(true);
+    const timer = window.setTimeout(() => setBursting(false), CELEBRATION_MS);
+    return () => window.clearTimeout(timer);
+  }, [celebrating]);
   // Wide: 280×80 (3.5:1), Card: 192×120 (1.6:1)
   const width = isWide ? 280 : 192;
   const height = isWide ? 80 : 120;
@@ -45,11 +80,15 @@ export function FocusScene({
   // Pyramid scaling:
   // Complete 8-row pyramid spans about 45% of scene width and about 60% of sky height in card.
   // In wide, apply the same pyramid scale relative to its height.
-  const scaleY = (skyHeight * 0.6) / 40;
-  const scaleX = isWide ? scaleY : (width * 0.45) / 64;
+  const pyramidUnitsW = PYRAMID_ROWS * BRICK_W;
+  const pyramidUnitsH = PYRAMID_ROWS * BRICK_H;
+  // One scale for both axes keeps the bricks square-cornered, as in the classic pyramid.
+  const scale = (skyHeight * 0.66) / pyramidUnitsH;
+  const scaleX = scale;
+  const scaleY = scale;
 
-  const pyramidWidth = 64 * scaleX;
-  const pyramidHeight = 40 * scaleY;
+  const pyramidWidth = pyramidUnitsW * scaleX;
+  const pyramidHeight = pyramidUnitsH * scaleY;
   const pyramidLeft = Math.round((width - pyramidWidth) / 2);
   const pyramidTop = groundY - pyramidHeight;
 
@@ -69,10 +108,9 @@ export function FocusScene({
   const laidCount = bricksLaid(progress, TOTAL_BRICKS);
   const visibleBricks = ALL_BRICKS.slice(0, laidCount);
 
-  // Ground squares: 4×4 alternating tiles
-  const groundTileSize = 4;
+  // Ground tiles: one row of wide alternating squares
+  const groundTileSize = 8;
   const groundCols = Math.ceil(width / groundTileSize);
-  const groundRows = groundHeight / groundTileSize; // 3 rows
 
   return (
     <div
@@ -93,20 +131,14 @@ export function FocusScene({
         <PixelSprite sprite={CLOUD} palette={PALETTE} x={cloud1.x} y={cloud1.y} />
         <PixelSprite sprite={CLOUD} palette={PALETTE} x={cloud2.x} y={cloud2.y} />
 
-        {/* Ground strip */}
+        {/* Ground: a dark lip, a row of two-tone tiles, a dark base */}
         <g className="px-ground">
-          {Array.from({ length: groundRows }, (_, r) =>
-            Array.from({ length: groundCols }, (_, c) => (
-              <rect
-                key={`${c}-${r}`}
-                x={c * groundTileSize}
-                y={groundY + r * groundTileSize}
-                width={groundTileSize}
-                height={groundTileSize}
-                fill={(c + r) % 2 === 0 ? 'var(--px-ground)' : 'var(--px-ground-dark)'}
-              />
-            ))
-          )}
+          <rect x={0} y={groundY} width={width} height={groundHeight} fill="var(--px-ground-base, #1b130c)" />
+          <rect x={0} y={groundY} width={width} height={1.5} fill="var(--px-mortar)" />
+          {Array.from({ length: groundCols }, (_, c) => (
+            <rect key={c} x={c * groundTileSize} y={groundY + 1.5} width={groundTileSize} height={groundHeight - 4.5}
+              fill={c % 2 === 0 ? 'var(--px-ground)' : 'var(--px-ground-dark)'} />
+          ))}
         </g>
 
         {/* Trees (1.5× bigger) */}
@@ -123,12 +155,11 @@ export function FocusScene({
           transform={`translate(${pyramidLeft}, ${pyramidTop}) scale(${scaleX}, ${scaleY})`}
         >
           {visibleBricks.map((b) => (
-            <PixelSprite
+            <Brick
               key={`${b.col}-${b.row}`}
-              sprite={BRICK}
-              palette={PALETTE}
-              x={b.col * 8}
-              y={(PYRAMID_ROWS - 1 - b.row) * 5}
+              x={b.col * BRICK_W}
+              y={(PYRAMID_ROWS - 1 - b.row) * BRICK_H}
+              shade={BRICK_SHADES[(Math.round(b.col * 2) * 7 + b.row * 5) % BRICK_SHADES.length]}
             />
           ))}
         </g>
@@ -154,7 +185,7 @@ export function FocusScene({
       </div>
 
       {/* Fireworks celebration */}
-      {celebrating && <Fireworks />}
+      {bursting && <Fireworks />}
     </div>
   );
 }

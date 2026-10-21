@@ -61,6 +61,14 @@ const blurbKeys: Record<Trophy['family'], TranslationKey> = {
   ratings: 'progress.blurb.ratings', comebacks: 'progress.blurb.comebacks',
 };
 
+/** A 10×10 pixel cup, coloured by tier in progress.css. */
+function TrophyIcon({ tier }: { tier: string }) {
+  return <svg className="pg-trophy-icon" data-tier={tier} viewBox="0 0 10 10" shapeRendering="crispEdges" aria-hidden="true">
+    <path d="M1 1h8v1h1v2h-1v1h-1v1h-1v1h-1v1h2v1h-6v-1h2v-1h-1v-1h-1v-1h-1v-1h-1v-2h1z" fill="currentColor" />
+    <path d="M3 2h1v3h-1z" fill="#fff" opacity=".45" />
+  </svg>;
+}
+
 export function ProgressView() {
   const { t, locale } = useT();
   const entries = useFocusLog();
@@ -175,7 +183,7 @@ export function ProgressView() {
       <div className="pg-world fx-card"><WorldScene unlocked={data.unlocked.map((item) => item.trophy.id)} ariaLabel={t('progress.worldScene', { count: data.unlocked.length })} /><div className="pg-world-copy"><p className="fx-eyebrow">{t('progress.currentWorld')}</p><h3>{t(`progress.world.${worldStage(data.unlocked.length)}` as TranslationKey)}</h3><p>{t('progress.worldCopy')}</p><div className="pg-next"><p className="fx-eyebrow">{t('progress.nextUp')}</p>{data.upcoming.length ? <ul>{data.upcoming.map((item) => <li key={item.trophy.id}><TrophyName trophy={item.trophy} /> · {item.trophy.family === 'bigWeek' ? <Duration minutes={item.value} /> : number.format(item.value)} / {item.trophy.family === 'bigWeek' ? <Duration minutes={item.trophy.goal} /> : number.format(item.trophy.goal)}</li>)}</ul> : <p>{t('progress.allEarned')}</p>}</div></div></div>
       <div className="pg-trophies">{data.trophies.map((item) => <article className={`pg-trophy${item.unlocked ? ' is-unlocked' : ''}`} key={item.trophy.id}>
         <p className="pg-trophy-tier">{t(tierKeys[item.trophy.tier])} · {item.unlocked ? t('progress.unlocked') : t('progress.toGo', { percent: Math.round((1 - item.progress) * 100) })}</p>
-        <h3 className="pg-trophy-title" id={`pg-trophy-${item.trophy.id}`}><TrophyName trophy={item.trophy} /></h3><p className="pg-trophy-blurb">{item.trophy.id === 'bigWeek-2400' ? t('progress.blurb.fortyWeek') : t(blurbKeys[item.trophy.family])}</p>
+        <h3 className="pg-trophy-title" id={`pg-trophy-${item.trophy.id}`}><TrophyIcon tier={item.trophy.tier} /><TrophyName trophy={item.trophy} /></h3><p className="pg-trophy-blurb">{item.trophy.id === 'bigWeek-2400' ? t('progress.blurb.fortyWeek') : t(blurbKeys[item.trophy.family])}</p>
         <div className="pg-trophy-bar" role="progressbar" aria-labelledby={`pg-trophy-${item.trophy.id}`} aria-valuenow={item.value} aria-valuemin={0} aria-valuemax={item.trophy.goal}><span style={{ width: `${item.progress * 100}%` }} /></div><p className="pg-trophy-count">{item.trophy.family === 'bigWeek' ? <Duration minutes={item.value} /> : number.format(item.value)} / {item.trophy.family === 'bigWeek' ? <Duration minutes={item.trophy.goal} /> : number.format(item.trophy.goal)}</p>
       </article>)}</div>
     </section>

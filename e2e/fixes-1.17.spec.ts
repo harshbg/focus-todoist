@@ -267,6 +267,7 @@ bare('#128 with site storage blocked, the connect screen appears and the demo st
     localStorage.setItem('skipSetup', '1');
     // The demo has no Work project, so Personal mode is the one that lists its tasks.
     localStorage.setItem('tde.mode', 'personal');
+      localStorage.setItem('tde.demoWork', 'off');
     Object.defineProperty(window, 'sessionStorage', {
       get() { throw new DOMException('The operation is insecure.', 'SecurityError'); },
     });
@@ -292,6 +293,7 @@ bare('#128 a crash while drawing shows a message and a Reload button, not a whit
     localStorage.setItem('skipSetup', '1');
     // The demo has no Work project, so Personal mode is the one that lists its tasks.
     localStorage.setItem('tde.mode', 'personal');
+      localStorage.setItem('tde.demoWork', 'off');
   });
   await page.goto('/');
   await page.getByRole('button', { name: 'Explore with demo data' }).click();

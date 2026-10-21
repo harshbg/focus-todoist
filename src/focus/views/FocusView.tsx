@@ -1,6 +1,6 @@
 import '@/focus/fonts';
 import { markedWorkProjects } from '@/focus/scope';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { useConfirm } from '@/components/overlays/Confirm';
 import { toApiDate } from '@/domain/dates';
@@ -22,6 +22,7 @@ import { useFocusLog, useFocusNow, useFocusPreferences, useFocusStore } from '..
 import { entriesForMode } from '../domain/modeEntries';
 import { settingsFor } from '../domain/settings';
 import { TaskSearch } from './TaskSearch';
+import { shortDuration } from '../domain/format';
 import './focus.css';
 
 const QUEUE_KEY = 'tde.focus.queue';
@@ -114,6 +115,13 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   const [pinned, setPinned] = useState(readQueue);
   const [manualOpen, setManualOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  // "Preview the fireworks" replays the celebration for a moment.
+  const [preview, setPreview] = useState(false);
+  useEffect(() => {
+    if (!preview) return;
+    const timer = window.setTimeout(() => setPreview(false), 5000);
+    return () => window.clearTimeout(timer);
+  }, [preview]);
   const modeEntries = useMemo(() => entriesForMode(logs, focusMode), [logs, focusMode]);
   const settings = useMemo(() => settingsFor(prefs, focusMode), [prefs, focusMode]);
   const progress = useMemo(() => todayProgress(modeEntries, settings, new Date(now)), [modeEntries, settings, now]);
@@ -208,42 +216,52 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
     </header>
 
     <div className="fx-grid"><main className="fx-main">
-      <section className="fx-card">
+      <section className="fx-card fx-timer">
         <div className="fx-seg">
           <button aria-pressed={mode === 'focus'} disabled={Boolean(active)} onClick={() => setMode('focus')}>{t('focus.focus')}</button>
           <button aria-pressed={mode === 'unwind'} disabled={Boolean(active)} onClick={() => setMode('unwind')}>{t('focus.unwind')}</button>
         </div>
         <p className="fx-eyebrow">{t('focus.eyebrow')}</p>
-        <h2 className="fx-h2">{active?.mode === 'unwind' || (!active && mode === 'unwind') ? t('focus.unwind') : t('focus.focus')}</h2>
-        <div className="fx-chips">{prefs.blockLengths.map((minutes) => <button key={minutes} className="fx-chip" aria-pressed={length === minutes} disabled={Boolean(active)} onClick={() => setLength(minutes)}>{formatDuration(minutes, locale)}</button>)}</div>
-        <FocusScene progress={active ? elapsed / (active.plannedMin * 60_000) : justLogged ? 1 : 0}
-          time={formatClock(remaining)} celebrating={Boolean(justLogged)}
-          quest={{ label: t('focus.dailyQuest'), minutesLabel: t('focus.questMinutes', { minutes: progress.minutes, target: progress.target }), pips: progress.pips }}
+        {!justLogged && <div className="fx-chips">{prefs.blockLengths.map((minutes) => <button key={minutes} className="fx-chip" aria-pressed={length === minutes} disabled={Boolean(active)} onClick={() => setLength(minutes)}>{formatDuration(minutes, locale)}</button>)}</div>}
+        <FocusScene progress={active ? elapsed / (active.plannedMin * 60_000) : justLogged || preview ? 1 : 0}
+          time={formatClock(remaining)} celebrating={Boolean(justLogged) || preview}
+          quest={{ label: t('focus.dailyQuest'), minutesLabel: t('focus.questMinutes', { minutes: shortDuration(progress.minutes), target: shortDuration(progress.target) }), pips: progress.pips }}
           ariaLabel={t('focus.sceneLabel', { time: formatClock(remaining) })} />
-        <div className="fx-actions">
-          {!active && <button className="fx-btn fx-btn--primary" disabled={mode === 'focus' && !selected && !query.trim()} onClick={() => startFor(selected, query.trim(), mode, mode === 'unwind' ? prefs.breakMin : length)}>{t('focus.start')}</button>}
-          {active && (active.pausedAt === null
+        {/* Blocks start from the queue; here only the running block's controls. */}
+        {active && <div className="fx-actions fx-center">
+          {active.pausedAt === null
             ? <button className="fx-btn fx-btn--secondary" onClick={pause}>{t('focus.pause')}</button>
-            : <button className="fx-btn fx-btn--primary" onClick={resume}>{t('focus.resume')}</button>)}
-          {active && <button className="fx-btn fx-btn--ghost" onClick={() => void stop()}>{t('focus.stop')}</button>}
-        </div>
+            : <button className="fx-btn fx-btn--primary" onClick={resume}>{t('focus.resume')}</button>}
+          <button className="fx-btn fx-btn--ghost" onClick={() => void stop()}>{t('focus.stop')}</button>
+        </div>}
+        {!active && mode === 'unwind' && <div className="fx-actions fx-center">
+          <button className="fx-btn fx-btn--primary" onClick={() => startFor(null, '', 'unwind', prefs.breakMin)}>{t('focus.start')}</button>
+        </div>}
         {justLogged && <div className="fx-complete">
-          <p className="fx-eyebrow">✓ {t('focus.blockLogged')}</p>
-          <h3>{justLogged.taskId && useStore.getState().snapshot.items[justLogged.taskId]
-            ? <button onClick={() => onOpen(justLogged.taskId!)}>{justLogged.title}</button> : justLogged.title}</h3>
-          <Rating value={justLogged.rating} onChange={(value) => void rate(value)} />
-          <div className="fx-actions"><span>{t('focus.continueSame')}</span>
-            {prefs.blockLengths.map((minutes) => <button key={minutes} className="fx-btn fx-btn--secondary" onClick={() => start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: justLogged.title, lane: justLogged.lane, plannedMin: minutes })}>{formatDuration(minutes, locale)}</button>)}
+          <p className="fx-complete-lead">{t('focus.completeLead')}</p>
+          <p className="fx-complete-title">✓ {t('focus.blockLogged')} · {justLogged.taskId && useStore.getState().snapshot.items[justLogged.taskId]
+            ? <button onClick={() => onOpen(justLogged.taskId!)}>{justLogged.title}</button> : justLogged.title}</p>
+          <div className="fx-quality">
+            <span className="fx-label">{t('focus.quality')}</span><span className="fx-label fx-muted">{t('focus.optional')}</span>
+            <Rating value={justLogged.rating} onChange={(value) => void rate(value)} />
+            <span className="fx-quality-ask">{t('focus.howFelt')}</span>
           </div>
-          <div className="fx-actions"><button className="fx-btn fx-btn--ghost" onClick={() => { dismiss(); setSelectedId(null); setQuery(''); setLane(null); }}>{t('focus.newTask')}</button>
+          <p className="fx-label fx-center">{t('focus.continueSame')}</p>
+          <div className="fx-actions fx-center">
+            {prefs.blockLengths.map((minutes) => <button key={minutes} className="fx-btn fx-btn--primary" onClick={() => start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: justLogged.title, lane: justLogged.lane, plannedMin: minutes })}>{formatDuration(minutes, locale)}</button>)}
+            <button className="fx-btn fx-btn--secondary" onClick={() => { dismiss(); setSelectedId(null); setQuery(''); setLane(null); }}>{t('focus.newTask')}</button>
             <button className="fx-btn fx-btn--secondary" onClick={() => start({ mode: 'unwind', focusMode, taskId: null, title: t('focus.unwind'), lane: null, plannedMin: prefs.breakMin })}>{t('focus.takeBreak', { minutes: prefs.breakMin })}</button>
           </div>
         </div>}
-        <div className="fx-hint"><button className="fx-btn fx-btn--ghost" disabled>{t('focus.openSidecar')}</button><span>· {t('focus.hint')}</span></div>
+        <div className="fx-hint">
+          <button className="fx-link" disabled>↗ {t('focus.openSidecar')}</button>
+          <button className="fx-link" onClick={() => setPreview(true)}>✦ {t('focus.previewFireworks')}</button>
+          <span>{t('focus.hint')}</span>
+        </div>
       </section>
     </main><aside className="fx-rail"><section className="fx-card">
       <p className="fx-eyebrow">{t('focus.queueEyebrow')}</p><h2 className="fx-h2">{t('focus.chooseNext')}</h2>
-      <label className="fx-label">{t('focus.addWork')}</label>
+      <label className="fx-label">{t('focus.task')}</label>
       <TaskSearch items={items} value={query} selectedId={selectedId} placeholder={t('focus.addWork')}
         onChange={(value) => { setQuery(value); setSelectedId(null); }} onSelect={choose}
         onCreate={() => { void create(); }} />
@@ -251,36 +269,46 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
       <div className="fx-chips">{prefs.blockLengths.map((minutes) => <button key={minutes} className="fx-chip" aria-pressed={length === minutes} onClick={() => setEstimate(minutes)}>{formatDuration(minutes, locale)}</button>)}</div>
       <span className="fx-label">{t('focus.lane')}</span>
       <div className="fx-chips">{settings.lanes.map((name) => <button key={name} className="fx-chip" aria-pressed={chosenLane === name} onClick={() => setLaneForTask(name)}>{name}</button>)}</div>
-      <div className="fx-actions"><button className="fx-btn fx-btn--primary" disabled={busy || Boolean(active) || (!selected && !query.trim())} onClick={() => void startTask()}>{t('focus.startTask')}</button>
-        <button className="fx-btn fx-btn--secondary" disabled={busy || (!selected && !query.trim())} onClick={() => void addToQueue()}>{t('focus.addQueue')}</button></div>
-      <div className="fx-section-head"><h3>{t('focus.ready')}</h3><span className="fx-badge">{queue.length}</span></div>
+      <div className="fx-actions"><button className="fx-btn fx-btn--primary" disabled={busy || Boolean(active) || (!selected && !query.trim())} onClick={() => void startTask()}>▶ {t('focus.startTask')}</button>
+        <button className="fx-btn fx-btn--outline" disabled={busy || (!selected && !query.trim())} onClick={() => void addToQueue()}>{t('focus.addQueue')}</button></div>
+      <div className="fx-ready"><span className="fx-label">{t('focus.ready')}</span><span className="fx-badge">{queue.length}</span></div>
       <ul className="fx-queue">{queue.map((item) => {
         const taskLane = settings.lanes.find((name) => item.labels.some((label) => label.toLowerCase() === name.toLowerCase()));
-        return <li key={item.id} className="fx-queue-item"><button className="fx-queue-title" onClick={() => onOpen(item.id)}>{item.content}</button>
-          <span className="fx-queue-meta">{[estimateOf(item) !== null ? formatDuration(estimateOf(item)!, locale) : null, taskLane].filter(Boolean).join(' · ')}</span>
+        return <li key={item.id} className="fx-queue-item"><i className="fx-mark" aria-hidden="true" />
+          <div className="fx-queue-text"><button className="fx-queue-title" onClick={() => onOpen(item.id)}>{item.content}</button>
+            <span className="fx-queue-meta">{[estimateOf(item) !== null ? formatDuration(estimateOf(item)!, locale) : null, taskLane].filter(Boolean).join(' · ')}</span></div>
           <button className="fx-icon-btn" disabled={Boolean(active)} aria-label={t('focus.startTaskNamed', { title: item.content })} onClick={() => startFor(item, item.content, 'focus', length)}>▶</button>
           {pinned.includes(item.id) && <button className="fx-icon-btn" aria-label={t('focus.removeQueue', { title: item.content })} onClick={() => saveQueue(pinned.filter((id) => id !== item.id))}>×</button>}
         </li>;
       })}</ul>
     </section></aside></div>
 
-    {active && <section className="fx-current fx-card"><span className="fx-eyebrow">{t('focus.currentFocus')}</span>
-      {active.taskId ? <button onClick={() => onOpen(active.taskId!)}>{active.title}</button> : <strong>{active.title}</strong>}
-      {active.lane && <span className="fx-chip">{active.lane}</span>}
-    </section>}
+    <section className="fx-current fx-card">
+      <div><p className="fx-eyebrow">{t('focus.currentFocus')}</p><h2 className="fx-h2">{t('focus.nameWork')}</h2></div>
+      <div className="fx-current-field"><span className="fx-label">{t('focus.task')}</span>
+        {active?.taskId || selected
+          ? <button className="fx-current-title" onClick={() => onOpen((active?.taskId ?? selected?.id)!)}>{active?.title ?? selected?.content}</button>
+          : <span className="fx-current-title fx-muted">{active?.title ?? (query.trim() || t('focus.taskPlaceholder'))}</span>}
+      </div>
+      <div className="fx-current-field"><span className="fx-label">{t('focus.lane')}</span>
+        <div className="fx-chips">{settings.lanes.map((name) => <button key={name} className="fx-chip" disabled={Boolean(active)}
+          aria-pressed={(active ? active.lane : chosenLane) === name} onClick={() => setLaneForTask(name)}>{name}</button>)}</div>
+      </div>
+    </section>
 
     <section className="fx-section"><div className="fx-section-head"><div><p className="fx-eyebrow">{t('focus.attentionEyebrow')}</p><h2 className="fx-h2">{t('focus.attentionTrail')}</h2></div>
-      <button className="fx-btn fx-btn--secondary" onClick={() => setManualOpen(true)}>{t('focus.logPast')}</button></div>
+      <button className="fx-btn fx-btn--small" onClick={() => setManualOpen(true)}>{t('focus.logPast')}</button></div>
       <ul className="fx-trail">{recent.map((entry) => <li key={entryKey(entry)} className="fx-trail-item">
-        {entry.taskId && useStore.getState().snapshot.items[entry.taskId]
+        <i className="fx-mark" aria-hidden="true" />
+        <div className="fx-trail-text">{entry.taskId && useStore.getState().snapshot.items[entry.taskId]
           ? <button className="fx-trail-title" onClick={() => onOpen(entry.taskId!)}>{entry.title}</button>
           : <strong className="fx-trail-title">{entry.title}</strong>}
-        <span className="fx-trail-meta">{[entry.lane, new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(entry.start))].filter(Boolean).join(' · ')}</span>
+        <span className="fx-trail-meta">{[entry.lane, new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(entry.start))].filter(Boolean).join(' · ')}</span></div>
         <span className="fx-trail-mins">{formatDuration(entry.minutes, locale)}{entry.rating ? ` · ${entry.rating}★` : ''}</span>
-        <Rating value={entry.rating} onChange={(value) => void editEntry(entryKey(entry), { rating: value })} />
+        <div className="fx-trail-tools"><Rating value={entry.rating} onChange={(value) => void editEntry(entryKey(entry), { rating: value })} />
         <button className="fx-icon-btn" aria-label={t('focus.deleteEntry', { title: entry.title })} onClick={async () => {
           if (await confirm({ title: t('focus.deletePrompt'), destructive: true })) void deleteEntry(entryKey(entry));
-        }}>×</button>
+        }}>×</button></div>
       </li>)}</ul>
     </section>
     {manualOpen && <ManualDialog items={items} lanes={settings.lanes} focusMode={focusMode} onClose={() => setManualOpen(false)} onSave={logManual} />}

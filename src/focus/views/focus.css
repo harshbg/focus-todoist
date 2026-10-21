@@ -695,44 +695,7 @@
   flex-shrink: 0;
 }
 
-/* 16. Current Focus Strip */
-.focus-theme .fx-current {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 14px 20px;
-  margin: 28px 0;
-  border-left: 4px solid var(--fx-rust);
-  flex-wrap: wrap;
-}
-
-.focus-theme .fx-current .fx-eyebrow {
-  margin: 0;
-  flex-shrink: 0;
-}
-
-.focus-theme .fx-current button,
-.focus-theme .fx-current strong {
-  appearance: none;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--fx-ink);
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  text-align: left;
-}
-
-.focus-theme .fx-current button:hover {
-  text-decoration: underline;
-}
-
-.focus-theme .fx-current .fx-chip {
-  cursor: default;
-  margin: 0;
-}
+/* 16. Current Focus band: see the fidelity section at the end. */
 
 /* 17. Page Sections & Section Head */
 .focus-theme .fx-section {
@@ -982,3 +945,110 @@
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ==========================================================================
+   Fidelity pass (docs/focus/FIDELITY.md): closer to the prototype.
+   ========================================================================== */
+.focus-theme { --fx-surface: #fbfaf7; --fx-sans: inherit; }
+:root[data-theme="dark"] .focus-theme { --fx-surface: #24221e; --fx-card: #2b2823; }
+
+/* Section eyebrows are the sans in bold; small field labels stay mono. */
+.focus-theme .fx-eyebrow {
+  font-family: var(--fx-sans); font-weight: 700; font-size: 11px;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--fx-rust);
+}
+.focus-theme .fx-label { font-family: var(--fx-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--fx-ink); }
+.focus-theme .fx-muted { color: var(--fx-muted); }
+.focus-theme .fx-center { text-align: center; justify-content: center; }
+
+/* 1–2. Timer card: one centred column on the lightest surface. */
+.focus-theme .fx-timer {
+  background: var(--fx-surface); display: flex; flex-direction: column;
+  align-items: center; gap: 14px; text-align: center;
+}
+.focus-theme .fx-timer > .fx-eyebrow { margin: 0; }
+.focus-theme .fx-timer .px-scene { width: 100%; }
+.focus-theme .fx-rail .fx-card { background: var(--fx-card); }
+
+/* 6. Block complete. */
+.focus-theme .fx-complete { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; border: 0; background: none; padding: 4px 0 0; }
+.focus-theme .fx-complete-lead { margin: 0; color: var(--fx-muted); font-size: 14px; }
+.focus-theme .fx-complete-title { margin: 0; font-size: 13px; color: var(--fx-ink); }
+.focus-theme .fx-complete-title button { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
+.focus-theme .fx-quality {
+  display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 10px;
+  border: 1.5px dashed var(--fx-cream-border); background: color-mix(in srgb, var(--fx-cream) 45%, transparent);
+  padding: 12px 16px; width: min(560px, 100%); box-sizing: border-box;
+}
+.focus-theme .fx-quality .fx-stars { display: inline-flex; gap: 4px; }
+.focus-theme .fx-quality .fx-star {
+  width: 26px; height: 26px; border: 1px solid var(--fx-hairline); background: var(--fx-surface);
+  color: var(--fx-hairline); font-size: 13px; line-height: 1; padding: 0; cursor: pointer;
+}
+.focus-theme .fx-quality .fx-star[aria-pressed="true"] { color: var(--fx-rust); border-color: var(--fx-rust); }
+.focus-theme .fx-quality-ask { font-size: 13px; color: var(--fx-muted); }
+.focus-theme .fx-hint { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; font-size: 12px; color: var(--fx-muted); }
+.focus-theme .fx-link { background: none; border: 0; padding: 0; font: inherit; color: var(--fx-muted); cursor: pointer; }
+.focus-theme .fx-link:hover:not(:disabled) { color: var(--fx-ink); text-decoration: underline; }
+.focus-theme .fx-link:disabled { opacity: .55; cursor: default; }
+
+/* 7–9. Queue rail field and buttons. */
+.focus-theme .fx-rail .fx-field input, .focus-theme .fx-rail input[type="text"], .focus-theme .fx-rail input:not([type]) {
+  border: 0; border-bottom: 1px solid var(--fx-hairline); border-radius: 0;
+  background: transparent; font-size: 19px; padding: 8px 0; color: var(--fx-ink);
+}
+.focus-theme .fx-btn--primary { background: var(--fx-rust); color: #fff; border-color: var(--fx-rust); }
+.focus-theme .fx-btn--primary:hover:not(:disabled) { background: var(--fx-rust-hover); }
+.focus-theme .fx-btn--primary:disabled { opacity: .45; background: var(--fx-rust); color: #fff; }
+.focus-theme .fx-rail .fx-actions .fx-btn--primary { flex: 1; }
+.focus-theme .fx-btn--outline { background: transparent; color: var(--fx-ink); border: 1px solid var(--fx-hairline); }
+.focus-theme .fx-btn--small { font-family: var(--fx-mono); font-size: 11px; letter-spacing: .06em; padding: 6px 12px; background: transparent; border: 1px solid var(--fx-hairline); color: var(--fx-ink); }
+
+/* 10. Ready when you are. */
+.focus-theme .fx-ready { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--fx-hairline); }
+.focus-theme .fx-badge { background: var(--fx-navy); color: #fff; border-radius: 0; min-width: 20px; height: 20px; font-family: var(--fx-mono); font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
+.focus-theme .fx-queue { list-style: none; margin: 6px 0 0; padding: 0; }
+.focus-theme .fx-queue-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px 2px;
+  border: 0; border-bottom: 1px solid var(--fx-hairline); background: none; border-radius: 0;
+}
+.focus-theme .fx-queue-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.focus-theme .fx-queue-title { font-weight: 600; text-align: left; background: none; border: 0; padding: 0; color: var(--fx-ink); cursor: pointer; font-size: 14px; }
+.focus-theme .fx-queue-meta { font-size: 12px; color: var(--fx-muted); }
+.focus-theme .fx-mark { width: 9px; height: 9px; flex: none; background: var(--fx-rust); box-shadow: 2px 2px 0 color-mix(in srgb, var(--fx-rust) 40%, transparent); }
+.focus-theme .fx-queue-item .fx-icon-btn {
+  width: 30px; height: 30px; border: 1px solid var(--fx-hairline); background: var(--fx-surface);
+  border-radius: 0; color: var(--fx-ink); cursor: pointer;
+}
+.focus-theme .fx-queue-item .fx-icon-btn + .fx-icon-btn { border: 0; background: none; color: var(--fx-muted); width: 22px; }
+
+/* 11. Current focus band. */
+.focus-theme .fx-current {
+  border-left: 4px solid var(--fx-rust);
+  display: grid; grid-template-columns: minmax(180px, 1fr) minmax(220px, 1.4fr) minmax(260px, 2fr);
+  gap: 24px; align-items: center; margin-top: 24px; padding: 22px 28px;
+}
+.focus-theme .fx-current .fx-h2 { font-size: 30px; margin: 4px 0 0; }
+.focus-theme .fx-current-field { display: flex; flex-direction: column; gap: 8px; }
+.focus-theme .fx-current-title {
+  font-size: 15px; padding: 10px 12px; border: 1px solid var(--fx-hairline); background: var(--fx-surface);
+  text-align: left; color: var(--fx-ink); cursor: pointer;
+}
+@media (max-width: 900px) { .focus-theme .fx-current { grid-template-columns: 1fr; } }
+
+/* 12–13. Attention trail. */
+.focus-theme .fx-trail { list-style: none; padding: 0; margin: 0; background: var(--fx-surface); border: 1px solid var(--fx-hairline); border-radius: 6px; overflow: hidden; }
+.focus-theme .fx-trail-item {
+  display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+  border: 0; border-bottom: 1px solid var(--fx-hairline); background: none; border-radius: 0; margin: 0;
+}
+.focus-theme .fx-trail-item:last-child { border-bottom: 0; }
+.focus-theme .fx-trail-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.focus-theme .fx-trail-title { font-weight: 600; font-size: 14px; text-align: left; background: none; border: 0; padding: 0; color: var(--fx-ink); cursor: pointer; }
+.focus-theme .fx-trail-meta { font-size: 12px; color: var(--fx-muted); }
+.focus-theme .fx-trail-mins { font-family: var(--fx-mono); font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+.focus-theme .fx-trail-tools { display: flex; align-items: center; gap: 6px; opacity: 0; transition: opacity .15s; }
+.focus-theme .fx-trail-item:hover .fx-trail-tools, .focus-theme .fx-trail-item:focus-within .fx-trail-tools { opacity: 1; }
+@media (hover: none) { .focus-theme .fx-trail-tools { opacity: 1; } }
+.focus-theme .fx-trail-tools .fx-star { background: none; border: 0; padding: 0 1px; color: var(--fx-hairline); cursor: pointer; font-size: 13px; }
+.focus-theme .fx-trail-tools .fx-star[aria-pressed="true"] { color: var(--fx-rust); }
