@@ -1,4 +1,5 @@
 import { uploadAttachment } from '@/api/uploads';
+import { useMarkedWorkProjects } from '@/focus/scope';
 import type { NoteAttachment } from '@/domain/types';
 import { AssigneeField } from '../AssigneeField';
 import { canAssign } from '@/domain/assignees';
@@ -64,7 +65,7 @@ export function Composer({
   const naturalDates = useStore((s) => s.prefs.naturalDates);
   const dateFormat = useStore((s) => s.prefs.dateFormat);
   const mode = useMode();
-  const marked = useStore((s) => s.prefs.focus.workProjectIds);
+  const marked = useMarkedWorkProjects();
 
   /* Where a task goes when nothing else says: the account's Inbox, however it is found. */
   const inboxId = snapshot.user?.inbox_project_id

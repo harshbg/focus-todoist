@@ -1,4 +1,5 @@
 import { assigneeItems, matchesAssignee } from '@/domain/assignees';
+import { markedWorkProjects } from '@/focus/scope';
 import { viewPrefs } from '@/store/prefs';
 import { useEffect, useMemo } from 'react';
 import { useStore } from '@/store/store';
@@ -15,6 +16,7 @@ export function useData(viewKey?: string) {
   const prefs = useStore((s) => s.prefs);
   const storage = useStore((s) => s.prefs.estimateStorage);
   const snapshot = useStore((s) => s.snapshot);
+  const demo = useStore((s) => s.demo);
   const mode = useMode();
 
   const selected = useStore((state) => state.selection);
@@ -30,7 +32,7 @@ export function useData(viewKey?: string) {
   return useMemo(() => {
     void storage; // Changing precedence invalidates derived totals and groups.
     // Work / Personal mode (SPEC §10.2): task lists follow the mode before view filters.
-    const inMode = scopeItems(snapshot.items, mode, workProjectIds(snapshot, prefs.focus.workProjectIds));
+    const inMode = scopeItems(snapshot.items, mode, workProjectIds(snapshot, markedWorkProjects({ demo, prefs })));
     const selection = viewKey ? viewPrefs(prefs, viewKey).filters.assignees : null;
     const scoped = selection == null ? inMode : assigneeItems({ ...snapshot, items: inMode }, selection);
     const workspaces = viewKey ? viewPrefs(prefs, viewKey).filters.workspaces : [];
@@ -40,5 +42,5 @@ export function useData(viewKey?: string) {
     const items = openItems(visibleSnapshot);
     const byId = (id: string): Item | undefined => snapshot.items[id];
     return { snapshot, items, childrenOf, byId, childIndex: index };
-  }, [snapshot, storage, prefs, viewKey, mode]);
+  }, [snapshot, storage, prefs, demo, viewKey, mode]);
 }

@@ -1,8 +1,29 @@
 import { useMemo } from 'react';
 import type { Item, Snapshot } from '@/domain/types';
-import { useStore } from '@/store/store';
+import { useStore, type AppState } from '@/store/store';
 import { scopeSnapshot } from './domain/mode';
 import { useMode } from './mode-store';
+
+/** The demo's Website project, which plays the part of a Work project there. */
+const DEMO_WORK_PROJECT = 'site';
+const NO_EXTRA: readonly string[] = [];
+
+/**
+ * The projects marked as Work. The demo has no project named Work, so its
+ * Website project counts as one there — only for the demo, never written
+ * into the account's preferences.
+ */
+export function markedWorkProjects(state: Pick<AppState, 'demo' | 'prefs'>): readonly string[] {
+  const marked = state.prefs.focus.workProjectIds;
+  return state.demo ? [...marked, DEMO_WORK_PROJECT] : marked.length ? marked : NO_EXTRA;
+}
+
+/** markedWorkProjects for components, stable between renders. */
+export function useMarkedWorkProjects(): readonly string[] {
+  const demo = useStore((state) => state.demo);
+  const marked = useStore((state) => state.prefs.focus.workProjectIds);
+  return useMemo(() => markedWorkProjects({ demo, prefs: { focus: { workProjectIds: marked } } } as Pick<AppState, 'demo' | 'prefs'>), [demo, marked]);
+}
 
 /**
  * Returns the Todoist snapshot scoped to the current focus mode (Work or Personal).
@@ -14,7 +35,7 @@ import { useMode } from './mode-store';
  */
 export function useScopedSnapshot(): Snapshot {
   const snapshot = useStore((state) => state.snapshot);
-  const workProjectIds = useStore((state) => state.prefs.focus.workProjectIds);
+  const workProjectIds = useMarkedWorkProjects();
   const mode = useMode();
 
   return useMemo(

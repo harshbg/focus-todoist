@@ -92,6 +92,8 @@ export function Sidebar({
   }, []);
   const { t } = useT();
   const { snapshot, items } = useData();
+  // Focus mode (SPEC §10.2): counts, favourites and the project tree follow Work / Personal.
+  const scopedSnapshot = useScopedSnapshot();
   const prefs = useStore((state) => state.prefs);
   const sheet = variant === 'sheet';
   const collapsed = useStore((s) => s.prefs.sidebarCollapsed) && !sheet;
@@ -149,7 +151,7 @@ export function Sidebar({
     const now = new Date();
     const scope = (key: string) => {
       const filters = viewPrefs(prefs, key).filters;
-      const scoped = { ...snapshot, items: assigneeItems(snapshot, filters.assignees) };
+      const scoped = { ...scopedSnapshot, items: assigneeItems(scopedSnapshot, filters.assignees) };
       const list = ['today', 'week', 'upcoming'].includes(key) ? datedRoots(openItems(scoped), scoped) : rootItems(openItems(scoped));
       return applyFilters(list, ['today', 'week', 'upcoming'].includes(key) ? { ...filters, includeScheduled: true } : filters, snapshot, makeChildrenOf(childIndex(scoped)));
     };
@@ -169,21 +171,21 @@ export function Sidebar({
       someday: somedayItems(scope('someday')).length,
       byProject: projectCounts(roots),
     };
-  }, [roots, inboxId, snapshot, prefs]);
+  }, [roots, inboxId, snapshot, scopedSnapshot, prefs]);
 
   /** Favourites are Todoist's own star, not a separate list this app keeps. */
   const favourites = useMemo(() => {
     const labels = Object.values(snapshot.labels)
       .filter((l) => l.is_favorite && !l.name.startsWith('est-'))
       .sort(byLabelOrder);
-    const projects = Object.values(snapshot.projects)
+    const projects = Object.values(scopedSnapshot.projects)
       .filter((p) => p.is_favorite && !p.is_archived && !p.is_deleted)
       .sort(byChildOrder);
     const filters = Object.values(snapshot.filters ?? {})
       .filter((f) => f.is_favorite && !f.is_deleted)
       .sort(byLabelOrder);
     return { labels, projects, filters };
-  }, [snapshot.labels, snapshot.projects, snapshot.filters]);
+  }, [snapshot.labels, scopedSnapshot.projects, snapshot.filters]);
   const filterCounts = useFilterCounts(favourites.filters);
 
   /* A menu that only closes by pressing its own button is a menu that follows
@@ -207,7 +209,6 @@ export function Sidebar({
   const toggleGroup = (key: string) =>
     setOpenGroups((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
 
-  const scopedSnapshot = useScopedSnapshot();
   const workspaceOrder = useStore((s) => s.prefs.workspaceOrder);
   // Focus mode (SPEC §10.2): project tree only shows projects allowed for the current mode.
   const workspaces = useMemo(() => projectTree(scopedSnapshot, workspaceOrder), [scopedSnapshot, workspaceOrder]);

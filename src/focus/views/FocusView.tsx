@@ -1,4 +1,5 @@
 import '@/focus/fonts';
+import { markedWorkProjects } from '@/focus/scope';
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { useConfirm } from '@/components/overlays/Confirm';
@@ -136,7 +137,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   };
   const create = async (): Promise<Item | null> => {
     if (!query.trim()) return null;
-    const placement = newTaskPlacement(snapshot, focusMode, prefs.workProjectIds, null);
+    const placement = newTaskPlacement(snapshot, focusMode, markedWorkProjects(useStore.getState()), null);
     const id = await createTaskId({
       content: query.trim(),
       project_id: placement.projectId,
