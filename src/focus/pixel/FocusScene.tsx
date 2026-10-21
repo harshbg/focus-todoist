@@ -154,6 +154,12 @@ export function FocusScene({
           className="px-pyramid"
           transform={`translate(${pyramidLeft}, ${pyramidTop}) scale(${scaleX}, ${scaleY})`}
         >
+          {/* Bricks still to lay wait as faint outlines, so the whole pyramid is in view from the start. */}
+          {ALL_BRICKS.slice(laidCount).map((b) => (
+            <rect key={`ghost-${b.col}-${b.row}`} className="px-ghost-brick"
+              x={b.col * BRICK_W + 1} y={(PYRAMID_ROWS - 1 - b.row) * BRICK_H + 1} width={BRICK_W - 2} height={BRICK_H - 2}
+              fill="var(--px-ghost-fill, rgba(255,255,255,.28))" stroke="var(--px-ghost-line, rgba(30,42,54,.28))" strokeWidth={0.8} />
+          ))}
           {visibleBricks.map((b) => (
             <Brick
               key={`${b.col}-${b.row}`}
