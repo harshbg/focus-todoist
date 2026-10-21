@@ -32,6 +32,7 @@ import { applyFilters, pullQuick, rootItems, sortItems } from '@/store/selectors
 import { summariseLoad } from '@/domain/load';
 import { readProjectIcon, stripProjectIcon, withProjectIcon } from '@/domain/projectIcons';
 import { bySectionOrder } from '@/domain/orderKey';
+import { useScopedItems } from '@/focus/scope';
 
 interface ProjectViewProps {
   projectId: string;
@@ -83,6 +84,7 @@ function ProjectBody({
   useProjectPeople(projectId);
   const timePill = useTimePill();
   const { snapshot, items, childrenOf } = useData(`project:${projectId}`);
+  const scopedItems = useScopedItems();
   const prefs = useStore((s) => s.prefs);
   const updateProjectFields = useStore((s) => s.updateProjectFields);
   const updateSectionFields = useStore((s) => s.updateSectionFields);
@@ -169,13 +171,14 @@ function ProjectBody({
   const pool0 = useMemo(() => {
     const openRoots = rootItems(items).filter((i) => i.project_id === projectId);
     if (!current.filters.showCompleted) return openRoots;
-    const ticked = Object.values(snapshot.items).filter(
+    // Work / Personal mode (SPEC §10.2): ticked tasks follow the mode.
+    const ticked = Object.values(scopedItems).filter(
       (i) => i.project_id === projectId && i.checked && !i.is_deleted && !i.parent_id,
     );
     /* What the sync still holds wins over the history's copy of the same task. */
     const known = new Set([...openRoots, ...ticked].map((i) => i.id));
     return [...openRoots, ...ticked, ...history.filter((i) => !known.has(i.id) && !snapshot.items[i.id])];
-  }, [items, projectId, current.filters.showCompleted, snapshot, history]);
+  }, [items, projectId, current.filters.showCompleted, snapshot, scopedItems, history]);
   const scoped = useMemo(
     () => applyFilters(pool0, current.filters, snapshot, childrenOf),
     [pool0, current.filters, snapshot, childrenOf],

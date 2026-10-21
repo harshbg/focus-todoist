@@ -12,6 +12,9 @@ import { nextUp, trophyProgress } from '@/focus/domain/trophies';
 import type { Trophy } from '@/focus/domain/trophies';
 import type { ExemptKind } from '@/focus/domain/types';
 import { setFocusPreferences, useFocusLog, useFocusPreferences } from '@/focus/store';
+import { useMode } from '@/focus/mode-store';
+import { entriesForMode } from '@/focus/domain/modeEntries';
+import { settingsFor } from '@/focus/domain/settings';
 import { FootprintChart } from '@/focus/pixel/FootprintChart';
 import { TempleScene } from '@/focus/pixel/TempleScene';
 import { WorldScene } from '@/focus/pixel/WorldScene';
@@ -62,40 +65,43 @@ export function ProgressView() {
   const { t, locale } = useT();
   const entries = useFocusLog();
   const prefs = useFocusPreferences();
+  const mode = useMode();
+  const modeEntries = useMemo(() => entriesForMode(entries, mode), [entries, mode]);
+  const settings = useMemo(() => settingsFor(prefs, mode), [prefs, mode]);
   const [exemptDate, setExemptDate] = useState('');
   const [exemptKind, setExemptKind] = useState<ExemptKind>('pto');
   const [exemptError, setExemptError] = useState(false);
   const currentDay = format(new Date(), 'yyyy-MM-dd');
   const data = useMemo(() => {
     const now = new Date();
-    const temple = weeklyTemple(entries, prefs, now);
+    const temple = weeklyTemple(modeEntries, settings, now);
     const weekStart = format(startOfISOWeek(now), 'yyyy-MM-dd');
-    const weekEntries = entries.filter((entry) => entry.start.slice(0, 10) >= weekStart && entry.start.slice(0, 10) <= currentDay);
-    const run = focusRun(entries, prefs, now);
-    const map = attentionMap(entries, now);
-    const q = quality(entries, now);
+    const weekEntries = modeEntries.filter((entry) => entry.start.slice(0, 10) >= weekStart && entry.start.slice(0, 10) <= currentDay);
+    const run = focusRun(modeEntries, settings, now);
+    const map = attentionMap(modeEntries, now);
+    const q = quality(modeEntries, now);
     const trophies = trophyProgress({
-      sessions: entries.length,
-      totalMinutes: entries.reduce((total, entry) => total + entry.minutes, 0),
-      bestWeekMinutes: bestWeekMinutes(entries),
-      strongWeeks: strongWeeks(entries, prefs),
+      sessions: modeEntries.length,
+      totalMinutes: modeEntries.reduce((total, entry) => total + entry.minutes, 0),
+      bestWeekMinutes: bestWeekMinutes(modeEntries),
+      strongWeeks: strongWeeks(modeEntries, settings),
       brightBlocks: q.bright,
       ratings: q.ratings,
-      comebacks: comebacks(entries, prefs, now),
+      comebacks: comebacks(modeEntries, settings, now),
     });
     return {
       temple, weekBlocks: weekEntries.length, run, map, q, trophies,
       unlocked: trophies.filter((item) => item.unlocked),
       upcoming: nextUp(trophies),
-      lane: mainLane(entries, now),
-      cadence: cadence(entries, now, 7),
-      calm: calmCadence(entries, prefs, now),
-      footprint: footprint(entries, now),
-      recent: recentFocusedDays(entries, currentDay),
-      year: yearGrid(entries, prefs, now),
-      momentum: weeklyMomentum(entries, prefs, now),
+      lane: mainLane(modeEntries, now),
+      cadence: cadence(modeEntries, now, 7),
+      calm: calmCadence(modeEntries, settings, now),
+      footprint: footprint(modeEntries, now),
+      recent: recentFocusedDays(modeEntries, currentDay),
+      year: yearGrid(modeEntries, settings, now),
+      momentum: weeklyMomentum(modeEntries, settings, now),
     };
-  }, [entries, prefs, currentDay]);
+  }, [modeEntries, settings, currentDay]);
   const number = new Intl.NumberFormat(locale);
   const dateFormat = new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' });
   const shortDate = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' });
@@ -142,7 +148,7 @@ export function ProgressView() {
     </section>
 
     <section className="fx-section" aria-labelledby="pg-run-title">
-      <div className="fx-section-head"><div><p className="fx-eyebrow">{t('progress.focusRun')}</p><h2 className="fx-h2" id="pg-run-title">{t('progress.runTitle')}</h2><p>{t('progress.runCopy', { minutes: number.format(prefs.runThresholdMin) })}</p></div></div>
+      <div className="fx-section-head"><div><p className="fx-eyebrow">{t('progress.focusRun')}</p><h2 className="fx-h2" id="pg-run-title">{t('progress.runTitle')}</h2><p>{t('progress.runCopy', { minutes: number.format(settings.runThresholdMin) })}</p></div></div>
       <div className="pg-cards"><article className="fx-card pg-stat"><p className="fx-eyebrow">{t('progress.currentRun')}</p><strong className="pg-stat-value">{data.run.current}</strong><span className="pg-stat-unit">{t('progress.days')}</span></article>
         <article className="fx-card pg-stat"><p className="fx-eyebrow">{t('progress.longestRun')}</p><strong className="pg-stat-value">{data.run.longest}</strong><span className="pg-stat-unit">{t('progress.days')}</span></article>
         <article className="fx-card pg-stat"><p className="fx-eyebrow">{t('progress.thisWeek')}</p><strong className="pg-stat-value">{data.run.weekFocused} / {data.run.weekEligible}</strong><span className="pg-stat-unit">{t('progress.days')}</span></article></div>
@@ -152,7 +158,7 @@ export function ProgressView() {
       <p className="fx-eyebrow">{t('progress.weeklyMomentum')}</p><div className="pg-momentum" role="img" aria-label={t('progress.momentumDescription')}>
         {data.momentum.map((week) => <span key={week.weekStart} className="pg-momentum-cell" data-days={Math.min(5, week.focusedDays)} title={t('progress.momentumTooltip', { date: shortDate.format(parseISO(week.weekStart)), days: week.focusedDays })} />)}
       </div>
-      <form className="pg-exempt fx-card" onSubmit={(event) => { event.preventDefault(); if (!exemptDate || !prefs.workdays.includes(getISODay(parseISO(exemptDate)))) { setExemptError(true); return; } setFocusPreferences({ exemptDays: [...prefs.exemptDays.filter((day) => day.date !== exemptDate), { date: exemptDate, kind: exemptKind }].sort((a, b) => a.date.localeCompare(b.date)) }); setExemptDate(''); setExemptError(false); }}>
+      <form className="pg-exempt fx-card" onSubmit={(event) => { event.preventDefault(); if (!exemptDate || !settings.workdays.includes(getISODay(parseISO(exemptDate)))) { setExemptError(true); return; } setFocusPreferences({ exemptDays: [...prefs.exemptDays.filter((day) => day.date !== exemptDate), { date: exemptDate, kind: exemptKind }].sort((a, b) => a.date.localeCompare(b.date)) }); setExemptDate(''); setExemptError(false); }}>
         <p className="fx-eyebrow">{t('progress.excuseWorkday')}</p><label className="fx-label">{t('progress.date')}<input type="date" required value={exemptDate} onChange={(event) => { setExemptDate(event.target.value); setExemptError(false); }} /></label>
         <div className="fx-seg" role="group" aria-label={t('progress.timeOffKind')}><button type="button" aria-pressed={exemptKind === 'pto'} onClick={() => setExemptKind('pto')}>{t('progress.state.pto')}</button><button type="button" aria-pressed={exemptKind === 'holiday'} onClick={() => setExemptKind('holiday')}>{t('progress.state.holiday')}</button></div>
         <button className="fx-btn fx-btn--primary" type="submit">{t('progress.markExempt')}</button>{exemptError && <p role="alert">{t('progress.workdayOnly')}</p>}

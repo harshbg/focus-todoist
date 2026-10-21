@@ -34,6 +34,7 @@ import {
 import type { TranslationKey } from '@/i18n';
 import { byChildOrder } from '@/domain/orderKey';
 import { plainTitle } from '@/domain/markdown';
+import { useScopedItems } from '@/focus/scope';
 
 /** The destination each action stands for, in the drop table's own terms. */
 const targetFor = (action: ReviewAction): DropTarget => {
@@ -929,7 +930,8 @@ function Estimates({
 }) {
   const { t, locale } = useT();
   const setEstimates = useStore((s) => s.setEstimates);
-  const live = useStore((s) => s.snapshot.items);
+  // Work / Personal mode (SPEC §10.2): estimate review follows the current mode.
+  const live = useScopedItems();
   const listRef = useRef<HTMLDivElement>(null);
   const [drafts, setDrafts] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);

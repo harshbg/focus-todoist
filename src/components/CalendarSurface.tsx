@@ -20,6 +20,7 @@ import { colorValue } from '@/domain/colors';
 import { projectOccurrences } from '@/domain/projectOccurrences';
 import { displayTaskContent, isUncompletable, toDisplayPriority, type Item } from '@/domain/types';
 import { scheduleCalendarTask } from '@/store/calendar';
+import { useScopedItems } from '@/focus/scope';
 import './calendar.css';
 
 const HOUR_HEIGHT = 56;
@@ -40,6 +41,7 @@ interface CalendarSurfaceProps {
 export function CalendarSurface({ viewKey, items, onOpen, onAddTaskTo, childrenOf: pageChildrenOf }: CalendarSurfaceProps) {
   const { t, locale } = useT();
   const { snapshot, childrenOf: allChildrenOf } = useData(viewKey);
+  const scopedItems = useScopedItems();
   const childrenOf = pageChildrenOf ?? allChildrenOf;
   const prefs = useStore((s) => s.prefs);
   const current = viewPrefs(prefs, viewKey);
@@ -126,7 +128,8 @@ export function CalendarSurface({ viewKey, items, onOpen, onAddTaskTo, childrenO
         : viewKey.startsWith('label:') ? item.labels.some((label) => label.toLowerCase() === viewKey.slice(6).toLowerCase())
         : viewKey.startsWith('filter:') ? knownIds.current.has(item.id)
         : viewKey === 'someday' ? item.due === null : true;
-      const localDone = Object.values(snapshot.items).filter((item) => item.checked && !item.is_deleted && matchesPage(item));
+      // Work / Personal mode (SPEC §10.2): completed tasks on the calendar follow the mode.
+      const localDone = Object.values(scopedItems).filter((item) => item.checked && !item.is_deleted && matchesPage(item));
       // Local entries take precedence over a historical copy. A recurring task
       // can be open again and still have distinct past completed occurrences.
       const localIds = new Set(localDone.map((item) => item.id));
@@ -137,7 +140,7 @@ export function CalendarSurface({ viewKey, items, onOpen, onAddTaskTo, childrenO
     }
     return applyFilters([...byId.values()].filter((item) => !item.is_deleted && (!item.checked || options.completed)
       && (current.filters.showSubtasks || !item.parent_id)), { ...current.filters, includeScheduled: true }, snapshot, childrenOf);
-  }, [items, childrenOf, current.filters, options.completed, snapshot, history.items, viewKey, locale]);
+  }, [items, childrenOf, current.filters, options.completed, snapshot, scopedItems, history.items, viewKey, locale]);
 
   const forecast = useMemo(() => {
     const dated = pool.filter((item) => item.due && !item.checked);

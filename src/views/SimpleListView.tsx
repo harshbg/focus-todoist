@@ -23,6 +23,7 @@ import { viewPrefs } from '@/store/prefs';
 import { applyFilters, pullQuick, rootItems, sortItems } from '@/store/selectors';
 import { somedayItems, hasLabel, splitDust } from '@/domain/views';
 import { summariseLoad } from '@/domain/load';
+import { useScopedItems } from '@/focus/scope';
 import type { TranslationKey } from '@/i18n';
 import type { Item } from '@/domain/types';
 import type { DropTarget, RowOrder, TaskPlacement } from '@/domain/dnd';
@@ -94,7 +95,9 @@ function SimpleListBody({
       : allChildrenOf),
     [kind, allChildrenOf, matched],
   );
-  const filterPool = (ids: string[]): Item[] => filterRoots(ids, snapshot.items);
+  const scopedItems = useScopedItems();
+  // Work / Personal mode (SPEC §10.2): filter queries only reveal tasks in the current mode.
+  const filterPool = (ids: string[]): Item[] => filterRoots(ids, scopedItems);
 
   const pool0 = useMemo(() => {
     const roots = rootItems(items);
@@ -115,7 +118,7 @@ function SimpleListBody({
 
     return selection;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, kind, labelName, snapshot, filterResult.parts, matched]);
+  }, [items, kind, labelName, snapshot, filterResult.parts, matched, scopedItems]);
   const scoped = useMemo(
     () => applyFilters(pool0, current.filters, snapshot, childrenOf),
     [pool0, current.filters, snapshot, childrenOf],

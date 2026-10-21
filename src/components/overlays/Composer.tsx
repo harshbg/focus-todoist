@@ -25,6 +25,9 @@ import {
 } from '@/domain/shorthand';
 import { matchesSearch } from '@/domain/search';
 import { byLabelOrder } from '@/domain/orderKey';
+import { useMode } from '@/focus/mode-store';
+import { newTaskPlacement } from '@/focus/domain/mode';
+import { mergeLabels } from '@/focus/domain/labels';
 
 interface ComposerProps {
   open: boolean;
@@ -60,6 +63,8 @@ export function Composer({
   const confirm = useConfirm();
   const naturalDates = useStore((s) => s.prefs.naturalDates);
   const dateFormat = useStore((s) => s.prefs.dateFormat);
+  const mode = useMode();
+  const marked = useStore((s) => s.prefs.focus.workProjectIds);
 
   /* Where a task goes when nothing else says: the account's Inbox, however it is found. */
   const inboxId = snapshot.user?.inbox_project_id
@@ -395,15 +400,16 @@ export function Composer({
     submitting.current = true;
     setSaving(true);
     try {
-      const inbox = snapshot.user?.inbox_project_id;
       await createTasks(lines.map((line) => {
         const read = parseShorthand(line, snapshot, naturalDates, [], dateFormat);
+        /* Work / Personal mode (SPEC §10.2): resolve default project and extra label. */
+        const placement = newTaskPlacement(snapshot, mode, marked, read.projectId || null);
         return {
           content: read.content || line,
-          project_id: read.projectId || inbox,
+          project_id: placement.projectId,
           section_id: read.sectionId || undefined,
           priority: toTodoistPriority(read.priority ?? 4),
-          labels: read.labels,
+          labels: mergeLabels(read.labels, placement.addLabels),
           ...(read.minutes !== null ? { estimateMinutes: read.minutes } : {}),
           due: read.recurrence
             ? { string: read.recurrence.string, lang: read.recurrence.lang, is_recurring: true }
@@ -426,7 +432,7 @@ export function Composer({
     /* `||`, not `??`: an unset picker is an empty string, not null, and an
        empty string sent as project_id is what Todoist answers "invalid
        argument value" to — which is a task that never gets created. */
-    const targetProject = projectId || inboxId;
+    const placement = newTaskPlacement(snapshot, mode, marked, projectId || null);
     const dueDate = date;
     const repeat = recurrence;
     const pending = subtaskDraft.trim();
@@ -452,11 +458,11 @@ export function Composer({
     const id = await createTaskId({
       content,
       description: description.trim() || undefined,
-      project_id: targetProject,
+      project_id: placement.projectId,
       responsible_uid: responsibleUid,
       section_id: sectionId || undefined,
       priority: toTodoistPriority(priority),
-      labels: allLabels,
+      labels: mergeLabels(allLabels, placement.addLabels),
       ...(minutes !== null ? { estimateMinutes: minutes } : {}),
       /* A recurrence is sent as the rule and nothing else. Todoist resolves
          it, and a date sent alongside would pin the first occurrence to

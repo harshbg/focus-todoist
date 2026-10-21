@@ -33,6 +33,8 @@ import { dragClock } from './dnd/DragProvider';
 import type { ProjectSheetTarget } from './overlays/ProjectSheet';
 import { byChildOrder, byLabelOrder } from '@/domain/orderKey';
 import { visibleSidebarNav, type SidebarItemId } from '@/domain/sidebar';
+import { ModeSwitch } from '@/focus/views/ModeSwitch';
+import { useScopedSnapshot } from '@/focus/scope';
 
 interface SidebarProps {
   route: Route;
@@ -205,8 +207,10 @@ export function Sidebar({
   const toggleGroup = (key: string) =>
     setOpenGroups((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
 
+  const scopedSnapshot = useScopedSnapshot();
   const workspaceOrder = useStore((s) => s.prefs.workspaceOrder);
-  const workspaces = useMemo(() => projectTree(snapshot, workspaceOrder), [snapshot, workspaceOrder]);
+  // Focus mode (SPEC §10.2): project tree only shows projects allowed for the current mode.
+  const workspaces = useMemo(() => projectTree(scopedSnapshot, workspaceOrder), [scopedSnapshot, workspaceOrder]);
   const user = snapshot.user;
   const avatar = avatarUrl(user);
   const karma = karmaStanding(user?.karma);
@@ -547,6 +551,9 @@ export function Sidebar({
           </div>
         )}
       </div>
+
+      {/* Mode switch (SPEC §10.2): scopes the entire app to Work or Personal. */}
+      <ModeSwitch />
 
       <div className="side-scroll">
         {showSearch && (

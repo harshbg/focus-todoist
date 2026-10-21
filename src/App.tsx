@@ -22,6 +22,7 @@ import { QUICK_ADD, QuickAdd } from './QuickAdd';
 import { WeekView } from './views/WeekView';
 import { FocusView } from './focus/views/FocusView';
 import { ProgressView } from './focus/views/ProgressView';
+import { ModeSwitch } from './focus/views/ModeSwitch';
 import { SearchView } from './views/SearchView';
 import { UpcomingView } from './views/UpcomingView';
 import { SimpleListView } from './views/SimpleListView';
@@ -803,6 +804,8 @@ function AppShell({
               scrolled away, which is the same title arriving where it is
               needed rather than a second one standing beside it. */}
           <strong className={titleShown ? ' shown' : ''}>{contextLabel}</strong>
+          {/* Mode switch (SPEC §10.2): accessible on phone header without opening navigation. */}
+          <ModeSwitch />
           <button className="iconbtn" aria-label={t('nav.search')} onClick={() => setSearchOpen(true)}>
             <Icon name="search" />
           </button>

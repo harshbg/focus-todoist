@@ -265,6 +265,8 @@ test('#130 in the demo, ticking a daily 14:00 task brings it back tomorrow at 14
 bare('#128 with site storage blocked, the connect screen appears and the demo still opens', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('skipSetup', '1');
+    // The demo has no Work project, so Personal mode is the one that lists its tasks.
+    localStorage.setItem('tde.mode', 'personal');
     Object.defineProperty(window, 'sessionStorage', {
       get() { throw new DOMException('The operation is insecure.', 'SecurityError'); },
     });
@@ -288,6 +290,8 @@ bare('#128 with site storage blocked, the connect screen appears and the demo st
 bare('#128 a crash while drawing shows a message and a Reload button, not a white page', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('skipSetup', '1');
+    // The demo has no Work project, so Personal mode is the one that lists its tasks.
+    localStorage.setItem('tde.mode', 'personal');
   });
   await page.goto('/');
   await page.getByRole('button', { name: 'Explore with demo data' }).click();

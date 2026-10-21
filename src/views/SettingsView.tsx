@@ -21,11 +21,12 @@ import type { Locale, TranslationKey } from '@/i18n';
 import { APP_NAME, AUTHOR, AUTHOR_GITHUB_URL, GITHUB_URL, VERSION } from '@/app-info';
 import { karmaStanding } from '@/domain/karma';
 import { projectTree } from '@/store/selectors';
+import { ModeSettings } from '@/focus/views/ModeSettings';
 
 /** Where the things this app only reads are changed. */
 const TODOIST_ACCOUNT_URL = 'https://app.todoist.com/app/settings/account';
 
-const SECTIONS = ['account', 'general', 'appearance', 'sidebar', 'lists', 'features', 'conflicts', 'about'] as const;
+const SECTIONS = ['account', 'general', 'appearance', 'sidebar', 'lists', 'features', 'conflicts', 'modes', 'about'] as const;
 
 /** A date with two digits in the day and a month that is short in both
  *  languages, so every option in the list is the same length. */
@@ -35,7 +36,7 @@ type Section = (typeof SECTIONS)[number];
 /** The glyph beside each entry of the menu. */
 const SECTION_ICON: Record<Section, IconName> = {
   account: 'user', general: 'settings', appearance: 'palette', sidebar: 'sidebar',
-  lists: 'list', features: 'sparkles', conflicts: 'warning', about: 'info',
+  lists: 'list', features: 'sparkles', conflicts: 'warning', modes: 'sliders', about: 'info',
 };
 
 /**
@@ -500,6 +501,11 @@ export function SettingsView() {
                 />
               </Row>
             ))}
+          </section>
+
+          {/* Work & Personal focus modes (MODE.md M2 item 6) */}
+          <section className="setsection" id="modes">
+            <ModeSettings />
           </section>
 
           {/* Todoist asks a third-party app to say, in its description, that

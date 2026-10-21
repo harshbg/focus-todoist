@@ -5,6 +5,7 @@ import { fetchFilterIds, splitQuery } from '@/api/filters';
 import { demoFilterIds } from '@/demo/demoFilters';
 import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
+import { useScopedSnapshot } from '@/focus/scope';
 import type { Filter, Item, Snapshot } from '@/domain/types';
 
 export interface FilterPart {
@@ -217,7 +218,9 @@ function countOf(parts: FilterPart[] | null | undefined, snapshot: Snapshot): nu
 
 /** The number of tasks each of these filters holds, by filter id; missing until Todoist has answered. */
 export function useFilterCounts(filters: Filter[]): Record<string, number | undefined> {
-  const { demo, snapshot, items, lang, signature, online } = useContext();
+  const { demo, items, lang, signature, online } = useContext();
+  // Work / Personal mode (SPEC §10.2): filter counts only count tasks in the current mode.
+  const scopedSnapshot = useScopedSnapshot();
   const entries = useAnswers((s) => s.entries);
   const queries = filters.map((f) => f.query).join('\n');
 
@@ -228,6 +231,6 @@ export function useFilterCounts(filters: Filter[]): Record<string, number | unde
 
   return useMemo(() => Object.fromEntries(filters.map((filter) => [
     filter.id,
-    demo ? countOf(demoParts(filter, items), snapshot) : countOf(entries[keyOf(filter.query, lang)]?.parts, snapshot),
-  ])), [filters, demo, items, snapshot, entries, lang]);
+    demo ? countOf(demoParts(filter, items), scopedSnapshot) : countOf(entries[keyOf(filter.query, lang)]?.parts, scopedSnapshot),
+  ])), [filters, demo, items, scopedSnapshot, entries, lang]);
 }

@@ -14,9 +14,12 @@ import { todayProgress } from '../domain/metrics';
 import { focusQueue } from '../domain/queue';
 import { elapsedMs, formatClock, MIN_LOGGED_MINUTES, remainingMs } from '../domain/timer';
 import type { FocusEntry, FocusRating } from '../domain/types';
-import type { Mode } from '../domain/mode';
+import { newTaskPlacement, type Mode } from '../domain/mode';
+import { mergeLabels } from '../domain/labels';
 import { useMode } from '../mode-store';
 import { useFocusLog, useFocusNow, useFocusPreferences, useFocusStore } from '../store';
+import { entriesForMode } from '../domain/modeEntries';
+import { settingsFor } from '../domain/settings';
 import { TaskSearch } from './TaskSearch';
 import './focus.css';
 
@@ -97,6 +100,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   const logs = useFocusLog();
   const now = useFocusNow();
   const { active, justLogged, start, pause, resume, finish, discard, rate, dismiss, logManual, editEntry, deleteEntry } = useFocusStore();
+  const snapshot = useStore((state) => state.snapshot);
   const createTaskId = useStore((state) => state.createTaskId);
   const updateTask = useStore((state) => state.updateTask);
   const showQuickGroup = useStore((state) => state.prefs.showQuickGroup);
@@ -109,11 +113,14 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   const [pinned, setPinned] = useState(readQueue);
   const [manualOpen, setManualOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const progress = todayProgress(logs, prefs, new Date(now));
+  const modeEntries = useMemo(() => entriesForMode(logs, focusMode), [logs, focusMode]);
+  const settings = useMemo(() => settingsFor(prefs, focusMode), [prefs, focusMode]);
+  const progress = useMemo(() => todayProgress(modeEntries, settings, new Date(now)), [modeEntries, settings, now]);
   const selected = items.find((item) => item.id === selectedId) ?? null;
   const queue = useMemo(() => focusQueue(items, pinned, new Date(now), showQuickGroup), [items, pinned, now, showQuickGroup]);
-  const recent = useMemo(() => [...logs].sort((a, b) => b.start.localeCompare(a.start)).slice(0, 20), [logs]);
-  const chosenLane = selected ? prefs.lanes.find((name) => selected.labels.some((label) => label.toLowerCase() === name.toLowerCase())) ?? null : lane;
+  const recent = useMemo(() => [...modeEntries].sort((a, b) => b.start.localeCompare(a.start)).slice(0, 20), [modeEntries]);
+  const effectiveLane = lane && settings.lanes.some((name) => name.toLowerCase() === lane.toLowerCase()) ? lane : null;
+  const chosenLane = selected ? settings.lanes.find((name) => selected.labels.some((label) => label.toLowerCase() === name.toLowerCase())) ?? null : effectiveLane;
   const remaining = active ? remainingMs(active, now) : (mode === 'unwind' ? prefs.breakMin : length) * 60_000;
   const elapsed = active ? elapsedMs(active, now) : 0;
 
@@ -124,13 +131,19 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   const choose = (item: Item) => {
     setSelectedId(item.id);
     setQuery(item.content);
-    setLane(prefs.lanes.find((name) => item.labels.some((label) => label.toLowerCase() === name.toLowerCase())) ?? null);
+    setLane(settings.lanes.find((name) => item.labels.some((label) => label.toLowerCase() === name.toLowerCase())) ?? null);
     setLength(estimateOf(item) ?? prefs.blockLengths[0] ?? 30);
   };
   const create = async (): Promise<Item | null> => {
     if (!query.trim()) return null;
-    const id = await createTaskId({ content: query.trim(), estimateMinutes: length,
-      labels: lane ? [lane] : [], due: { date: toApiDate(new Date()), string: toApiDate(new Date()), lang: 'en', timezone: null, is_recurring: false } });
+    const placement = newTaskPlacement(snapshot, focusMode, prefs.workProjectIds, null);
+    const id = await createTaskId({
+      content: query.trim(),
+      project_id: placement.projectId,
+      estimateMinutes: length,
+      labels: mergeLabels(effectiveLane ? [effectiveLane] : [], placement.addLabels),
+      due: { date: toApiDate(new Date()), string: toApiDate(new Date()), lang: 'en', timezone: null, is_recurring: false },
+    });
     const item = id ? useStore.getState().snapshot.items[id] : null;
     if (item) choose(item);
     return item ?? null;
@@ -143,7 +156,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
       return;
     }
     start({ mode: startMode, focusMode, taskId: item?.id ?? null, title: item?.content ?? title,
-      lane: item ? prefs.lanes.find((name) => item.labels.some((label) => label.toLowerCase() === name.toLowerCase())) ?? null : lane,
+      lane: item ? settings.lanes.find((name) => item.labels.some((label) => label.toLowerCase() === name.toLowerCase())) ?? null : effectiveLane,
       plannedMin: minutes });
   };
   const stop = async () => {
@@ -159,7 +172,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   const setLaneForTask = (next: string) => {
     setLane(next);
     if (!selected) return;
-    const labels = selected.labels.filter((label) => !prefs.lanes.some((name) => name.toLowerCase() === label.toLowerCase()));
+    const labels = selected.labels.filter((label) => !settings.lanes.some((name) => name.toLowerCase() === label.toLowerCase()));
     void updateTask(selected.id, { labels: [...labels, next] });
   };
   const addToQueue = async () => {
@@ -236,12 +249,12 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
       <span className="fx-label">{t('focus.timeRequired')}</span>
       <div className="fx-chips">{prefs.blockLengths.map((minutes) => <button key={minutes} className="fx-chip" aria-pressed={length === minutes} onClick={() => setEstimate(minutes)}>{formatDuration(minutes, locale)}</button>)}</div>
       <span className="fx-label">{t('focus.lane')}</span>
-      <div className="fx-chips">{prefs.lanes.map((name) => <button key={name} className="fx-chip" aria-pressed={chosenLane === name} onClick={() => setLaneForTask(name)}>{name}</button>)}</div>
+      <div className="fx-chips">{settings.lanes.map((name) => <button key={name} className="fx-chip" aria-pressed={chosenLane === name} onClick={() => setLaneForTask(name)}>{name}</button>)}</div>
       <div className="fx-actions"><button className="fx-btn fx-btn--primary" disabled={busy || Boolean(active) || (!selected && !query.trim())} onClick={() => void startTask()}>{t('focus.startTask')}</button>
         <button className="fx-btn fx-btn--secondary" disabled={busy || (!selected && !query.trim())} onClick={() => void addToQueue()}>{t('focus.addQueue')}</button></div>
       <div className="fx-section-head"><h3>{t('focus.ready')}</h3><span className="fx-badge">{queue.length}</span></div>
       <ul className="fx-queue">{queue.map((item) => {
-        const taskLane = prefs.lanes.find((name) => item.labels.some((label) => label.toLowerCase() === name.toLowerCase()));
+        const taskLane = settings.lanes.find((name) => item.labels.some((label) => label.toLowerCase() === name.toLowerCase()));
         return <li key={item.id} className="fx-queue-item"><button className="fx-queue-title" onClick={() => onOpen(item.id)}>{item.content}</button>
           <span className="fx-queue-meta">{[estimateOf(item) !== null ? formatDuration(estimateOf(item)!, locale) : null, taskLane].filter(Boolean).join(' · ')}</span>
           <button className="fx-icon-btn" disabled={Boolean(active)} aria-label={t('focus.startTaskNamed', { title: item.content })} onClick={() => startFor(item, item.content, 'focus', length)}>▶</button>
@@ -269,6 +282,6 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
         }}>×</button>
       </li>)}</ul>
     </section>
-    {manualOpen && <ManualDialog items={items} lanes={prefs.lanes} focusMode={focusMode} onClose={() => setManualOpen(false)} onSave={logManual} />}
+    {manualOpen && <ManualDialog items={items} lanes={settings.lanes} focusMode={focusMode} onClose={() => setManualOpen(false)} onSave={logManual} />}
   </div>;
 }

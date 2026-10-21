@@ -1,0 +1,130 @@
+/* Work / Personal mode switch — styles using app chrome tokens */
+.mode-switch {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--r-ctl);
+  background: var(--subtle);
+  border: 1px solid var(--border);
+  box-sizing: border-box;
+}
+
+.mode-switch-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: calc(var(--r-ctl) - 2px);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-12);
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: background 0.14s ease-out, color 0.14s ease-out, box-shadow 0.14s ease-out;
+}
+
+.mode-switch-btn:hover {
+  color: var(--text);
+}
+
+.mode-switch-btn[aria-pressed="true"] {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--border);
+  font-weight: 600;
+  box-shadow: var(--sh-sm);
+}
+
+.mode-switch-btn:active {
+  transform: scale(0.97);
+}
+
+.mode-switch-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Sidebar context: compact full-width control under the account header */
+.sidebar .mode-switch {
+  width: 100%;
+  margin-bottom: var(--s2);
+}
+
+/* Phone header context: compact control beside navigation buttons */
+.mobile-top .mode-switch {
+  flex: 0 0 auto;
+}
+
+.mobile-top strong {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Work & Personal section in Settings (MODE.md M2 item 6) */
+.mode-workdays-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.mode-workdays-grid .checkrow {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  user-select: none;
+}
+
+.mode-workdays-grid .checkrow:hover {
+  background: var(--hover);
+}
+
+.mode-lanes-editor {
+  display: grid;
+  gap: var(--s2);
+  width: 100%;
+}
+
+.mode-lanes-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mode-lane-remove {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin-left: 4px;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.mode-lane-remove:hover {
+  color: var(--accent);
+}
+
+.mode-lanes-input {
+  width: 100%;
+}
+
+.mode-project-check input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
