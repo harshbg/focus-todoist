@@ -29,34 +29,44 @@ const ALL_BRICKS = pyramidBricks(PYRAMID_ROWS);
 
 /** A brick in pyramid units, outline included; bricks sit edge to edge, so seams read twice as thick. */
 const BRICK_W = 12;
-const BRICK_H = 9;
+const BRICK_H = 10;
 
 /**
- * The three faces a classic platformer block comes in: [face, highlight, shadow].
+ * The three faces a classic platformer block comes in: [face, lit edge, shaded edge, deep shadow].
  * Picked per brick from its position, so the pyramid looks hand-laid but never changes.
  */
-const BRICK_SHADES: ReadonlyArray<readonly [string, string, string]> = [
-  ['var(--px-brick-a, #f2ad45)', 'var(--px-brick-a-hi, #fde29c)', 'var(--px-brick-a-lo, #c9701f)'],
-  ['var(--px-brick-b, #ec9238)', 'var(--px-brick-b-hi, #f8c46a)', 'var(--px-brick-b-lo, #b85a1c)'],
-  ['var(--px-brick-c, #dc6a2a)', 'var(--px-brick-c-hi, #f29a55)', 'var(--px-brick-c-lo, #9e3f16)'],
+const BRICK_SHADES: ReadonlyArray<readonly [string, string, string, string]> = [
+  ['#f6bd55', '#fde7a8', '#d9772c', '#b8521f'],
+  ['#ef9632', '#f9c66a', '#cf5a22', '#a9401a'],
+  ['#e3762d', '#f4a54f', '#c04a1d', '#9a3416'],
 ];
 
-function Brick({ x, y, shade }: { x: number; y: number; shade: readonly [string, string, string] }) {
-  const [face, hi, lo] = shade;
-  return <g>
-    <rect x={x} y={y} width={BRICK_W} height={BRICK_H} fill="var(--px-brick-outline, #1b130c)" />
-    <rect x={x + 1} y={y + 1} width={BRICK_W - 2} height={BRICK_H - 2} fill={lo} />
-    <rect x={x + 1} y={y + 1} width={BRICK_W - 3} height={BRICK_H - 3} fill={hi} />
-    <rect x={x + 2} y={y + 2} width={BRICK_W - 4} height={BRICK_H - 4} fill={face} />
+/**
+ * One block, bevelled like the classic pyramid: a heavy outline, the light
+ * falling from the top-left (a pale band across the top and down the left),
+ * the shade on the right and a deeper one along the bottom.
+ */
+function Brick({ x, y, shade, className }: { x: number; y: number; shade: readonly [string, string, string, string]; className?: string }) {
+  const [face, lit, shaded, deep] = shade;
+  const o = 1.1; // outline
+  const w = BRICK_W - 2 * o;
+  const h = BRICK_H - 2 * o;
+  return <g className={className}>
+    <rect x={x} y={y} width={BRICK_W} height={BRICK_H} fill="var(--px-brick-outline, #17110b)" />
+    <rect x={x + o} y={y + o} width={w} height={h} fill={face} />
+    <rect x={x + o + w * 0.86} y={y + o + h * 0.16} width={w * 0.14} height={h * 0.84} fill={shaded} />
+    <rect x={x + o + w * 0.12} y={y + o + h * 0.78} width={w * 0.88} height={h * 0.22} fill={deep} />
+    <rect x={x + o} y={y + o} width={w} height={h * 0.16} fill={lit} />
+    <rect x={x + o} y={y + o} width={w * 0.12} height={h} fill={lit} />
   </g>;
 }
 
 /**
- * The side trees: tiered pines grown block by block with the pyramid. Cells
+ * The side trees: round, bushy canopies grown block by block with the pyramid. Cells
  * in growing order — the trunk, then each row of leaves from the widest up.
  * Columns are centred on 0.
  */
-const TREE_ROWS = [11, 9, 7, 5, 3, 1];
+const TREE_ROWS = [11, 11, 11, 9, 7];
 const TREE_CELLS: ReadonlyArray<{ col: number; row: number; trunk: boolean }> = [
   { col: 0, row: 0, trunk: true },
   { col: 0, row: 1, trunk: true },
@@ -73,7 +83,7 @@ function GrowingTree({ x, groundY, cell, progress }: { x: number; groundY: numbe
       const cx = x + c.col * cell - cell / 2;
       const cy = groundY - (c.row + 1) * cell;
       if (index >= laid) {
-        return <rect key={index} x={cx + 0.3} y={cy + 0.3} width={cell - 0.6} height={cell - 0.6}
+        return <rect key={index} className={index === laid && progress > 0 && progress < 1 ? 'px-filling' : undefined} x={cx + 0.3} y={cy + 0.3} width={cell - 0.6} height={cell - 0.6}
           fill="var(--px-ghost-fill, rgba(255,255,255,.28))" stroke="var(--px-ghost-line, rgba(30,42,54,.22))" strokeWidth={0.4} />;
       }
       const [face, hi, lo] = c.trunk
@@ -187,8 +197,8 @@ export function FocusScene({
           transform={`translate(${pyramidLeft}, ${pyramidTop}) scale(${scaleX}, ${scaleY})`}
         >
           {/* Bricks still to lay wait as faint outlines, so the whole pyramid is in view from the start. */}
-          {ALL_BRICKS.slice(laidCount).map((b) => (
-            <rect key={`ghost-${b.col}-${b.row}`} className="px-ghost-brick"
+          {ALL_BRICKS.slice(laidCount).map((b, index) => (
+            <rect key={`ghost-${b.col}-${b.row}`} className={index === 0 && progress > 0 && progress < 1 ? 'px-ghost-brick px-filling' : 'px-ghost-brick'}
               x={b.col * BRICK_W + 1} y={(PYRAMID_ROWS - 1 - b.row) * BRICK_H + 1} width={BRICK_W - 2} height={BRICK_H - 2}
               fill="var(--px-ghost-fill, rgba(255,255,255,.28))" stroke="var(--px-ghost-line, rgba(30,42,54,.28))" strokeWidth={0.8} />
           ))}

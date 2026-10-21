@@ -86,7 +86,8 @@ export function readLogComment(content: string): { week: string; part: number; e
   const entries: FocusEntry[] = payload.e.filter(isCompactEntry).map((row) => ({
     start: row[0], minutes: row[1], taskId: row[2], title: row[3], lane: row[4],
     rating: row[5] as FocusEntry['rating'], source: row[6] === 't' ? 'timed' : 'manual',
-    mode: row[7] === 'w' ? 'work' : 'personal',
+    // Rows written before Work/Personal existed were deep work, so they read as Work.
+    mode: row[7] === 'p' ? 'personal' : 'work',
   }));
   return { week: match[1], part: Number(match[2]), entries };
 }

@@ -25,7 +25,8 @@
   --fx-leaf-dark: #2c6b2a;
   --fx-gold: #e08a3c;
 
-  background-color: var(--fx-paper);
+  /* The page follows the app's own background; only the cards carry the paper tones. */
+  background-color: transparent;
   color: var(--fx-ink);
   font-family: inherit;
   min-height: 100%;
@@ -50,7 +51,7 @@
   --fx-leaf: #2f6e2c;
   --fx-leaf-dark: #20501f;
 
-  background-color: var(--fx-paper);
+  background-color: transparent;
   color: var(--fx-ink);
 }
 

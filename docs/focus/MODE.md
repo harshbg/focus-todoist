@@ -12,7 +12,7 @@ projects and the `work` label. Two Codex jobs, in order.
    - `FocusEntry.mode: Mode` in `src/focus/domain/types.ts`.
    - `log.ts`: the compact row gets an optional 8th field, `"w"` or `"p"`.
      `writeLogComments` always writes it; `readLogComment` accepts 7- and
-     8-element rows, and a 7-element row reads as `'personal'`. Update
+     8-element rows, and a 7-element row reads as `'work'` (those were deep work). Update
      log.test.ts (both lengths round-trip; a bad 8th value skips the row).
    - `timer.ts`: `ActiveBlock` gets `focusMode: Mode` (named so it doesn't
      clash with `mode: 'focus' | 'unwind'`), `startBlock` takes it,

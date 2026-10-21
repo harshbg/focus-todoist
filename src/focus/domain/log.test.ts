@@ -44,7 +44,8 @@ describe('the focus log', () => {
   });
 
   it('skips malformed rows and keeps valid ones', () => {
-    const personalRow = entry(startAt(2026, 10, 20), { mode: 'personal' });
+    // A row from before Work/Personal has no mode and reads as Work.
+    const personalRow = entry(startAt(2026, 10, 20), { mode: 'work' });
     const workRow = entry(startAt(2026, 10, 20, 9, 30), { mode: 'work' });
     const content = `${logHeader('2026-W43', 1)}\n\n${JSON.stringify({ v: 1, e: [
       [personalRow.start, 30, personalRow.taskId, personalRow.title, personalRow.lane, 4, 't'],
