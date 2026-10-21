@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CLOUD, PALETTE, TREE } from './sprites';
+import { CLOUD, PALETTE } from './sprites';
 import { bricksLaid, pyramidBricks } from './layout';
 import { PixelSprite } from './PixelSprite';
 import { Fireworks } from './Fireworks';
@@ -51,6 +51,44 @@ function Brick({ x, y, shade }: { x: number; y: number; shade: readonly [string,
   </g>;
 }
 
+/**
+ * The side trees: tiered pines grown block by block with the pyramid. Cells
+ * in growing order — the trunk, then each row of leaves from the widest up.
+ * Columns are centred on 0.
+ */
+const TREE_ROWS = [11, 9, 7, 5, 3, 1];
+const TREE_CELLS: ReadonlyArray<{ col: number; row: number; trunk: boolean }> = [
+  { col: 0, row: 0, trunk: true },
+  { col: 0, row: 1, trunk: true },
+  ...TREE_ROWS.flatMap((width, index) => Array.from({ length: width }, (_, i) => ({
+    col: i - (width - 1) / 2, row: index + 2, trunk: false,
+  }))),
+];
+const TREE_TOTAL_ROWS = TREE_ROWS.length + 2;
+
+function GrowingTree({ x, groundY, cell, progress }: { x: number; groundY: number; cell: number; progress: number }) {
+  const laid = bricksLaid(progress, TREE_CELLS.length);
+  return <g className="px-tree">
+    {TREE_CELLS.map((c, index) => {
+      const cx = x + c.col * cell - cell / 2;
+      const cy = groundY - (c.row + 1) * cell;
+      if (index >= laid) {
+        return <rect key={index} x={cx + 0.3} y={cy + 0.3} width={cell - 0.6} height={cell - 0.6}
+          fill="var(--px-ghost-fill, rgba(255,255,255,.28))" stroke="var(--px-ghost-line, rgba(30,42,54,.22))" strokeWidth={0.4} />;
+      }
+      const [face, hi, lo] = c.trunk
+        ? ['var(--px-trunk)', '#8a5530', '#4a2a12']
+        : (index % 3 === 0 ? ['#58b04a', '#9fe07a', '#2c6b2a'] : index % 3 === 1 ? ['#3e8a3a', '#7cc35c', '#20501f'] : ['#4c9e3f', '#8fd46c', '#265f23']);
+      return <g key={index}>
+        <rect x={cx} y={cy} width={cell} height={cell} fill="var(--px-brick-outline, #1b130c)" />
+        <rect x={cx + 0.5} y={cy + 0.5} width={cell - 1} height={cell - 1} fill={lo} />
+        <rect x={cx + 0.5} y={cy + 0.5} width={cell - 1.4} height={cell - 1.4} fill={hi} />
+        <rect x={cx + 0.9} y={cy + 0.9} width={cell - 1.8} height={cell - 1.8} fill={face} />
+      </g>;
+    })}
+  </g>;
+}
+
 /** Fireworks run for this long after a block completes, then the sky goes quiet. */
 const CELEBRATION_MS = 5000;
 
@@ -92,13 +130,11 @@ export function FocusScene({
   const pyramidLeft = Math.round((width - pyramidWidth) / 2);
   const pyramidTop = groundY - pyramidHeight;
 
-  // Trees: 1.5× bigger, standing on the ground strip
-  const treeScale = 1.5;
-  const treeW = 11 * treeScale;
-  const treeH = 14 * treeScale;
-  const treeY = groundY - treeH;
-  const leftTreeX = isWide ? 16 : 10;
-  const rightTreeX = width - leftTreeX - treeW;
+  // Trees: tiered pines that grow with the block, centred in the space beside the pyramid.
+  const treeCell = Math.min((pyramidLeft - 4) / 11.5, (skyHeight * 0.5) / TREE_TOTAL_ROWS);
+  const leftTreeX = pyramidLeft / 2;
+  const rightTreeX = width - pyramidLeft / 2;
+  const treeProgress = Math.max(0, Math.min(1, progress));
 
   // Clouds: in the sky
   const cloud1 = isWide ? { x: 42, y: 10 } : { x: 26, y: 14 };
@@ -141,13 +177,9 @@ export function FocusScene({
           ))}
         </g>
 
-        {/* Trees (1.5× bigger) */}
-        <g transform={`translate(${leftTreeX}, ${treeY}) scale(${treeScale})`}>
-          <PixelSprite sprite={TREE} palette={PALETTE} />
-        </g>
-        <g transform={`translate(${rightTreeX}, ${treeY}) scale(${treeScale})`}>
-          <PixelSprite sprite={TREE} palette={PALETTE} />
-        </g>
+        {/* Trees grow block by block with the pyramid */}
+        <GrowingTree x={leftTreeX} groundY={groundY} cell={treeCell} progress={treeProgress} />
+        <GrowingTree x={rightTreeX} groundY={groundY} cell={treeCell} progress={treeProgress} />
 
         {/* Centred pyramid */}
         <g
