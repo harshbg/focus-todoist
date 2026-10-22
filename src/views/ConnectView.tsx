@@ -65,7 +65,7 @@ export function ConnectView() {
       <aside className="signin-bubble">
         <h2>{t('connect.pitch')}</h2>
         <ul className="signin-checks">
-          {(['week', 'estimates', 'time', 'review', 'quick', 'matrix'] as const).map((key) => (
+          {(['focus', 'week', 'estimates', 'time', 'review', 'matrix'] as const).map((key) => (
             <li key={key}>
               <span className="signin-check"><Icon name="check" size="sm" /></span>
               {t(`connect.feature.${key}` as TranslationKey)}

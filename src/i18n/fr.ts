@@ -1199,6 +1199,7 @@ export const fr: Record<TranslationKey, string> = {
   /* Connexion — l’écran de la maquette */
   'connect.login': 'Se connecter',
   'connect.pitch': 'Votre Todoist, en mieux.',
+  'connect.feature.focus': 'Un minuteur de concentration qui bâtit une pyramide pendant que vous travaillez',
   'connect.feature.week': 'Une semaine planifiée en heures, pas seulement en tâches',
   'connect.feature.estimates': 'Une estimation sur chaque tâche',
   'connect.feature.time': '« J’ai du temps » pour les minutes dont vous disposez',

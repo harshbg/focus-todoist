@@ -1197,6 +1197,7 @@ export const en = {
   /* Connect — the Figma sign-in screen */
   'connect.login': 'Log in',
   'connect.pitch': 'Your Todoist, only better.',
+  'connect.feature.focus': 'A focus timer that builds a pyramid as you work',
   'connect.feature.week': 'A week planned in hours, not just in tasks',
   'connect.feature.estimates': 'An estimate on every task',
   'connect.feature.time': '“I have time” for the minutes you have',
