@@ -305,6 +305,7 @@ export function DragProvider({ children }: { children: ReactNode }) {
         return target.sectionId
           ? t('drop.toSection', { name: snapshot.sections[target.sectionId]?.name ?? '' })
           : t('drop.toProject', { name: snapshot.projects[target.projectId]?.name ?? '' });
+      case 'step': return t(`step.${target.step}`);
       case 'label':
         return t('drop.tagged', { label: target.label });
       default:
@@ -321,6 +322,7 @@ export function DragProvider({ children }: { children: ReactNode }) {
       case 'quick': return t('group.quick');
       case 'anytime': return t('group.anytime');
       case 'someday': return t('nav.someday');
+      case 'step': return t(`step.${target.step}`);
       case 'label': return `@${target.label}`;
       case 'project': return snapshot.projects[target.projectId]?.name ?? '';
       case 'section': {
@@ -866,6 +868,7 @@ export function DragProvider({ children }: { children: ReactNode }) {
 
   /** A block dropped between rows of a project, a section or a parent's subtasks. */
   async function reorderMany(block: Item[], dragged: Item, row: Item, list: RowList, slot?: 'before' | 'after') {
+    if (list.target?.kind === 'step') { await useStore.getState().sendManyTo(block.map((item) => item.id), list.target, t(`step.${list.target.step}`)); return; }
     const container = { project_id: row.project_id, section_id: row.section_id, parent_id: row.parent_id };
     const joins = (it: Item) => it.project_id !== container.project_id
       || (it.section_id ?? null) !== (container.section_id ?? null)
@@ -1003,6 +1006,7 @@ export function DragProvider({ children }: { children: ReactNode }) {
     item: Item, row: Item, list: RowList, landAfter = false, skipUnchanged = false,
     slot?: 'before' | 'after' | 'first',
   ) {
+    if (list.target?.kind === 'step') { await useStore.getState().sendTo(item.id, list.target, t(`step.${list.target.step}`)); return; }
     const container = {
       project_id: row.project_id,
       section_id: row.section_id,

@@ -24,6 +24,7 @@ import { WeekView } from './views/WeekView';
 import { SearchView } from './views/SearchView';
 import { UpcomingView } from './views/UpcomingView';
 import { SimpleListView } from './views/SimpleListView';
+import { WorkspaceView } from './views/WorkspaceView';
 import { ProjectView } from './views/ProjectView';
 import { LabelsView } from './views/LabelsView';
 import { FiltersView } from './views/FiltersView';
@@ -853,6 +854,7 @@ function AppShell({
           {route.view === 'week' && (
             <WeekView {...viewProps} scope="all" />
           )}
+          {route.view === 'workspace' && <WorkspaceView key={`${snapshot.user?.id}:${route.id}`} workspaceId={route.id ?? 'personal'} />}
           {route.view === 'today' && <WeekView {...viewProps} scope="today" />}
           {route.view === 'search' && <SearchView query={route.query ?? ''} onOpen={openTask} />}
           {route.view === 'upcoming' && <UpcomingView {...viewProps} />}

@@ -257,7 +257,7 @@
 .task:hover{background:transparent}
 
 /* One statement, one colour. */
-.task{--row-marked:color-mix(in srgb, var(--accent) 13%, var(--surface));}
+.task,.taskwrap{--row-marked:color-mix(in srgb, var(--accent) 13%, var(--surface));}
 
 /*
  * The cursor is a border, picked is a fill.

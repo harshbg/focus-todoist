@@ -26,8 +26,7 @@ import type { TranslationKey } from '@/i18n';
 import { SyncStatus } from './SyncStatus';
 import { Droppable } from './dnd/Droppable';
 import { ProjectDropRow, ProjectRowSortable } from './dnd/ProjectRowSortable';
-import { COFFEE_URL } from '@/app-info';
-import { Feedback } from './overlays/Feedback';
+import { COFFEE_URL, FEEDBACK_URL } from '@/app-info';
 import { ProjectMenu } from './ProjectMenu';
 import { DraggableTag } from './dnd/DraggableTag';
 import { dragClock } from './dnd/DragProvider';
@@ -104,7 +103,6 @@ export function Sidebar({
   const demo = useStore((s) => s.demo);
   const draggingProjectId = useStore((s) => s.draggingProjectId);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
@@ -459,7 +457,6 @@ export function Sidebar({
 
   return (
     <>
-    <Feedback open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     {/* Folded, the sidebar is still here and still drawn: it slides out
         (theme.css), and `inert` takes it out of the tab order and out of reach
         of a screen reader while it is away. */}
@@ -532,7 +529,7 @@ export function Sidebar({
               <Icon name="sparkles" />
               {t('nav.whatsNew')}
             </button>
-            <button onClick={() => { setMenuOpen(false); setFeedbackOpen(true); }}>
+            <button onClick={() => { setMenuOpen(false); window.open(FEEDBACK_URL, '_blank', 'noopener,noreferrer'); }}>
               <Icon name="comment" />
               {t('nav.feedback')}
             </button>
@@ -608,6 +605,7 @@ export function Sidebar({
               logo={workspace.workspaceId ? snapshot.workspaces[workspace.workspaceId]?.logo_big ?? null : null}
               workspaceId={workspace.workspaceId}
               open={openGroups[key] ?? true}
+              onOpen={() => navigate('workspace', key)}
               onToggle={() => toggleGroup(key)}
               onAdd={() => onProjectSheet({
                 mode: 'create',
@@ -667,7 +665,7 @@ export function Sidebar({
  * resting sidebar stays quiet.
  */
 function SideGroup({
-  title, logo, workspaceId, open, onToggle, onAdd, addLabel, dropTarget, children,
+  title, logo, workspaceId, open, onToggle, onOpen, onAdd, addLabel, dropTarget, children,
 }: {
   title: string;
   /** A workspace's own picture, when Todoist has one; its initial stands in when it has not. */
@@ -675,6 +673,7 @@ function SideGroup({
   workspaceId?: string | null;
   open: boolean;
   onToggle: () => void;
+  onOpen?: () => void;
   onAdd?: () => void;
   addLabel?: string;
   /** When set, the heading itself takes a drop. */
@@ -683,7 +682,7 @@ function SideGroup({
 }) {
   const head = () => (
     <div className="side-head">
-        <button className="side-headbtn" aria-expanded={open} onClick={onToggle}>
+        <button className="side-headbtn" aria-expanded={onOpen ? undefined : open} onClick={onOpen ?? onToggle}>
           {workspaceId && <WorkspaceAvatar small id={workspaceId} name={title} logo={logo} />}
           <span>{title}</span>
         </button>

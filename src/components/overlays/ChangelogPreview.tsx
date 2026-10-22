@@ -105,6 +105,8 @@ export function ChangelogPreview({ kind }: { kind: ChangelogVisual | null }) {
       content = <>{title(say('Share project', 'Partager le projet'))}{kind === 'access' ? <>{row(say('Restricted', 'Restreint'), 'lock', '✓', true)}{row(say('Team', 'Équipe'), 'group')}{row(say('Public', 'Public'), 'globe')}</> : people}</>; break;
     case 'assigneeFilter':
       content = <>{title(say('Assigned to', 'Assigné à'))}{row(say('Me & unassigned', 'Moi et non assignées'), 'user', '✓', true)}{row('Anne', 'user')}{row(say('Everyone', 'Tout le monde'), 'group')}</>; break;
+    case 'workspacePage':
+      content = <><b className="cv-title">{say('My projects', 'Mes projets')}</b><div className="cv-workspace-head"><span>{say('Project', 'Projet')}</span><span>{say('Open', 'Ouvertes')}</span><span>{say('Done', 'Achevées')}</span><span>{say('Progress', 'Progrès')}</span></div>{[[say('Website', 'Site web'), 8, 12, 60], [say('Home', 'Maison'), 4, 16, 80]].map(([name, open, done, progress]) => <div className="cv-workspace-row" key={name}><span>{name}</span><span>{open}</span><span>{done}</span><span><i style={{ width: `${progress}%` }} />{progress}%</span></div>)}<div className="cv-section">{say('Archive', 'Archives')}</div></>; break;
     case 'workspaces':
       content = <>{title(say('Workspaces', 'Espaces de travail'))}{row(say('My projects', 'Mes projets'), 'project', '✓', true)}{row('Studio', 'group', '✓', true)}<div className="cv-indent">{row(design, 'project', '8')}{row(say('Brand identity', 'Identité visuelle'), 'project', '5')}</div></>; break;
     case 'forecast': case 'skipRepeat':
