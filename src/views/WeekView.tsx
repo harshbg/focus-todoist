@@ -250,11 +250,12 @@ function WeekBody({
                leave the group the moment it was saved. */
             actions={
               <button
-                className="btn sm linklike"
+                className="reschedule-overdue"
+                aria-label={t('group.rescheduleAll')}
                 onClick={() => void rescheduleOverdue()}
-                title={t('group.rescheduleAllHint')}
+                title={t('group.rescheduleAll')}
               >
-                {t('group.rescheduleAll')}
+                <Icon name="calendar" size="sm" />
               </button>
             }
           />
@@ -340,11 +341,12 @@ function WeekBody({
                 ...column,
                 action: (
                   <button
-                    className="btn sm linklike"
+                    className="reschedule-overdue"
+                    aria-label={t('group.rescheduleAll')}
                     onClick={() => void rescheduleOverdue()}
-                    title={t('group.rescheduleAllHint')}
+                    title={t('group.rescheduleAll')}
                   >
-                    {t('group.rescheduleAll')}
+                    <Icon name="calendar" size="sm" />
                   </button>
                 ),
               })

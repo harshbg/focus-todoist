@@ -147,9 +147,11 @@ const collisionsForKind: CollisionDetection = (args) => {
      droppables, which made a project appear to land but left the order
      unchanged. Moving right still turns the same target into nesting. */
   if (dragKind(String(args.active.id)) === 'project') {
-    const projectSlots = hits.filter((c) => String(c.id).startsWith('project-slot:'));
+    const source = String(args.active.id).slice('project-row:'.length);
+    const otherHits = hits.filter((c) => String(c.id) !== args.active.id && !String(c.id).startsWith(`project-slot:${source}:`));
+    const projectSlots = otherHits.filter((c) => String(c.id).startsWith('project-slot:'));
     if (projectSlots.length) return nearestVertical(projectSlots);
-    const projectRows = hits.filter((c) => String(c.id).startsWith('project-row:'));
+    const projectRows = otherHits.filter((c) => String(c.id).startsWith('project-row:'));
     if (projectRows.length) return nearestVertical(projectRows);
   }
 

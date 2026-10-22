@@ -40,6 +40,20 @@ translation lives in CHANGELOG.fr.md.
 - Only what a person using the app can see or do. No technical work, no
   intermediate states of the same release.
 
+## 2.17.0
+
+🆕 **Privacy explained.** A dedicated Settings section explains local data storage, Todoist synchronization and the absence of usage tracking.
+
+🎨 **Workspace refinements.** Projects follow the sidebar order, with folders you can expand and collapse. Icons line up on the left, and progress appears beside each project.
+
+🎨 **Quieter subtasks.** A subtask no longer repeats the project of the parent shown above it. When it appears on its own, its project stays visible.
+
+🎨 **Reschedule overdue tasks at a glance.** The Behind schedule heading has a red calendar button to move everything to today. Confirmation and Undo work as before.
+
+🐛 **Add a section without a jump.** The Board keeps a name field that is already visible in place. New columns scroll into view only when needed.
+
+🐛 **Selects keep their outline.** Grouping and Sort retain their normal outline after a mouse choice. Keyboard navigation still shows the focus ring.
+
 ## 2.16.0
 
 🆕 **Group tasks by status.** In Display, choose Group by, then Status: To do, In progress and Done. It works with or without sections, in List and Board. Marking a task Done keeps it open until you complete it.

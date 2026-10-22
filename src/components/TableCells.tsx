@@ -14,7 +14,7 @@ import { ProjectIcon } from './ProjectIconPicker';
 import { readProjectIcon } from '@/domain/projectIcons';
 
 /** Inline values use the same controls and store commands as task details. */
-export function TableCells({ item, columns, childrenOf }: { item: Item; columns: TableColumn[]; childrenOf: (id: string) => Item[] }) {
+export function TableCells({ item, columns, childrenOf, hideProject = false }: { hideProject?: boolean; item: Item; columns: TableColumn[]; childrenOf: (id: string) => Item[] }) {
   const { t, locale } = useT();
   const snapshot = useStore((s) => s.snapshot);
   const updateTask = useStore((s) => s.updateTask);
@@ -57,7 +57,7 @@ export function TableCells({ item, columns, childrenOf }: { item: Item; columns:
       const project = snapshot.projects[item.project_id];
       const section = item.section_id ? snapshot.sections[item.section_id] : undefined;
       const projectIcon = project ? readProjectIcon(project.description) : null;
-      content = project ? (
+      content = project && !hideProject ? (
         <span className="meta"><span className="proj" style={markerStyle(project.color)} title={section ? `${project.name} / ${section.name}` : project.name}>
           {project.inbox_project ? <Icon name="inbox" size="sm" /> : projectIcon ? <ProjectIcon iconId={projectIcon} size="sm" /> : '#'}
           <span className="project-section-name">{project.name}{section ? ` / ${section.name}` : ''}</span>
