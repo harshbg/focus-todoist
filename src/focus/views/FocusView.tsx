@@ -23,6 +23,7 @@ import { entriesForMode } from '../domain/modeEntries';
 import { settingsFor } from '../domain/settings';
 import { TaskSearch } from './TaskSearch';
 import { openSidecar } from './Sidecar';
+import { PlanBlock } from './PlanBlock';
 import { shortDuration } from '../domain/format';
 import './focus.css';
 
@@ -312,6 +313,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
         }}>×</button></div>
       </li>)}</ul>
     </section>
+    <PlanBlock items={items} lengths={prefs.blockLengths} onOpen={onOpen} />
     {manualOpen && <ManualDialog items={items} lanes={settings.lanes} focusMode={focusMode} onClose={() => setManualOpen(false)} onSave={logManual} />}
   </div>;
 }
