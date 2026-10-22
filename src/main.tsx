@@ -10,6 +10,7 @@ import './styles/polish.css';
 import './styles/v2.css';
 import './styles/table.css';
 import './styles/mobile.css';
+import { startInputModality } from './lib/inputModality';
 import { startSegSlider } from './lib/segSlider';
 import { startTabStops } from './lib/tabStops';
 import { watchInstall } from './lib/install';
@@ -20,6 +21,7 @@ if (import.meta.env.DEV) {
   (window as unknown as Record<string, unknown>).__store = useStore;
 }
 
+startInputModality();
 startSegSlider();
 startTabStops();
 watchInstall();

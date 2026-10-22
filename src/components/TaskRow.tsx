@@ -205,7 +205,7 @@ export function TaskRow({
   const project = snapshot.projects[item.project_id];
   const projectIcon = project ? readProjectIcon(project.description) : null;
   const preview = useMemo(() => withoutChecklist(item.description), [item.description]);
-  const section = showSection && item.section_id ? snapshot.sections[item.section_id] : undefined;
+  const section = (showSection || showProject) && item.section_id ? snapshot.sections[item.section_id] : undefined;
 
   /**
    * The DOM is the final truth about range order.
@@ -287,11 +287,11 @@ export function TaskRow({
       </span>
     ),
     project: showProject && project && (
-      <span className="proj" key="project" style={markerStyle(project.color)}>
+      <span className="proj" key="project" style={markerStyle(project.color)} title={section ? `${project.name} / ${section.name}` : project.name}>
         {project.inbox_project
           ? <Icon name="inbox" size="sm" />
           : projectIcon ? <ProjectIcon iconId={projectIcon} size="sm" /> : '#'}
-        {project.name}
+        <span className="project-section-name">{project.name}{section ? ` / ${section.name}` : ''}</span>
       </span>
     ),
     labels: (
@@ -474,7 +474,7 @@ export function TaskRow({
 
             {dust && <DustAge item={item} />}
 
-            {section && (
+            {section && !showProject && (
               <span className="sect">
                 <Icon name="section" size="sm" />
                 {section.name}

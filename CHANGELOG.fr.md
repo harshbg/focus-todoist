@@ -8,6 +8,22 @@ Chaque ligne est marquée :
 - 🎨 Amélioré : ce qui existait et fonctionne ou se présente mieux,
 - 🐛 Corrigé : un bug ou une régression corrigés.
 
+## 2.16.0
+
+🆕 **Regroupez vos tâches par statut.** Dans Affichage, choisissez Grouper par, puis Statut : À faire, En cours et Terminé. Cela fonctionne avec ou sans sections, en Liste et en Board. Passer une tâche en Terminé la garde ouverte jusqu'à ce que vous la complétiez.
+
+🆕 **Voyez un workspace d'un coup d'œil.** Ouvrez un workspace depuis la barre latérale pour voir ses projets, le nombre de tâches ouvertes ou terminées et leur progression. Les projets archivés et les membres de l'équipe sont listés en dessous.
+
+🎨 **Voyez la section d'une tâche dans vos listes.** Une tâche affiche maintenant son projet et sa section, par exemple « Site web / Design », avec le nom complet au survol.
+
+🎨 **Des cases de priorité plus lisibles.** La bordure est un peu plus marquée, pour distinguer une priorité 1 d'une priorité 3 d'un coup d'œil.
+
+🎨 **Un formulaire de retour qui s'ouvre dans son propre onglet.** Envoyez un bug ou une idée depuis le nouveau formulaire, sans fenêtre dans la fenêtre.
+
+🐛 **Les cartes sélectionnées gardent leur couleur dans le Board.** Après une sélection avec Cmd+clic et un déplacement du pointeur, chaque carte garde une couleur uniforme.
+
+🐛 **Plus de contour parasite après un usage à la souris.** Cliquer, ou fermer un menu avec Échap, ne laisse plus de contour. Tab et les flèches montrent toujours où vous êtes.
+
 ## 2.15.0
 
 🎨 **Des finitions pour la version mobile.** Navigation, menus, détail d’une tâche, nouvelle tâche et connexion sont repensés pour le téléphone : zones plus faciles à toucher, feuilles qui montent du bas, vues adaptées aux petits écrans. Une invitation explique comment ajouter l’app à l’écran d’accueil.

@@ -32,8 +32,29 @@ translation lives in CHANGELOG.fr.md.
 - An entry, title included, is at most 350 characters. A title is understood
   at a glance, by someone who does not know the feature: "Choose the width of
   your lists", not "Comfortable width".
+- Every entry has a bold title AND a description, never a title alone and
+  never a description alone. The title is short (about 6 words), starts with a
+  verb or names the thing, and means something to someone who has never used
+  the feature: no jargon, no "Project / Section"-style notation, no "to see
+  its X" chains.
 - Only what a person using the app can see or do. No technical work, no
   intermediate states of the same release.
+
+## 2.16.0
+
+🆕 **Group tasks by status.** In Display, choose Group by, then Status: To do, In progress and Done. It works with or without sections, in List and Board. Marking a task Done keeps it open until you complete it.
+
+🆕 **See a workspace at a glance.** Open a workspace from the sidebar to see its projects, how many tasks are open or done, and their progress. Archived projects and team members are listed below.
+
+🎨 **See the section of a task in your lists.** A task now shows its project and its section, like "Website / Design", with the full name when you hover it.
+
+🎨 **Clearer priority checkboxes.** The border is a little bolder, so you can tell a priority 1 from a priority 3 at a glance.
+
+🎨 **A feedback form that opens in its own tab.** Send a bug or an idea from the new form, without a window inside a window.
+
+🐛 **Selected cards keep their colour on the Board.** After you select cards with Cmd+click and move the pointer away, each card keeps one even colour.
+
+🐛 **No stray outline after using the mouse.** Clicking, or closing a menu with Escape, no longer leaves an outline. Tab and the arrow keys still show where you are.
 
 ## 2.15.0
 

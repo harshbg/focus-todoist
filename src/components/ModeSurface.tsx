@@ -1,3 +1,4 @@
+import { type Step } from '@/domain/steps';
 import { TableSurface } from './TableSurface';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useDndMonitor } from '@dnd-kit/core';
@@ -90,6 +91,7 @@ function useGrouped(props: ModeSurfaceProps) {
   return useMemo(() => {
     const sorted = sortItems(items, sort, childrenOf, order, snapshot);
     return groupItems(sorted, group, snapshot, {
+      step: (step) => t(`step.${step}`),
       none: t('common.none'),
       overdue: viewKey?.startsWith('filter:') ? t('filters.overdueGroup') : undefined,
       noProject: t('nav.inbox'),
@@ -112,6 +114,7 @@ function useGrouped(props: ModeSurfaceProps) {
         const name = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(first);
         return name.charAt(0).toUpperCase() + name.slice(1);
       },
+      year: (first) => String(first.getFullYear()),
       scheduled: t('section.scheduled'),
       available: t('section.available'),
     });
@@ -140,7 +143,7 @@ function ListSurface(props: ModeSurfaceProps) {
   const { t } = useT();
   const groups = useGrouped(props);
 
-  if (props.items.length === 0 && !props.lead && !props.firstGroupLead) {
+  if (props.group !== 'step' && props.items.length === 0 && !props.lead && !props.firstGroupLead) {
     return <p className="empty">{t('task.noTasks')}</p>;
   }
 
@@ -150,6 +153,11 @@ function ListSurface(props: ModeSurfaceProps) {
       {groups.length === 0 && props.firstGroupLead}
       {groups.map((group, index) => (
         <TaskGroup
+          reorderable={props.group === 'step' ? props.order ?? 'project' : undefined}
+          viewKey={props.viewKey}
+          keepWhenEmpty={props.group === 'step'}
+          dropTarget={props.group === 'step' ? { kind: 'step', step: group.key as Step } : undefined}
+          showSection={props.group === 'step'}
           key={group.key}
           lead={index === 0 ? props.firstGroupLead : undefined}
           title={group.title || undefined}
@@ -187,7 +195,8 @@ function BoardSurface(props: ModeSurfaceProps) {
   // "priority" or "tag" has no single unambiguous meaning.
   const columns: NonNullable<ModeSurfaceProps['boardColumns']> =
     props.boardColumns ??
-    groups.map((g) => ({ id: g.key, title: g.title || t('common.all'), items: g.items }));
+    groups.map((g) => ({ id: g.key, title: g.title || t('common.all'), items: g.items,
+      dropTarget: props.group === 'step' ? { kind: 'step' as const, step: g.key as Step } : undefined }));
 
   const boardRef = useRef<HTMLDivElement>(null);
   const [reach, setReach] = useState({ left: false, right: false });
@@ -363,7 +372,7 @@ function BoardSurface(props: ModeSurfaceProps) {
                 childrenOf={props.childrenOf}
                 onOpen={props.onOpen}
                 showProject={props.showProject}
-                showSection={column.accent === 'quick'}
+                showSection={column.accent === 'quick' || props.group === 'step'}
                 surface="card"
               />
             ))}
