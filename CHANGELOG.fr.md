@@ -8,6 +8,20 @@ Chaque ligne est marquée :
 - 🎨 Amélioré : ce qui existait et fonctionne ou se présente mieux,
 - 🐛 Corrigé : un bug ou une régression corrigés.
 
+## 2.17.0
+
+🆕 **La confidentialité expliquée.** Une section dédiée dans les réglages explique le stockage local, la synchronisation Todoist et l’absence de suivi d’usage.
+
+🎨 **Des espaces mieux ordonnés.** Les projets suivent l’ordre de la barre latérale, avec des dossiers repliables. Les icônes sont alignées à gauche et la progression apparaît à côté de chaque projet.
+
+🎨 **Des sous-tâches plus lisibles.** Une sous-tâche ne répète plus le projet de son parent affiché au-dessus. Lorsqu’elle apparaît seule, son projet reste visible.
+
+🎨 **Replanifier les retards en un geste.** Le titre du bloc En retard accueille un bouton calendrier rouge pour tout passer à aujourd’hui. La confirmation et l’annulation fonctionnent comme avant.
+
+🐛 **Ajouter une section sans saut.** Le tableau conserve en place un champ de nom déjà visible. Une nouvelle colonne ne provoque un défilement que si nécessaire.
+
+🐛 **Des sélecteurs qui gardent leur contour.** Regroupement et Tri conservent leur contour après un choix à la souris. Le clavier affiche toujours l’anneau de focus.
+
 ## 2.16.0
 
 🆕 **Regroupez vos tâches par statut.** Dans Affichage, choisissez Grouper par, puis Statut : À faire, En cours et Terminé. Cela fonctionne avec ou sans sections, en Liste et en Board. Passer une tâche en Terminé la garde ouverte jusqu'à ce que vous la complétiez.

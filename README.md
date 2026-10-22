@@ -355,3 +355,7 @@ me. If anyone at Todoist would like something here changed, open an issue and
 I will change it.
 
 **License:** [MIT](LICENSE).
+
+### Privacy
+
+No analytics SDK, usage counters or tracking cookies are included. Settings → Privacy explains local storage and Todoist synchronization. The same information is available before sign-in.

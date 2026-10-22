@@ -15,6 +15,7 @@ import type { TranslationKey } from '@/i18n';
 import type { Project } from '@/domain/types';
 import { markerStyle } from '@/domain/colors';
 import { Icon } from '@/components/Icon';
+import { projectTree, type ProjectNode } from '@/store/selectors';
 
 interface WorkspaceExtra { archive?: Project[]; members?: WorkspaceMember[]; projects?: Project[]; counts?: Record<string, number>; weeks?: Record<string, number[]> }
 export function WorkspaceView({ workspaceId }: { workspaceId: string }) {
@@ -33,6 +34,7 @@ export function WorkspaceView({ workspaceId }: { workspaceId: string }) {
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<'projects' | 'people'>('projects');
+  const [folded, setFolded] = useState<Record<string, boolean>>({});
   const [showArchive, setShowArchive] = useState(false);
   const [roles, setRoles] = useState<Record<string, string>>({});
   const [roleFailed, setRoleFailed] = useState(false);
@@ -70,25 +72,37 @@ export function WorkspaceView({ workspaceId }: { workspaceId: string }) {
     return () => controller.abort();
   }, [workspaceId, personal, demo, offline, account, snapshot.syncedAt]);
   const belongs = (project: Project) => !project.is_deleted && (personal ? !project.workspace_id : project.workspace_id === workspaceId);
-  const projects = useMemo(() => {
-    const synced = Object.values(snapshot.projects).filter((project) => !project.is_folder && !project.is_deleted && !project.is_archived
-      && (personal ? !project.workspace_id : project.workspace_id === workspaceId));
-    const all = new Map((extra.projects ?? []).filter((p) => !p.is_deleted && !p.is_folder).map((p) => [p.id, p]));
-    for (const project of synced) all.set(project.id, project);
-    return [...all.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [snapshot.projects, extra.projects, personal, workspaceId]);
+  const entries = useMemo(() => {
+    const result: { project: Project; depth: number; projectCount: number }[] = [];
+    const countProjects = (node: ProjectNode): number => (node.project.is_folder ? 0 : 1) + node.children.reduce((sum, child) => sum + countProjects(child), 0);
+    const visit = (node: ProjectNode, depth: number) => {
+      result.push({ project: node.project, depth, projectCount: countProjects(node) });
+      if (!node.project.is_folder || !folded[node.project.id]) node.children.forEach((child) => visit(child, depth + 1));
+    };
+    projectTree(snapshot).find((group) => (group.workspaceId ?? 'personal') === workspaceId)
+      ?.roots.forEach((node) => visit(node, 0));
+    const seen = new Set(result.map(({ project }) => project.id));
+    for (const project of extra.projects ?? []) {
+      if (!seen.has(project.id) && !project.is_deleted && !project.is_archived && !project.is_folder) {
+        result.push({ project, depth: 0, projectCount: 1 });
+        seen.add(project.id);
+      }
+    }
+    return result;
+  }, [snapshot, extra.projects, workspaceId, folded]);
+  const projects = entries.filter(({ project }) => !project.is_folder).map(({ project }) => project);
   const demoArchive = projects[0] ? [{ ...projects[0], id: 'demo-archive', name: t('workspace.demoArchive'), is_archived: true, archived_date: subDays(new Date(), 200).toISOString() }] : [];
   const archive = demo ? [...Object.values(snapshot.projects).filter((p) => belongs(p) && p.is_archived), ...demoArchive] : extra.archive;
   const members = (demo ? [{ user_id: 'demo-user', full_name: snapshot.user?.full_name ?? 'Sam', user_email: snapshot.user?.email ?? '', role: 'ADMIN' }, { user_id: 'demo-alex', full_name: 'Alex Martin', user_email: 'alex@example.com', role: 'MEMBER' }] : extra.members)?.filter((member) => !member.is_deleted);
   const weeks = demo ? weeklyCompletions(buildDemoCompleted(locale), new Date()) : extra.weeks;
   const now = new Date();
   const dateFormat = new Intl.DateTimeFormat(locale === 'fr' ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-  const rows = projects.map((project) => {
+  const rows = entries.map(({ project, depth, projectCount }) => {
     const items = Object.values(snapshot.items).filter((item) => item.project_id === project.id && !item.is_deleted);
     const active = snapshot.projects[project.id] ? items.filter((item) => !item.checked).length : undefined;
     const completed = demo ? (demoCounts[project.id] ?? 0) + items.filter((item) => item.checked).length : extra.counts !== undefined && snapshot.projects[project.id] ? extra.counts[project.id] ?? 0 : snapshot.completedProjectCounts?.[project.id];
     const progress = active !== undefined && completed !== undefined ? (active + completed ? Math.round(100 * completed / (active + completed)) : 0) : undefined;
-    return { project, active, completed, progress };
+    return { project, depth, projectCount, active, completed, progress };
   });
   const me = members?.find((member) => member.user_id === snapshot.user?.id);
   const canEditRoles = demo || me?.role === 'ADMIN';
@@ -106,8 +120,9 @@ export function WorkspaceView({ workspaceId }: { workspaceId: string }) {
     return <span className="workspace-icon" style={markerStyle(project.color)} aria-hidden="true">
       {project.inbox_project ? <Icon name="inbox" size="sm" /> : icon ? <ProjectIcon iconId={icon} size="sm" /> : '#'}</span>;
   };
-  const ring = (progress: number | undefined, name: string) => <span className="workspace-ring" role="img" aria-label={progress === undefined ? undefined : `${name}: ${progress}%`} style={{ '--p': progress ?? 0 } as React.CSSProperties}>
-    <b>{progress === undefined ? '—' : progress}</b></span>;
+  const ring = (progress: number | undefined, name: string) => <span className="workspace-progress" role="img" aria-label={progress === undefined ? undefined : `${name}: ${progress}%`}>
+    <span className="workspace-progress-track"><i style={{ width: `${progress ?? 0}%` }} /></span>
+    <span>{progress === undefined ? '—' : `${progress}%`}</span></span>;
   const peopleSection = <section className="workspace-section" role="tabpanel">
     {loading && !members ? <p>{t('common.loading')}</p> : members === undefined ? <p>{t('workspace.unavailable')}</p>
       : members.length === 0 ? <p className="empty">{t('workspace.noPeople')}</p>
@@ -149,24 +164,30 @@ export function WorkspaceView({ workspaceId }: { workspaceId: string }) {
     </div>
     {tab === 'people' && !personal ? peopleSection : <div role={personal ? undefined : 'tabpanel'}>
       <div className="workspace-projects">
-        <div className="workspace-project workspace-columns"><span /><span>{t('group.project')}</span><span>{t('workspace.last8Weeks')}</span><span>{t('workspace.openForHead')}</span></div>
-        {rows.map(({ project, active, completed, progress }) => {
+        <div className="workspace-project workspace-columns"><span>{t('group.project')}</span><span>{t('workspace.progress')}</span><span>{t('workspace.last8Weeks')}</span><span>{t('workspace.openForHead')}</span></div>
+        {rows.map(({ project, depth, projectCount, active, completed, progress }) => {
+          if (project.is_folder) return <button key={project.id} type="button" className="workspace-folder" style={{ marginLeft: depth * 20, width: `calc(100% - ${depth * 20}px)` }}
+            aria-expanded={!folded[project.id]} onClick={() => setFolded((previous) => ({ ...previous, [project.id]: !previous[project.id] }))}>
+            <Icon name={folded[project.id] ? 'caret' : 'caret-up'} size="sm" className="workspace-folder-caret" />
+            <span className="workspace-icon workspace-folder-icon"><Icon name="project" size="sm" /></span>
+            <span className="workspace-name"><strong>{project.name}</strong><small>{t('workspace.projectCount', { count: projectCount })}</small></span>
+          </button>;
           const created = project.created_at ? new Date(project.created_at) : null;
           const series = weeks?.[project.id] ?? (weeks ? Array.from({ length: 8 }, () => 0) : undefined);
           const top = Math.max(1, ...(series ?? [0]));
-          return <div className="workspace-project" key={project.id}>
-            {ring(progress, project.name)}
+          return <div className="workspace-project" key={project.id} style={{ paddingLeft: depth * 20 }}>
             <button className="workspace-project-name" title={project.name} style={markerStyle(project.color)} onClick={() => openProject(project)}>
               {marker(project)}
               <span className="workspace-name"><span>{project.name}</span>
                 {meta(completed, active)}</span>
             </button>
+            {ring(progress, project.name)}
             <span className="workspace-spark" style={markerStyle(project.color)} aria-label={series ? t('workspace.sparkLabel', { counts: series.join(', ') }) : undefined}>
               {series ? series.map((value, at) => <i key={at} style={{ height: `${3 + Math.round(17 * value / top)}px` }} />) : '—'}</span>
             <span className="workspace-when">{created && Number.isFinite(created.getTime()) ? t('workspace.openFor', { time: elapsed(created, now, locale, t('workspace.today')) }) : ''}</span>
           </div>;
         })}
-        {projects.length === 0 && <p className="empty">{t('nav.noProjectsYet')}</p>}
+        {entries.length === 0 && <p className="empty">{t('nav.noProjectsYet')}</p>}
       </div>
       {!demo && extra.counts === undefined && projects.some((project) => snapshot.completedProjectCounts?.[project.id] === undefined) && <p className="psub">{t('workspace.countsPending')}</p>}
       {showArchive && <section className="workspace-section">
@@ -176,10 +197,10 @@ export function WorkspaceView({ workspaceId }: { workspaceId: string }) {
             const when = project.archived_date ? new Date(project.archived_date) : null;
             const stats = archivedProgress(project);
             return <a className="workspace-project workspace-archive" key={project.id} onClick={demo ? (event) => event.preventDefault() : undefined} href={`https://app.todoist.com/app/project/${encodeURIComponent(project.id)}`} target="_blank" rel="noopener noreferrer" style={markerStyle(project.color)}>
-              {ring(stats?.progress, project.name)}
               <span className="workspace-project-name">{marker(project)}
                 <span className="workspace-name"><span>{project.name}</span>
                   {meta(stats?.done, stats?.open)}</span></span>
+              {ring(stats?.progress, project.name)}
               <span />
               <span className="workspace-when">{when && Number.isFinite(when.getTime()) ? t('workspace.archivedOn', { date: dateFormat.format(when) }) : ''}</span>
             </a>;

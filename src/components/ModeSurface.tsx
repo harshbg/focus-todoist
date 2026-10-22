@@ -199,6 +199,7 @@ function BoardSurface(props: ModeSurfaceProps) {
       dropTarget: props.group === 'step' ? { kind: 'step' as const, step: g.key as Step } : undefined }));
 
   const boardRef = useRef<HTMLDivElement>(null);
+  const beforeAddScroll = useRef(0);
   const [reach, setReach] = useState({ left: false, right: false });
   /** Which column is in front, for the dots under a phone's board (#295). */
   const [at, setAt] = useState(0);
@@ -404,15 +405,37 @@ function BoardSurface(props: ModeSurfaceProps) {
         })}
         {props.onAddSection && (
           <AddSectionColumn
-            onAdd={props.onAddSection}
-            onAdded={() => {
-              /* The new column lands just before this one; the page follows
-                 it, so what was made is on screen. */
+            onAdd={(name) => {
               const board = boardRef.current;
               if (board) {
-                window.requestAnimationFrame(() => board.scrollTo({
-                  left: board.scrollWidth, behavior: 'smooth',
-                }));
+                beforeAddScroll.current = board.scrollLeft;
+                // The Add tile moves right, but it must not anchor the viewport with it.
+                board.style.scrollSnapType = 'none';
+                board.style.overflowAnchor = 'none';
+              }
+              return props.onAddSection!(name);
+            }}
+            onAdded={() => {
+              /* Replace Add in the current viewport with the new section.
+                 The Add tile moving right must never pull earlier columns away. */
+              const board = boardRef.current;
+              if (board) {
+                window.requestAnimationFrame(() => {
+                  board.scrollLeft = beforeAddScroll.current;
+                  window.requestAnimationFrame(() => {
+                    board.scrollLeft = beforeAddScroll.current;
+                    const column = board.querySelector<HTMLElement>('.coladdsection')?.previousElementSibling;
+                    if (column) {
+                      const box = column.getBoundingClientRect();
+                      const viewport = board.getBoundingClientRect();
+                      const delta = box.right > viewport.right ? box.right - viewport.right
+                        : box.left < viewport.left ? box.left - viewport.left : 0;
+                      if (Math.abs(delta) > 1) board.scrollLeft += delta;
+                    }
+                    board.style.removeProperty('overflow-anchor');
+                    board.style.removeProperty('scroll-snap-type');
+                  });
+                });
               }
             }}
           />
@@ -445,7 +468,7 @@ function AddSectionColumn({
   const [name, setName] = useState('');
   const fieldRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (editing) fieldRef.current?.focus(); }, [editing]);
+  useEffect(() => { if (editing) fieldRef.current?.focus({ preventScroll: true }); }, [editing]);
 
   const cancel = () => { setEditing(false); setName(''); };
   const submit = () => {

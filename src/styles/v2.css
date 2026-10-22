@@ -1643,7 +1643,7 @@ img.notifav{display:block;width:34px;height:34px;object-fit:cover}
   .sheet:has(> .detail-body) > .detail-body{flex:1 1 auto;min-height:0;grid-template-rows:minmax(0,1fr);overflow:hidden}
   .sheet:has(> .detail-body) .detail-main,.sheet:has(> .detail-body) .detail-side{min-height:0;overflow-y:auto;overscroll-behavior:contain}
 }
-.fselect-face.quiet:focus-visible,.fselect-face.quiet:focus{outline:0;box-shadow:none}
+.fselect-face.quiet:focus-visible,.fselect-face.quiet:focus{outline:0}
 .notifanswered{display:block;margin-top:6px;color:var(--muted);font-size:12.5px}
 
 /* #29 Insights on a coloured frame with the page floating: the head and the bottom button sit on the frame
@@ -2085,14 +2085,14 @@ html[data-navigation="pointer"] .task:focus-visible::after{content:none}
 
 .workspace-page{max-width:1100px;margin:0 auto;padding:24px}
 .workspace-head{display:flex;align-items:center;justify-content:flex-start;gap:12px}.workspace-head .workspace-avatar{width:32px;height:32px;border-radius:8px;font-size:14px}
-.workspace-project{display:grid;grid-template-columns:38px minmax(160px,1fr) 104px 190px;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);font-size:var(--fs-13)}
+.workspace-project{display:grid;grid-template-columns:minmax(180px,1fr) 100px 104px 160px;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);font-size:var(--fs-13)}
 .workspace-columns{color:var(--muted);font-weight:600;font-size:var(--fs-12);padding:8px 0}
 .workspace-columns span:last-child{text-align:right}
 .workspace-when{text-align:right;color:var(--muted);font-size:var(--fs-12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.workspace-project-name{display:flex;align-items:center;gap:10px;min-width:0;text-align:left}
+.workspace-project-name{padding:0;display:flex;align-items:center;gap:10px;min-width:0;text-align:left}
 .workspace-icon{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;flex:none;font-weight:700;font-size:14px;line-height:1;color:var(--marker);background:color-mix(in srgb,var(--marker) 14%,var(--surface))}
 .workspace-icon .ic{width:15px;height:15px}
-.workspace-name{display:flex;flex-direction:row;align-items:baseline;gap:8px;min-width:0}
+.workspace-name{display:flex;flex-direction:row;align-items:baseline;gap:8px;min-width:0;flex:1}
 .workspace-meta{display:inline-flex;align-items:baseline;gap:8px;flex:none;font-weight:400;font-size:var(--fs-13);color:var(--text);white-space:nowrap}
 .workspace-meta i{font-style:normal;color:var(--faint)}.workspace-meta b{font-weight:400;color:var(--muted)}
 .workspace-name>span:not(.workspace-meta){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--text)}
@@ -2110,8 +2110,17 @@ html[data-navigation="pointer"] .task:focus-visible::after{content:none}
 .workspace-archive{opacity:.85}.workspace-archive .ic:last-child{justify-self:end;color:var(--faint)}
 .workspace-spark{display:flex;align-items:flex-end;gap:3px;height:22px;color:var(--faint)}
 .workspace-spark i{width:8px;border-radius:2px;background:color-mix(in srgb,var(--marker,var(--accent)) 72%,var(--surface))}
-.workspace-ring{--p:0;width:38px;height:38px;border-radius:50%;background:conic-gradient(var(--accent) calc(var(--p)*1%),var(--border) 0);display:grid;place-items:center;justify-self:center}
-.workspace-ring b{width:30px;height:30px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font-size:10px;font-weight:700;font-variant-numeric:tabular-nums}
+.workspace-progress{display:flex;flex-direction:column;align-items:stretch;gap:5px;font-size:var(--fs-12);color:var(--muted);font-variant-numeric:tabular-nums}
+.workspace-progress-track{height:4px;flex:none;width:100%;min-width:24px;background:var(--border);border-radius:4px;overflow:hidden}
+.workspace-progress-track i{display:block;height:100%;background:var(--accent);border-radius:inherit}
+.workspace-meta>i:first-child{display:none}
+.workspace-progress>span:last-child{text-align:center}
+.workspace-folder .workspace-name{flex-direction:column;gap:5px}
+.workspace-folder{position:relative;display:flex;align-items:center;gap:10px;width:100%;padding:18px 0 10px;text-align:left;color:var(--text)}
+.workspace-folder .workspace-folder-caret{position:absolute;left:-15px;top:calc(50% - 7px);width:12px;color:var(--muted)}
+.workspace-folder-icon{color:var(--muted);background:transparent}
+.workspace-folder strong{font-size:var(--fs-13);font-weight:600}
+.workspace-folder small{font-size:var(--fs-12);color:var(--muted)}
 .workspace-person{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
 .workspace-who strong{font-size:var(--fs-14);font-weight:600}
 .workspace-person .workspace-avatar{width:34px;height:34px;font-size:13px}
@@ -2124,18 +2133,41 @@ html[data-navigation="pointer"] .task:focus-visible::after{content:none}
   .workspace-toolbar{gap:12px;justify-content:space-between}
   .workspace-tabs{flex:1 1 100%}.workspace-tabs button{flex:1;justify-content:center;padding:8px 12px}
   .workspace-columns{display:none}
-  /* A project reads top to bottom: its name, how far along it is, then a caption line with its weekly rhythm and its age. The ring sits at the left edge. */
-  .workspace-project{grid-template-columns:44px auto minmax(0,1fr);grid-template-areas:"ring name name" "ring spark when";gap:10px 14px;padding:18px 0;align-items:center}
-  .workspace-project>.workspace-ring{grid-area:ring;width:44px;height:44px;align-self:start}
-  .workspace-project>.workspace-ring b{width:34px;height:34px;font-size:11px}
-  .workspace-project>.workspace-project-name{grid-area:name;display:grid;grid-template-columns:26px minmax(0,1fr);column-gap:10px;row-gap:4px;align-items:center;width:100%}
-  .workspace-project>.workspace-project-name .workspace-name{display:contents}
-  .workspace-project>.workspace-project-name .workspace-name>span:not(.workspace-meta){font-size:var(--fs-16,16px);font-weight:650;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .workspace-project>.workspace-project-name .workspace-meta{grid-column:1 / -1;flex-wrap:wrap;font-size:var(--fs-13)}
-  .workspace-meta>i:first-child{display:none}.workspace-meta>span:last-child{color:var(--muted)}
-  .workspace-project>.workspace-spark{grid-area:spark;height:22px;align-self:center}
-  .workspace-project>.workspace-when{grid-area:when;text-align:right;font-size:var(--fs-12);color:var(--faint)}
-  .workspace-archive{grid-template-areas:"ring name name" "ring when when"}.workspace-archive>.workspace-spark{display:none}.workspace-archive>.workspace-when{text-align:left}
-  .workspace-archive>.workspace-ring{align-self:center}.workspace-archive>span:empty{display:none}
+  .workspace-project{grid-template-columns:minmax(0,1fr) 76px;grid-template-areas:"name name" "spark progress" "when progress";gap:10px 12px;padding:18px 0;align-items:center}
+  .workspace-project>.workspace-project-name{grid-area:name;align-items:flex-start;gap:10px;width:100%}
+  .workspace-project .workspace-name>span:not(.workspace-meta){font-size:var(--fs-14);font-weight:650;min-width:0}
+  .workspace-project .workspace-meta{gap:4px;font-size:var(--fs-12);white-space:nowrap}
+  .workspace-meta>span:last-child{color:var(--muted)}
+  .workspace-project>.workspace-progress{grid-area:progress;align-self:center;gap:5px;font-size:11px}
+  .workspace-project>.workspace-spark{grid-area:spark;height:22px;margin-left:36px}
+  .workspace-project>.workspace-when{grid-area:when;text-align:left;margin-left:36px;font-size:11px;color:var(--faint);white-space:normal}
+  .workspace-archive{grid-template-areas:"name name" "when progress"}.workspace-archive>span:empty{display:none}.workspace-archive>.workspace-when{text-align:left;margin-left:36px}
   .workspace-person{padding:14px 0}.workspace-role{max-width:46%}
 }
+
+.reschedule-overdue{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;flex:none;border:0;border-radius:50%;background:#d1453b;color:#fff;cursor:pointer}
+.reschedule-overdue:hover{filter:brightness(.9)}
+
+
+
+/* Keep the overdue command next to the section's duration, including on phones. */
+.ghead:has(.reschedule-overdue){flex-wrap:nowrap}
+.ghead:has(.reschedule-overdue) .gtoggle{flex:0 1 auto}
+.ghead:has(.reschedule-overdue) .gactions{order:initial;width:auto;margin:0;flex:0 0 auto;justify-content:flex-start}
+.ghead:has(.reschedule-overdue) .gname{white-space:normal}
+.sidebar .navrow:is(.drop-before,.drop-after,.nesting)::after{height:3px;background:var(--text);box-shadow:0 0 0 1px var(--accent);z-index:5;pointer-events:none}
+
+.privacy-disclosure{border:0;border-radius:0;background:transparent}
+.privacy-disclosure>summary{list-style:none;display:flex;align-items:center;justify-content:flex-start;gap:8px;padding:12px 0;font-size:var(--fs-14);font-weight:600;cursor:pointer}
+.privacy-disclosure>summary .ic{flex:none;color:var(--muted)}
+.privacy-disclosure>summary::-webkit-details-marker{display:none}
+.privacy-disclosure[open]>summary .ic{transform:rotate(180deg)}
+.privacy-disclosure .privacy-information{padding:0 0 16px}
+.privacy-information{font-size:var(--fs-13);line-height:1.6;color:var(--muted);overflow-wrap:anywhere}
+.privacy-information h3{font-size:var(--fs-14);color:var(--text);margin:20px 0 6px}
+.privacy-information p{margin:8px 0}
+.privacy-information a,.privacy-link{color:var(--accent-dark);text-decoration:underline}
+.privacy-choice{gap:16px}.privacy-choice .switch{flex-shrink:0}
+.privacy-status{padding:10px 12px;border-radius:var(--r-sm);background:var(--subtle);color:var(--text)}
+.privacy-links{display:flex;flex-wrap:wrap;gap:8px 16px}
+@media(max-width:720px){.settings{grid-template-columns:minmax(0,1fr);gap:var(--s4)}.privacy-disclosure{min-width:0;width:100%}}

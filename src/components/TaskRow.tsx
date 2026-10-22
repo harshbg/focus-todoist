@@ -203,6 +203,8 @@ export function TaskRow({
   const deadline = deadlineDate(item);
   const late = isOverdue(item);
   const project = snapshot.projects[item.project_id];
+  const parent = item.parent_id ? snapshot.items[item.parent_id] : undefined;
+  const projectVisible = showProject && !(depth > 0 && parent?.project_id === item.project_id);
   const projectIcon = project ? readProjectIcon(project.description) : null;
   const preview = useMemo(() => withoutChecklist(item.description), [item.description]);
   const section = (showSection || showProject) && item.section_id ? snapshot.sections[item.section_id] : undefined;
@@ -286,7 +288,7 @@ export function TaskRow({
         {formatRelativeDay(deadline, locale)}
       </span>
     ),
-    project: showProject && project && (
+    project: projectVisible && project && (
       <span className="proj" key="project" style={markerStyle(project.color)} title={section ? `${project.name} / ${section.name}` : project.name}>
         {project.inbox_project
           ? <Icon name="inbox" size="sm" />
@@ -485,7 +487,7 @@ export function TaskRow({
           </span>
         </span>
 
-        {table && <TableCells item={item} columns={table.columns} childrenOf={childrenOf} />}
+        {table && <TableCells item={item} hideProject={!projectVisible} columns={table.columns} childrenOf={childrenOf} />}
         {!item.projection && <span className="trow-end">
           <TaskActions
             item={item}
