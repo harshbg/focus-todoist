@@ -1059,8 +1059,15 @@
 .focus-theme .fx-sidecar-title { font-weight: 600; font-size: 14px; margin-right: auto; }
 
 /* Gentle guidance: plan the next block. */
-.focus-theme .fx-plan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.focus-theme .fx-plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 .focus-theme .fx-plan-card { display: flex; flex-direction: column; gap: 12px; }
 .focus-theme .fx-plan-card input[type="datetime-local"] { display: block; margin-top: 6px; padding: 8px 10px; border: 1px solid var(--fx-hairline); background: var(--fx-surface); color: var(--fx-ink); font: inherit; text-transform: none; letter-spacing: 0; }
 .focus-theme .fx-plan-note { margin: 0; font-size: 12px; color: var(--fx-muted); }
 @media (max-width: 900px) { .focus-theme .fx-plan-grid { grid-template-columns: 1fr; } }
+
+/* Gentle guidance: the opt-in nudges and their switches */
+.focus-theme .fx-nudges { display: grid; gap: 16px; margin-bottom: 24px; }
+.focus-theme .fx-nudge { display: flex; flex-direction: column; gap: 10px; border-left: 4px solid var(--fx-rust); }
+.focus-theme .fx-nudge-text { margin: 0; font-family: var(--fx-serif, inherit); font-size: 18px; color: var(--fx-ink); }
+.focus-theme .fx-toggle { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--fx-ink); cursor: pointer; }
+.focus-theme .fx-toggle input { accent-color: var(--fx-rust); width: 16px; height: 16px; }

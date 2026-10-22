@@ -63,6 +63,7 @@ export function readFocusPreferences(stored: unknown): FocusPreferences {
     blockLengths: [...defaults.blockLengths],
     workProjectIds: [...defaults.workProjectIds],
     personal: { ...defaults.personal, workdays: [...defaults.personal.workdays], lanes: [...defaults.personal.lanes] },
+    guidance: { ...defaults.guidance },
   };
   if (stored === null || typeof stored !== 'object' || Array.isArray(stored)) return result;
 
@@ -108,5 +109,11 @@ export function readFocusPreferences(stored: unknown): FocusPreferences {
 
   if (typeof fields.taskComment === 'boolean') result.taskComment = fields.taskComment;
   if (typeof fields.sound === 'boolean') result.sound = fields.sound;
+  if (fields.guidance !== null && typeof fields.guidance === 'object' && !Array.isArray(fields.guidance)) {
+    const guidance = fields.guidance as Record<string, unknown>;
+    for (const key of ['startAlerts', 'gentleRestart', 'weeklyInsight'] as const) {
+      if (typeof guidance[key] === 'boolean') result.guidance[key] = guidance[key];
+    }
+  }
   return result;
 }

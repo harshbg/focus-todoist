@@ -76,6 +76,8 @@ describe('readFocusPreferences', () => {
   it('accepts booleans and falls back for malformed booleans', () => {
     expect(readFocusPreferences({ taskComment: true, sound: false })).toMatchObject({ taskComment: true, sound: false });
     expect(readFocusPreferences({ taskComment: 'true', sound: 0 })).toMatchObject({ taskComment: false, sound: true });
+    expect(readFocusPreferences({ guidance: { startAlerts: true, gentleRestart: 'yes' } }).guidance)
+      .toEqual({ startAlerts: true, gentleRestart: false, weeklyInsight: false });
   });
 
   it('does not let one malformed field affect the other choices', () => {

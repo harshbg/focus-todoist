@@ -24,6 +24,7 @@ import { settingsFor } from '../domain/settings';
 import { TaskSearch } from './TaskSearch';
 import { openSidecar } from './Sidecar';
 import { PlanBlock } from './PlanBlock';
+import { GuidanceNudges } from './Guidance';
 import { shortDuration } from '../domain/format';
 import './focus.css';
 
@@ -216,6 +217,8 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
         </div></div>
       </div>
     </header>
+
+    <GuidanceNudges items={items} entries={modeEntries} onReturn={(item, minutes) => startFor(item, item.content, 'focus', minutes)} />
 
     <div className="fx-grid"><main className="fx-main">
       <section className="fx-card fx-timer">

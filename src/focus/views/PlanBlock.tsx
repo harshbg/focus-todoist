@@ -5,6 +5,7 @@ import { formatDuration } from '@/domain/estimates';
 import type { Item } from '@/domain/types';
 import { useT } from '@/hooks/useT';
 import { useStore } from '@/store/store';
+import { ReminderSettings } from './Guidance';
 import { TaskSearch } from './TaskSearch';
 
 /**
@@ -70,6 +71,7 @@ export function PlanBlock({ items, lengths, onOpen }: { items: Item[]; lengths: 
                 {item.duration ? ` · ${formatDuration(item.duration.unit === 'day' ? item.duration.amount * 1440 : item.duration.amount, locale)}` : ''}</span></div>
           </li>)}</ul>}
       </div>
+      <ReminderSettings />
     </div>
   </section>;
 }

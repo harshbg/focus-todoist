@@ -69,6 +69,8 @@ export interface FocusPreferences extends FocusSettings {
   /** Also leave a readable comment on the task when a block ends. */
   taskComment: boolean;
   sound: boolean;
+  /** Gentle guidance nudges, all opt-in; they show only while the app is open. */
+  guidance: { startAlerts: boolean; gentleRestart: boolean; weeklyInsight: boolean };
 }
 
 export const DEFAULT_FOCUS_PREFERENCES: FocusPreferences = {
@@ -86,4 +88,5 @@ export const DEFAULT_FOCUS_PREFERENCES: FocusPreferences = {
   breakMin: 5,
   taskComment: false,
   sound: true,
+  guidance: { startAlerts: false, gentleRestart: false, weeklyInsight: false },
 };
