@@ -2155,6 +2155,8 @@ html[data-navigation="pointer"] .task:focus-visible::after{content:none}
 .ghead:has(.reschedule-overdue) .gtoggle{flex:0 1 auto}
 .ghead:has(.reschedule-overdue) .gactions{order:initial;width:auto;margin:0;flex:0 0 auto;justify-content:flex-start}
 .ghead:has(.reschedule-overdue) .gname{white-space:normal}
+.group .ghead:has(.reschedule-overdue) .gactions{margin-left:auto}
+.task-table .group .ghead:has(.reschedule-overdue) .gactions{margin-left:0}
 .sidebar .navrow:is(.drop-before,.drop-after,.nesting)::after{height:3px;background:var(--text);box-shadow:0 0 0 1px var(--accent);z-index:5;pointer-events:none}
 
 .privacy-disclosure{border:0;border-radius:0;background:transparent}

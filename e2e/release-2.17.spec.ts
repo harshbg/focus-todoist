@@ -152,7 +152,7 @@ test('#327 sidebar drag reorders repeatedly with a contrasting indicator on colo
   await expect.poll(order).toEqual(['drag217b', 'drag217c', 'drag217a']);
 });
 
-test('#324 overdue button stays beside the duration in Table and on a phone', async ({ demo: page }) => {
+test('#324 overdue button aligns right in List and follows duration in Table', async ({ demo: page }) => {
   for (const mode of ['list', 'table']) {
     await page.evaluate((mode) => (window as unknown as { __store: Store }).__store.getState().setViewPrefs('week', { mode, group: 'none' }), mode);
     for (const width of [1280, 390]) {
@@ -163,11 +163,17 @@ test('#324 overdue button stays beside the duration in Table and on a phone', as
         const stats = await header.locator('.gstats').boundingBox();
         return button && stats ? Math.abs((button.y + button.height / 2) - (stats.y + stats.height / 2)) : Infinity;
       }).toBeLessThan(12);
+      if (mode === 'table') {
       await expect.poll(async () => {
         const button = await header.locator('.reschedule-overdue').boundingBox();
         const stats = await header.locator('.gstats').boundingBox();
         return button && stats ? button.x - (stats.x + stats.width) : Infinity;
       }).toBeLessThan(25);
+      } else {
+        const button = (await header.locator('.reschedule-overdue').boundingBox())!;
+        const bounds = (await header.boundingBox())!;
+        expect(Math.abs(bounds.x + bounds.width - button.x - button.width)).toBeLessThan(3);
+      }
       await page.screenshot({ path: `../../outputs/retards-${mode}-${width}.png`, fullPage: true });
     }
   }
