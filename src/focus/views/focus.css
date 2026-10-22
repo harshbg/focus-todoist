@@ -1053,3 +1053,7 @@
 @media (hover: none) { .focus-theme .fx-trail-tools { opacity: 1; } }
 .focus-theme .fx-trail-tools .fx-star { background: none; border: 0; padding: 0 1px; color: var(--fx-hairline); cursor: pointer; font-size: 13px; }
 .focus-theme .fx-trail-tools .fx-star[aria-pressed="true"] { color: var(--fx-rust); }
+
+/* The sidecar window: one narrow column. */
+.focus-theme.fx-sidecar { padding: 12px; display: flex; flex-direction: column; gap: 12px; background: var(--fx-surface); min-height: 100vh; box-sizing: border-box; }
+.focus-theme .fx-sidecar-title { font-weight: 600; font-size: 14px; margin-right: auto; }

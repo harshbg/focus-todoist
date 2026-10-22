@@ -22,6 +22,7 @@ import { useFocusLog, useFocusNow, useFocusPreferences, useFocusStore } from '..
 import { entriesForMode } from '../domain/modeEntries';
 import { settingsFor } from '../domain/settings';
 import { TaskSearch } from './TaskSearch';
+import { openSidecar } from './Sidecar';
 import { shortDuration } from '../domain/format';
 import './focus.css';
 
@@ -254,7 +255,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
           </div>
         </div>}
         <div className="fx-hint">
-          <button className="fx-link" disabled>↗ {t('focus.openSidecar')}</button>
+          <button className="fx-link" onClick={() => void openSidecar()}>↗ {t('focus.openSidecar')}</button>
           <button className="fx-link" onClick={() => setPreview(true)}>✦ {t('focus.previewFireworks')}</button>
           <span>{t('focus.hint')}</span>
         </div>
