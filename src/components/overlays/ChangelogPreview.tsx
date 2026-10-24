@@ -70,6 +70,11 @@ export function ChangelogPreview({ kind }: { kind: ChangelogVisual | null }) {
       </div>; break;
     case 'assign':
       content = <><div className="cv-sentence">Prepare the presentation {chip('+Anne', 'accent')}</div>{row('Anne', 'user', '↵', true)}</>; break;
+    case 'views':
+      content = <><div className="cv-heading"><Icon name="project" size="sm" />{design}</div>
+        <div className="cv-pills">{([['list', 'Main view', true], ['board', 'By status'], ['table', 'Overview']] as Array<[IconName, string, boolean?]>).map(([icon, label, on]) =>
+          <span key={label} className={`cv-pill${on ? ' on' : ''}`}><Icon name={icon} size="sm" />{label}</span>)}<span className="cv-pill plus">+</span></div>
+        {row(review, 'checkbox', 'P1')}{row(task, 'checkbox', 'P2')}</>; break;
     case 'mentions':
       content = <>{title(say('Comments', 'Commentaires'))}<div className="cv-chips">{chip(say('Notify: Anne', 'Notifier : Anne'))}</div><div className="cv-field">{say('Can you check the copy, ', 'Tu peux relire les textes, ')}<span className="cv-chip accent">@Anne</span> ?</div>{row('Anne', 'user', undefined, true)}{row('Sam', 'user')}</>; break;
     case 'subtasks':

@@ -34,6 +34,9 @@ import { applyFilters, pullQuick, rootItems, sortItems } from '@/store/selectors
 import { summariseLoad } from '@/domain/load';
 import { readProjectIcon, stripProjectIcon, withProjectIcon } from '@/domain/projectIcons';
 import { bySectionOrder } from '@/domain/orderKey';
+import { ProjectViewTabs } from '@/components/ProjectViewTabs';
+import { useActiveViewKey, useProjectViews } from '@/hooks/useProjectViews';
+import { PROJECT_GROUPS } from '@/components/DisplayMenu';
 
 interface ProjectViewProps {
   projectId: string;
@@ -151,7 +154,9 @@ function ProjectBody({
     setTimeout(focus, 30);
     await created;
   };
-  const viewKey = `project:${projectId}`;
+  /* The settings this page reads are those of its active saved view (#333). */
+  const projectViews = useProjectViews(projectId);
+  const viewKey = projectViews.activeKey;
   const current = viewPrefs(prefs, viewKey);
   const hireNoteOpen = useStore((s) => s.hireNote);
   /* A row of the project's own tasks (or of the Scheduled list), under Quick; elsewhere under the header. */
@@ -384,9 +389,10 @@ function ProjectBody({
               viewKey={viewKey}
               pageItems={pool0}
               modes={['list', 'board', 'table', 'calendar']}
-              groups={['none', 'assignee', 'scheduled', 'priority', 'label', 'step', 'estimate', 'day', 'month', 'year']}
+              groups={PROJECT_GROUPS}
               completedToggle
               showWorkspaces={false}
+              scope={projectViews.tabs.length > 1 ? t('views.displayScope', { name: projectViews.active.name }) : undefined}
             />
             <InsightsButton onClick={onInsights} />
             {/* The same menu the sidebar row carries, asked from the page it
@@ -424,6 +430,7 @@ function ProjectBody({
         onOpenUnestimated={load.unestimatedCount > 0 ? onUnestimated : undefined}
         time={timePill}
       />
+      <ProjectViewTabs api={projectViews} />
       {current.mode !== 'calendar' && <TimePanel
         pageItems={scoped}
         pageLabel={project.name}
@@ -602,8 +609,9 @@ function ProjectBody({
 
 export function ProjectView(props: ProjectViewProps) {
   const prefs = useStore((s) => s.prefs);
+  const viewKey = useActiveViewKey(props.projectId);
   return (
-    <SubtasksProvider value={viewPrefs(prefs, `project:${props.projectId}`).filters.showSubtasks}>
+    <SubtasksProvider value={viewPrefs(prefs, viewKey).filters.showSubtasks}>
       <ProjectBody {...props} />
     </SubtasksProvider>
   );

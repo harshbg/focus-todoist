@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { tableColumns } from './table';
+import { tableColumnOrder, tableColumns } from './table';
 import { pageClass } from './pageLayout';
-import { defaultViewPrefs } from './types';
+import { defaultViewPrefs, type ViewPrefs } from './types';
 
 describe('table columns', () => {
   const view = defaultViewPrefs('inbox');
@@ -29,4 +29,25 @@ describe('page layout', () => {
     expect(pageClass({ ...view, mode: 'list', fullWidth: true })).toBe('page');
   });
 
+});
+
+describe('the order of the columns (#333)', () => {
+  const prefs = (extra: Partial<ViewPrefs> = {}): ViewPrefs => ({ ...defaultViewPrefs('project:p'), ...extra });
+
+  it('lists every column but the title, the shown ones first when nothing was saved', () => {
+    expect(tableColumnOrder(prefs())).toEqual(['date', 'deadline', 'priority', 'estimate', 'labels', 'description', 'project']);
+  });
+
+  it('keeps a saved order, hidden columns included', () => {
+    const order = tableColumnOrder(prefs({ tableOrder: ['project', 'date', 'labels'], tableColumns: ['title', 'date', 'labels'] }));
+    expect(order.slice(0, 3)).toEqual(['project', 'date', 'labels']);
+    expect(order).toHaveLength(7);
+  });
+
+  it('ignores the title, duplicates and columns that do not exist', () => {
+    const order = tableColumnOrder(prefs({ tableOrder: ['title', 'date', 'date', 'nope' as never] }));
+    expect(order.filter((column) => column === 'date')).toHaveLength(1);
+    expect(order).not.toContain('title');
+    expect(order).not.toContain('nope');
+  });
 });

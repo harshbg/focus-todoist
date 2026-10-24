@@ -8,6 +8,7 @@ import './styles/additions.css';
 import './styles/theme.css';
 import './styles/polish.css';
 import './styles/v2.css';
+import './styles/viewtabs.css';
 import './styles/table.css';
 import './styles/mobile.css';
 import { startInputModality } from './lib/inputModality';

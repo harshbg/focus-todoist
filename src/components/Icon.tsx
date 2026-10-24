@@ -8,13 +8,13 @@ import {
   MessageSquare, MoreHorizontal, PanelLeft, PanelTop, Pencil, Plus, Repeat,
   Search, Settings, SlidersHorizontal, Star, Tag, Target, TrendingUp,
   TriangleAlert, Upload, X, Lock, Globe, ListChecks, Bold, Italic, Strikethrough, Heading1, Heading2, Quote, Code, ListOrdered,
-  Volume2, User, Eye, Sparkles, Info, Palette, Paperclip, SquareCheck, SmilePlus, Copy, Trash2, ArrowUp, FileText,
+  RotateCcw, Volume2, User, Eye, Sparkles, Info, Palette, Paperclip, SquareCheck, SmilePlus, Copy, Trash2, ArrowUp, FileText,
   type LucideIcon,
 } from 'lucide-react';
 
 /** Every glyph in the product, named exactly as it was under the old sprite. */
 export type IconName =
-  | 'volume'
+  | 'volume' | 'reset'
   | 'arrow-left' | 'arrow-right' | 'bars' | 'bell' | 'board' | 'calendar'
   | 'caret' | 'caret-up' | 'check' | 'clock' | 'close' | 'coffee' | 'comment'
   | 'dashboard' | 'deadline' | 'drag' | 'edit' | 'export' | 'external'
@@ -29,6 +29,7 @@ export type IconName =
 /** Lucide (MIT, lucide.dev) — chosen to replace the app's hand-drawn sprite. */
 const ICONS: Record<IconName, LucideIcon> = {
   volume: Volume2,
+  reset: RotateCcw,
   table: Table2,
   checkbox: SquareCheck, paperclip: Paperclip, react: SmilePlus, copy: Copy, trash: Trash2, 'arrow-up': ArrowUp, file: FileText, image: ImageGlyph,
   user: User, eye: Eye, sparkles: Sparkles, info: Info, palette: Palette, bold: Bold, italic: Italic, strike: Strikethrough, heading1: Heading1, heading2: Heading2, quote: Quote, code: Code, 'list-ordered': ListOrdered,

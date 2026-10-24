@@ -8,6 +8,12 @@ Chaque ligne est marquée :
 - 🎨 Amélioré : ce qui existait et fonctionne ou se présente mieux,
 - 🐛 Corrigé : un bug ou une régression corrigés.
 
+## 2.19.0
+
+🆕 **Créez des vues pour vos projets.** Appuyez sur + sous le titre d'un projet pour ajouter une vue : son nom, sa disposition, son regroupement et ses filtres. Passez d'une vue à l'autre en un clic, sans rien reconfigurer. Appuyez sur la vue ouverte pour la modifier. Vos vues suivent votre compte.
+
+🎨 **Affichage affiné.** Affichage et chaque vue se présentent en trois parties : type de vue, regrouper et trier, filtres. Priorité, estimation, tags et assignation sont des menus à cases à cocher. Dans une table, Colonnes ouvre une liste sur le côté : activez ou désactivez les colonnes et glissez-les pour les réordonner.
+
 ## 2.18.0
 
 🆕 **Mentionnez quelqu'un dans un commentaire.** Dans un projet partagé, tapez @ dans le commentaire d'une tâche pour choisir une personne dans la liste. Notifier, au-dessus du champ, choisit qui est prévenu : tout le monde ou une seule personne. Une personne mentionnée est toujours prévenue.
