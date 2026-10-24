@@ -42,6 +42,7 @@ const tourPreferences = (prefs: Preferences): Preferences => ({
   showQuickGroup: true,
   weekLayout: 'unified',
   views: {},
+  projectViews: {},
 });
 
 export function schedulePreferencesWrite(get: () => AppState) {
@@ -182,6 +183,20 @@ export const createPreferencesSlice: Slice<PreferencesSlice> = (set, get) => ({
     set({ prefs });
     void idb.savePrefs(PREFS_KEY, prefs);
     schedulePreferencesWrite(get);
+  },
+  setProjectViews(projectId, tabs) {
+    const projectViews = { ...get().prefs.projectViews };
+    if (tabs) projectViews[projectId] = { tabs }; else delete projectViews[projectId];
+    get().setPrefs({ projectViews });
+  },
+  setActiveView(projectId, viewId) {
+    if (get().prefs.activeViews[projectId] === viewId) return;
+    get().setPrefs({ activeViews: { ...get().prefs.activeViews, [projectId]: viewId } });
+  },
+  removeViewPrefs(keys) {
+    const views = { ...get().prefs.views };
+    for (const key of keys) delete views[key];
+    get().setPrefs({ views });
   },
   setLocale(locale) {
     get().setPrefs({ locale });

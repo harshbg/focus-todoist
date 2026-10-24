@@ -52,9 +52,9 @@
 :root[data-layout="sidebar-float"] .pvscale{--sidebar-w:268px}
 .app:has(.sidebar-resize:active),.app:has(.sidebar-resize:active) .workspace{transition:none}
 
-.displaypanel .display-modes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
-.displaypanel .display-modes button{display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0;min-height:64px;padding:8px 3px}
-.displaypanel .display-modes button small{font-size:var(--fs-11);white-space:nowrap}
+:is(.displaypanel,.dfields) .display-modes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+:is(.displaypanel,.dfields) .display-modes button{display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0;min-height:64px;padding:8px 3px}
+:is(.displaypanel,.dfields) .display-modes button small{font-size:var(--fs-11);white-space:nowrap}
 .table-priority-mark{display:inline-flex;color:var(--priority-color)}
 .table-priority-mark.p1{--priority-color:var(--p1)}.table-priority-mark.p2{--priority-color:var(--p2)}
 .table-priority-mark.p3{--priority-color:var(--p3)}.table-priority-mark.p4{--priority-color:var(--p4)}
@@ -73,11 +73,11 @@
 .composer-attachment-status{font-size:var(--fs-12);color:var(--muted);margin:8px 0}
 @media(max-width:720px){.task-table .task.picked>.tmain{background:var(--row-marked)}}
 
-.displaypanel .display-modes{border-radius:12px}
-.displaypanel .display-modes button{border-radius:8px}
+:is(.displaypanel,.dfields) .display-modes{border-radius:12px}
+:is(.displaypanel,.dfields) .display-modes button{border-radius:8px}
 .task-table .task,.task-table .task[data-depth],.task-table .table-head{padding-left:30px}
 .task-table .task .drag{left:2px;width:18px;justify-content:center}
-.displaypanel .display-modes.seg-slide::before{border-radius:8px}
+:is(.displaypanel,.dfields) .display-modes.seg-slide::before{border-radius:8px}
 
 /* The table scrolls inside itself and its header row stays in view. */
 .table-scroll{overflow:auto;overscroll-behavior:contain}

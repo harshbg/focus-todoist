@@ -68,8 +68,10 @@ test('the Inbox is drawn as a project, so its sections can be added and shown', 
 test('the Display menu offers only the tags of the page in front', async ({ demo: page }) => {
   const tagsOf = async () => {
     await page.locator('.screen.active').getByRole('button', { name: 'Display' }).click();
-    const menu = page.locator('.popover').filter({ has: page.getByRole('heading', { name: 'Tags' }) });
-    const names = await menu.locator('.chiprow.scroll .chip').allInnerTexts();
+    const menu = page.locator('.popover').filter({ has: page.getByRole('heading', { name: 'Filters' }) });
+    await menu.locator('.dfields').getByRole('button', { name: /^Tags/ }).click();
+    const names = await page.locator('.multiselect-options label .multiselect-label').allInnerTexts();
+    await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
     return names.map((n) => n.trim());
   };

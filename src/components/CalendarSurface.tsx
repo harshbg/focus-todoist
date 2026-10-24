@@ -20,6 +20,7 @@ import { colorValue } from '@/domain/colors';
 import { projectOccurrences } from '@/domain/projectOccurrences';
 import { displayTaskContent, isUncompletable, toDisplayPriority, type Item } from '@/domain/types';
 import { scheduleCalendarTask } from '@/store/calendar';
+import { projectIdOfKey } from '@/domain/projectViews';
 import './calendar.css';
 
 /** An hour of the day grid: a phone's is shorter, so three days and the hours around now fit one screen (#295). */
@@ -79,7 +80,7 @@ export function CalendarSurface({ viewKey, items, onOpen, onAddTaskTo, childrenO
   const range = calendarRange(anchor, presentation, snapshot.user?.start_day);
   const days = daysBetween(range.first, range.last);
   const history = useCalendarHistory(range.first, range.last, options.completed && !viewKey.startsWith('filter:'),
-    viewKey.startsWith('project:') ? viewKey.slice(8) : viewKey === 'inbox' ? snapshot.user?.inbox_project_id : undefined);
+    viewKey.startsWith('project:') ? projectIdOfKey(viewKey) : viewKey === 'inbox' ? snapshot.user?.inbox_project_id : undefined);
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 700px)');
@@ -134,7 +135,7 @@ export function CalendarSurface({ viewKey, items, onOpen, onAddTaskTo, childrenO
       items.forEach(walk);
     }
     if (options.completed) {
-      const matchesPage = (item: Item) => viewKey.startsWith('project:') ? item.project_id === viewKey.slice(8)
+      const matchesPage = (item: Item) => viewKey.startsWith('project:') ? item.project_id === projectIdOfKey(viewKey)
         : viewKey === 'inbox' ? item.project_id === snapshot.user?.inbox_project_id
         : viewKey.startsWith('label:') ? item.labels.some((label) => label.toLowerCase() === viewKey.slice(6).toLowerCase())
         : viewKey.startsWith('filter:') ? knownIds.current.has(item.id)
@@ -176,7 +177,7 @@ export function CalendarSurface({ viewKey, items, onOpen, onAddTaskTo, childrenO
     const date = new Date(day);
     if (minute !== null) date.setHours(0, minute, 0, 0);
     onAddTaskTo({
-      ...(viewKey.startsWith('project:') ? { projectId: viewKey.slice(8) } : viewKey === 'inbox' ? { projectId: snapshot.user?.inbox_project_id } : {}),
+      ...(viewKey.startsWith('project:') ? { projectId: projectIdOfKey(viewKey) } : viewKey === 'inbox' ? { projectId: snapshot.user?.inbox_project_id } : {}),
       ...(viewKey.startsWith('label:') ? { labels: [viewKey.slice(6)] } : {}),
       date: minute === null ? toApiDate(day) : toApiDateTime(date),
       ...(minute !== null ? { minutes: duration } : {}),

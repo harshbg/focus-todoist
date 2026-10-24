@@ -7,6 +7,7 @@ import { defaultCapacity, type DailyCapacity } from '@/domain/load';
 import { DATE_FORMATS, type DateFormat } from '@/domain/dates';
 import { DEFAULT_DUST_MONTHS, isDustMonths, type DustMonths } from '@/domain/views';
 import { defaultSidebarNav, readSidebarNav, type SidebarNav } from '@/domain/sidebar';
+import { isViewKey, readProjectViews, readStringMap, type ProjectViews } from '@/domain/projectViews';
 import {
   defaultDetailOrder, defaultTaskFields, readDetailOrder, readTaskFields, type DetailChip, type TaskFields,
 } from '@/domain/taskDetails';
@@ -41,6 +42,11 @@ export interface SyncedView {
   showSubtasks: boolean;
   showCompleted: boolean;
   calendar?: ViewPrefs['calendar'];
+  /**
+   * Only on a saved view of a project (#333): its filters are what it is for,
+   * so they go with it. The project's own first view keeps them on the device.
+   */
+  filters?: ViewPrefs['filters'];
   /* A `wide` written by a 1.x build is still in some comments and is ignored:
      a board is always the width of the page now. */
 }
@@ -53,15 +59,15 @@ export interface SyncedView {
  * SyncedView). Not whether the sidebar is folded, which is a matter of the
  * window in front of you, nor the display of pages other than projects.
  */
-export type SyncedPreferences = Omit<Preferences, 'sidebarCollapsed' | 'views'> & {
+export type SyncedPreferences = Omit<Preferences, 'sidebarCollapsed' | 'activeViews' | 'views'> & {
   views: Record<string, SyncedView>;
 };
 
 export function syncedPreferences(prefs: Preferences): SyncedPreferences {
-  const { sidebarCollapsed: _folded, views, ...rest } = prefs;
+  const { sidebarCollapsed: _folded, activeViews: _open, views, projectViews, ...rest } = prefs;
   /* Sorted, so two devices holding the same settings write the same text
      and never take turns rewriting the comment. */
-  const projectViews = Object.entries(views)
+  const projectViews_ = Object.entries(views)
     .filter(([key]) => key.startsWith('project:'))
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([key, view]): [string, SyncedView] => [key, {
@@ -71,8 +77,10 @@ export function syncedPreferences(prefs: Preferences): SyncedPreferences {
       sort: view.sort,
       showSubtasks: view.filters.showSubtasks,
       showCompleted: view.filters.showCompleted,
+      ...(isViewKey(key) ? { filters: view.filters } : {}),
     }]);
-  return { ...rest, views: Object.fromEntries(projectViews) };
+  const sortedViews = Object.fromEntries(Object.entries(projectViews).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+  return { ...rest, projectViews: sortedViews, views: Object.fromEntries(projectViews_) };
 }
 
 /** The settings as the comment holds them: what travels, and when it was written. */
@@ -138,6 +146,7 @@ export function mergeSynced(
       sort: shared.sort ?? mine.sort,
       filters: {
         ...mine.filters,
+        ...(shared.filters ?? {}),
         showSubtasks: shared.showSubtasks ?? mine.filters.showSubtasks,
         showCompleted: shared.showCompleted ?? mine.filters.showCompleted,
       },
@@ -356,6 +365,13 @@ export interface Preferences {
   accentCustom: string;
   /** Filters, grouping, sorting and mode are remembered per view. */
   views: Record<string, ViewPrefs>;
+  /**
+   * The saved views of each project (#333): their names and order. What a view
+   * shows is in `views`, under the key `viewKeyOf` gives it.
+   */
+  projectViews: Record<string, ProjectViews>;
+  /** The view each project was last opened on, on this device (not shared). */
+  activeViews: Record<string, string>;
   upcomingHorizonDays: number;
   /** Whether Today has a page of its own beside My week. */
   weekLayout: WeekLayout;
@@ -446,6 +462,8 @@ export const defaultPreferences = (locale: Locale): Preferences => ({
   dashboardOrder: [],
   accentCustom: '#d1453b',
   views: {},
+  projectViews: {},
+  activeViews: {},
   upcomingHorizonDays: 15,
   weekLayout: 'unified',
   weekLabel: DEFAULT_WEEK_LABEL,
@@ -563,5 +581,7 @@ export function hydratePreferences(stored: unknown, locale: Locale): Preferences
       : null,
     hireNoteSeen: s.hireNoteSeen === true,
     views: s.views ?? {},
+    projectViews: readProjectViews(s.projectViews),
+    activeViews: readStringMap(s.activeViews),
   };
 }

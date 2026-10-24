@@ -167,18 +167,15 @@ test('native team folders show their children and collapse without becoming proj
 });
 
 
-test('Display toggles have equal spacing between their separators', async ({ demo: page }) => {
+test('Display toggles have equal spacing between their rows', async ({ demo: page }) => {
   for (const view of ['today', 'upcoming', 'week']) {
     await go(page, view);
     await page.locator('.pactions').getByRole('button', { name: /^Display/ }).click();
-    const spacing = await page.locator('.display-toggles').evaluate((el) => {
-      const row = el.querySelector('.panelrow')!.getBoundingClientRect();
-      const last = el.lastElementChild!.getBoundingClientRect();
-      const before = el.previousElementSibling!.getBoundingClientRect();
-      const after = el.nextElementSibling!.getBoundingClientRect();
-      return { top: row.top - before.bottom, bottom: after.top - last.bottom };
+    const gaps = await page.locator('.dfields .display-toggles').evaluate((el) => {
+      const rows = Array.from(el.querySelectorAll('.panelrow')).map((row) => row.getBoundingClientRect());
+      return rows.slice(1).map((row, at) => row.top - rows[at].bottom);
     });
-    expect(Math.abs(spacing.top - spacing.bottom)).toBeLessThanOrEqual(1);
+    for (const gap of gaps) expect(Math.abs(gap - gaps[0])).toBeLessThanOrEqual(1);
     await page.keyboard.press('Escape');
   }
 });

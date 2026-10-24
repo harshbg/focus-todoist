@@ -40,6 +40,12 @@ translation lives in CHANGELOG.fr.md.
 - Only what a person using the app can see or do. No technical work, no
   intermediate states of the same release.
 
+## 2.19.0
+
+🆕 **Create views for your projects.** Press + under a project's title to add a view: its own name, layout, grouping and filters. Switch between views in one click, nothing to set up again. Press the open view to change it. Your views follow your account.
+
+🎨 **Display refinements.** Display and each view now have three parts: view type, group and sort, filters. Priority, estimate, tags and assignee are dropdowns with checkboxes. In a table, Columns opens a list at the side: switch columns on or off and drag any of them to reorder.
+
 ## 2.18.0
 
 🆕 **Mention someone in a comment.** In a shared project, type @ in a task's comment to pick a person from the list. Notify, above the field, chooses who hears about it: everyone, or one person. Someone you mention is always told.

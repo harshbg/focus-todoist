@@ -343,9 +343,8 @@ test('sidebar contains title and duration; sort stays on one line and forecasts 
   await expect(calendar(page).getByText('Description hidden in the calendar sidebar')).toHaveCount(0);
   await active(page).getByRole('button', { name: /^Display/ }).click();
   const menu = active(page).getByRole('dialog', { name: 'Display', exact: true });
-  const label = await menu.locator('.calendar-sort>span:not(.fselect)').boundingBox();
   const field = await menu.getByRole('button', { name: 'Sort', exact: true }).boundingBox();
-  expect(Math.abs(label!.y + label!.height / 2 - field!.y - field!.height / 2)).toBeLessThan(2);
+  expect(field!.height).toBeLessThan(50);
   await menu.getByRole('switch', { name: 'Future occurrences', exact: true }).click();
   await active(page).getByRole('button', { name: /^Display/ }).click();
   const forecast = calendar(page).locator('.is-forecast').first();
