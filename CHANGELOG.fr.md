@@ -8,6 +8,18 @@ Chaque ligne est marquée :
 - 🎨 Amélioré : ce qui existait et fonctionne ou se présente mieux,
 - 🐛 Corrigé : un bug ou une régression corrigés.
 
+## 2.18.0
+
+🆕 **Mentionnez quelqu'un dans un commentaire.** Dans un projet partagé, tapez @ dans le commentaire d'une tâche pour choisir une personne dans la liste. Notifier, au-dessus du champ, choisit qui est prévenu : tout le monde ou une seule personne. Une personne mentionnée est toujours prévenue.
+
+🎨 **Repliez les sous-tâches depuis le titre.** La flèche après le titre d'une tâche parente masque ou affiche ses sous-tâches. Todoist garde votre choix : la tâche reste repliée après un rechargement et dans les apps Todoist.
+
+🐛 **Les analyses correspondent à Todoist.** Analyses compte désormais les sous-tâches sur toutes les pages. Sur un projet ou la boîte de réception, le total terminé et le pourcentage sont ceux de Todoist. Les autres pages précisent que leur chiffre terminé couvre tous les projets, sur 7 jours.
+
+🐛 **Les compteurs des projets correspondent à Todoist.** Le nombre à côté de chaque projet et de la boîte de réception, dans la barre latérale, compte désormais les sous-tâches, comme dans Todoist.
+
+🐛 **Les mises à jour arrivent toutes seules.** Quand une nouvelle version sort, l'app bascule dessus quelques secondes après l'ouverture, sans recharger plusieurs fois. Si vous êtes en train d'écrire, un bouton Recharger vous attend à la place.
+
 ## 2.17.0
 
 🆕 **La confidentialité expliquée.** Une section dédiée dans les réglages explique le stockage local, la synchronisation Todoist et l’absence de suivi d’usage.

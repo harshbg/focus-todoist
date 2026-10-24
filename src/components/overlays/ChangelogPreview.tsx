@@ -70,6 +70,8 @@ export function ChangelogPreview({ kind }: { kind: ChangelogVisual | null }) {
       </div>; break;
     case 'assign':
       content = <><div className="cv-sentence">Prepare the presentation {chip('+Anne', 'accent')}</div>{row('Anne', 'user', '↵', true)}</>; break;
+    case 'mentions':
+      content = <>{title(say('Comments', 'Commentaires'))}<div className="cv-chips">{chip(say('Notify: Anne', 'Notifier : Anne'))}</div><div className="cv-field">{say('Can you check the copy, ', 'Tu peux relire les textes, ')}<span className="cv-chip accent">@Anne</span> ?</div>{row('Anne', 'user', undefined, true)}{row('Sam', 'user')}</>; break;
     case 'subtasks':
       content = <>{row('Prepare the brief tomorrow at 9am', 'checkbox', '9:00')}{row('Review the copy p1', 'checkbox', 'P1')}{row('Choose photos for 30 min', 'checkbox', '30 min')}</>; break;
     case 'composerImage':

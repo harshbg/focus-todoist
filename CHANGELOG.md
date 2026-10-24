@@ -40,6 +40,18 @@ translation lives in CHANGELOG.fr.md.
 - Only what a person using the app can see or do. No technical work, no
   intermediate states of the same release.
 
+## 2.18.0
+
+🆕 **Mention someone in a comment.** In a shared project, type @ in a task's comment to pick a person from the list. Notify, above the field, chooses who hears about it: everyone, or one person. Someone you mention is always told.
+
+🎨 **Fold subtasks from the title.** The arrow after a parent task's title hides or shows its subtasks. Todoist keeps your choice, so the task stays folded after a reload and in the Todoist apps.
+
+🐛 **Insights match Todoist.** Insights now counts subtasks on every page. On a project or the Inbox, the completed total and the percentage are the ones Todoist shows. Other pages say their completed figure covers all projects, over the last 7 days.
+
+🐛 **Project counts match Todoist.** The number beside each project and the Inbox in the sidebar now includes subtasks, like in Todoist.
+
+🐛 **Updates arrive on their own.** After a new version is out, the app switches to it a few seconds after you open it, with no need to reload several times. If you are writing something, a Reload button waits for you instead.
+
 ## 2.17.0
 
 🆕 **Privacy explained.** A dedicated Settings section explains local data storage, Todoist synchronization and the absence of usage tracking.
