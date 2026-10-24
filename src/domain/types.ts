@@ -52,6 +52,8 @@ export interface Item {
   order_key?: string | null;
   day_order: number;
   collapsed: boolean;
+  /** The same flag as Todoist's sync names it; `collapsed` is the REST spelling. */
+  is_collapsed?: boolean;
   checked: boolean;
   is_deleted: boolean;
   added_at: string | null;

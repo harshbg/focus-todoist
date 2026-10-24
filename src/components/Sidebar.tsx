@@ -148,7 +148,9 @@ export function Sidebar({
     const scope = (key: string) => {
       const filters = viewPrefs(prefs, key).filters;
       const scoped = { ...snapshot, items: assigneeItems(snapshot, filters.assignees) };
-      const list = ['today', 'week', 'upcoming'].includes(key) ? datedRoots(openItems(scoped), scoped) : rootItems(openItems(scoped));
+      /* A project's count is Todoist's: every open task, subtasks included,
+         so the Inbox and the projects read the same number in both apps. */
+      const list = ['today', 'week', 'upcoming'].includes(key) ? datedRoots(openItems(scoped), scoped) : key === 'inbox' ? openItems(scoped) : rootItems(openItems(scoped));
       return applyFilters(list, ['today', 'week', 'upcoming'].includes(key) ? { ...filters, includeScheduled: true } : filters, snapshot, makeChildrenOf(childIndex(scoped)));
     };
     return {
@@ -165,9 +167,9 @@ export function Sidebar({
         return date !== null && date <= endOfDay(addDays(now, prefs.upcomingHorizonDays));
       }).length,
       someday: somedayItems(scope('someday')).length,
-      byProject: projectCounts(roots),
+      byProject: projectCounts(items),
     };
-  }, [roots, inboxId, snapshot, prefs]);
+  }, [items, inboxId, snapshot, prefs]);
 
   /** Favourites are Todoist's own star, not a separate list this app keeps. */
   const favourites = useMemo(() => {
