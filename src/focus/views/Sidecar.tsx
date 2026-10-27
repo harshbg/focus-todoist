@@ -54,8 +54,7 @@ export function SidecarPage() {
   const chosenLane = task ? laneOf(task.labels) : lane;
   const lengths = linked.minutes && !prefs.blockLengths.includes(linked.minutes)
     ? [linked.minutes, ...prefs.blockLengths] : prefs.blockLengths;
-  const [length, setLength] = useState(linked.minutes ?? prefs.blockLengths[0] ?? 30);
-  const remaining = active ? remainingMs(active, now) : length * 60_000;
+  const remaining = active ? remainingMs(active, now) : (linked.minutes ?? prefs.blockLengths[0] ?? 30) * 60_000;
   const quest = { label: t('focus.dailyQuest'), minutesLabel: t('focus.questMinutes', { minutes: shortDuration(progress.minutes), target: shortDuration(progress.target) }), pips: progress.pips };
 
   const begin = (minutes: number) => {
@@ -89,10 +88,6 @@ export function SidecarPage() {
     <div className="fx-sc-status">
       {!active && justLogged && <p className="fx-sc-eyebrow">{t('focus.blockComplete')}</p>}
       <div className="fx-sc-clock" role="timer">{formatClock(remaining)}</div>
-      {!active && !justLogged && <div className="fx-sc-lengths" role="group" aria-label={t('focus.startBlock')}>
-        {lengths.map((minutes) => <button key={minutes} aria-pressed={length === minutes}
-          onClick={() => setLength(minutes)}>{formatDuration(minutes, locale)}</button>)}
-      </div>}
     </div>
     {active && <h1 className="fx-sc-running">{active.title}</h1>}
 
@@ -129,11 +124,19 @@ export function SidecarPage() {
       </div>
     </section>}
 
-    {!active && !justLogged && <div className="fx-sc-buttons fx-sc-center">
-      <button className="fx-sc-btn fx-sc-btn--go" disabled={!task && !query.trim()} onClick={() => begin(length)}>{t('focus.startFocus')}</button>
-      <button className="fx-sc-btn fx-sc-btn--icon" aria-label={t('focus.reset')} title={t('focus.reset')}
-        onClick={() => { setTaskId(null); setQuery(''); setLane(null); setLength(prefs.blockLengths[0] ?? 30); }}>↺</button>
-    </div>}
+    {!active && !justLogged && <section className="fx-sc-card">
+      <p className="fx-sc-kicker">{t('focus.ready')}</p>
+      {/* With no task yet, the title opens the task list below. */}
+      {task || query.trim()
+        ? <h1 className="fx-sc-title">{task?.content ?? query.trim()}</h1>
+        : <button className="fx-sc-title fx-sc-pickbtn" onClick={() => document.querySelector<HTMLInputElement>('.fx-sc-pick input')?.focus()}>{t('focus.sidecarPick')}</button>}
+      <p className="fx-sc-type">{t('focus.startBlock')}</p>
+      <div className="fx-sc-buttons">
+        {lengths.map((minutes) => <button key={minutes} className="fx-sc-btn fx-sc-btn--go" disabled={!task && !query.trim()}
+          onClick={() => begin(minutes)}>{formatDuration(minutes, locale)}</button>)}
+        <button className="fx-sc-btn" onClick={takeBreak}>{t('focus.takeBreak', { minutes: prefs.breakMin })}</button>
+      </div>
+    </section>}
 
     {!active && <>
       <div className="fx-sc-quest">

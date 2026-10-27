@@ -152,7 +152,7 @@ export function FocusScene({
   const pyramidUnitsW = PYRAMID_ROWS * BRICK_W;
   const pyramidUnitsH = PYRAMID_ROWS * BRICK_H;
   // One scale for both axes keeps the bricks square-cornered, as in the classic pyramid.
-  const scale = (skyHeight * (fill ? 0.5 : 0.66)) / pyramidUnitsH;
+  const scale = (skyHeight * (fill ? 0.58 : 0.66)) / pyramidUnitsH;
   const scaleX = scale;
   const scaleY = scale;
 

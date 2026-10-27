@@ -1075,7 +1075,7 @@
   --fx-type: "Courier Prime", "Courier New", Courier, monospace;
   --fx-frame: 3px solid var(--fx-navy);
   --fx-drop: 6px 6px 0 var(--fx-navy);
-  position: relative; padding: clamp(10px, 2.6vw, 36px) clamp(10px, 3vw, 44px); box-sizing: border-box; min-height: 100vh;
+  position: relative; padding: clamp(10px, 2.6vw, 36px) clamp(10px, 3vw, 44px); box-sizing: border-box; min-height: 100vh; min-height: 100dvh;
   display: flex; flex-direction: column; gap: clamp(12px, 2vh, 20px); background: var(--bg, var(--fx-paper));
 }
 .focus-theme .fx-sc-close { position: absolute; top: clamp(8px, 2vw, 20px); right: clamp(8px, 2vw, 20px); width: 34px; height: 34px; border: 1px solid var(--fx-hairline); background: var(--fx-card); color: var(--fx-ink); font-size: 20px; line-height: 1; cursor: pointer; }
@@ -1091,11 +1091,14 @@
 .focus-theme .fx-sc-kicker { color: var(--fx-muted); font-size: 11px; }
 .focus-theme .fx-sc-clock {
   background: var(--fx-cream); border: 4px solid var(--fx-navy); box-shadow: 8px 8px 0 var(--fx-navy); padding: 6px 40px; color: #2b3442;
-  font-family: "Tektur", var(--fx-type); font-weight: 800; font-size: clamp(56px, 10vw, 128px); line-height: 1.15;
+  font-family: "Tektur", var(--fx-type); font-weight: 800; font-size: clamp(48px, min(10vw, 13vh), 128px); line-height: 1.15;
   font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
 }
-.focus-theme.fx-sc .px-scene { border: 5px solid var(--fx-navy); box-shadow: var(--fx-drop); height: clamp(200px, min(42vh, 28vw), 400px); box-sizing: border-box; }
-.focus-theme.fx-sc.is-running .px-scene { height: clamp(220px, min(54vh, 34vw), 520px); }
+/* The scene takes the height the window has left, so the page fits without
+   scrolling; it never drops below a readable height, nor grows taller than wide. */
+.focus-theme.fx-sc .px-scene { border: 5px solid var(--fx-navy); box-shadow: var(--fx-drop); box-sizing: border-box;
+  flex: 1 1 0; min-height: clamp(200px, 24vw, 360px); max-height: min(560px, 45vw); position: relative; }
+.focus-theme.fx-sc .px-scene > svg { position: absolute; inset: 0; }
 .focus-theme.fx-sc .px-quest { gap: 6px; }
 .focus-theme.fx-sc .px-quest-label, .focus-theme.fx-sc .px-quest-minutes {
   font-family: var(--fx-type); font-weight: 700; color: #2f3338; opacity: 1;
@@ -1106,7 +1109,7 @@
 .focus-theme.fx-sc .px-quest-pip { width: clamp(14px, 2vw, 30px); height: clamp(14px, 2vw, 30px); border-radius: 50%; border: 0; box-shadow: inset 0 -3px 0 rgba(0,0,0,.18), inset 0 3px 0 rgba(255,255,255,.18); }
 .focus-theme.fx-sc .px-quest-pip--lit { background: #5d9443; }
 .focus-theme.fx-sc .px-quest-pip--unlit { background: #a5a7a2; }
-.focus-theme .fx-sc-card { width: min(100%, 1060px); margin: 4px auto 0; box-sizing: border-box; padding: 20px 22px; background: var(--fx-card); border: var(--fx-frame); box-shadow: var(--fx-drop); display: flex; flex-direction: column; gap: 14px; }
+.focus-theme .fx-sc-card { flex: none; width: min(100%, 1060px); margin: 4px auto 0; box-sizing: border-box; padding: 20px 22px; background: var(--fx-card); border: var(--fx-frame); box-shadow: var(--fx-drop); display: flex; flex-direction: column; gap: 14px; }
 .focus-theme .fx-sc-card--done { background: #dfe3cf; }
 .focus-theme .fx-sc-logged { display: flex; gap: 16px; align-items: center; }
 .focus-theme .fx-sc-check { width: 40px; height: 40px; flex: none; display: grid; place-items: center; background: #5d9443; color: #fff; font-size: 22px; border: 3px solid #2c4a22; box-shadow: inset 2px 2px 0 rgba(255,255,255,.35); }
@@ -1148,3 +1151,5 @@
 .focus-theme .fx-suggest > li button { display: flex; align-items: baseline; gap: 12px; }
 .focus-theme .fx-suggest-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .focus-theme .fx-suggest-time { flex: none; font-family: var(--fx-mono); font-size: 11px; color: var(--fx-muted); }
+.focus-theme .fx-sc-pickbtn { border: 0; padding: 0; background: none; text-align: left; cursor: pointer; text-decoration: underline; text-decoration-color: var(--fx-hairline); text-underline-offset: 4px; }
+.focus-theme .fx-sc-pick .fx-suggest { top: auto; bottom: calc(100% + 4px); } /* the field sits at the page's foot, so the list opens upward */

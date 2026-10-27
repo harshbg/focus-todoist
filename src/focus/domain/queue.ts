@@ -23,9 +23,10 @@ export function searchTasks(items: Item[], query: string): Item[] {
 }
 
 /**
- * What the task field offers, at most eight: tasks with a time from today on
- * in time order, then today's and overdue ones without a time, then the rest
- * of the week. Typing filters them (any open task can match, the others last).
+ * What the task field offers: every open task, those with a time from today on
+ * first in time order, then today's and overdue ones, then the rest of the
+ * week, then later and undated ones. Typing filters them. At most 50; the
+ * list scrolls.
  */
 export function taskChoices(items: Item[], query: string, now: Date): Item[] {
   const term = query.trim().toLocaleLowerCase();
@@ -40,7 +41,7 @@ export function taskChoices(items: Item[], query: string, now: Date): Item[] {
   };
   return items
     .filter((item) => !item.checked && !item.is_deleted
-      && (term ? item.content.toLocaleLowerCase().includes(term) : rank(item) < 3))
+      && (!term || item.content.toLocaleLowerCase().includes(term)))
     .map((item) => ({ item, rank: rank(item) }))
     .sort((a, b) => {
       // Within a group, the earliest first; a task with no date after the dated ones.
@@ -48,6 +49,6 @@ export function taskChoices(items: Item[], query: string, now: Date): Item[] {
       const y = b.item.due?.date ?? '9999';
       return a.rank - b.rank || (x < y ? -1 : x > y ? 1 : 0);
     })
-    .slice(0, 8)
+    .slice(0, 50)
     .map(({ item }) => item);
 }
