@@ -84,6 +84,8 @@ export const fr: Record<TranslationKey, string> = {
   'focus.reminderRestart': "Proposer une relance en douceur après un bloc manqué",
   'focus.reminderInsight': "Afficher le bilan de la semaine le lundi",
   'focus.reminderNote': "Ces rappels ne fonctionnent que lorsque l’app est ouverte dans un onglet. Les rappels de Todoist arrivent sur votre téléphone pour les blocs prévus.",
+  'focus.planCalendar': 'Ajouter aussi à Google Agenda',
+  'focus.planBlock': 'Planifier un bloc de concentration…',
   'focus.completeLead': 'Bloc de concentration terminé. Continuez la même tâche ou faites une pause.',
   'focus.quality': 'Qualité de concentration',
   'focus.optional': 'Facultatif',

@@ -82,6 +82,8 @@ export const en = {
   'focus.reminderRestart': "Offer one gentle restart after a missed block",
   'focus.reminderInsight': "Show last week's insight on Mondays",
   'focus.reminderNote': "These work only while this app is open in a tab. Todoist's own reminders reach your phone for planned blocks.",
+  'focus.planCalendar': 'Also add to Google Calendar',
+  'focus.planBlock': 'Plan a focus block…',
   'focus.completeLead': 'Focus block complete. Continue the same task or take a reset.',
   'focus.quality': 'Focus quality',
   'focus.optional': 'Optional',

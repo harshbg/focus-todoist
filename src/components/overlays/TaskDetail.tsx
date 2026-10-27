@@ -8,6 +8,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { copyText, isTemporaryId, todoistTaskUrl } from '@/api/links';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { Overlay } from './Overlay';
+import { PlanDialog } from '@/focus/views/PlanDialog';
 import { isTopOverlay } from './overlayStack';
 import { Icon } from '../Icon';
 import { ProgressRing } from '../ProgressRing';
@@ -322,6 +323,7 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
   const [subtaskRefusals, setSubtaskRefusals] = useState<TextRange[]>([]);
   const [addingSubtask, setAddingSubtask] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [planOpen, setPlanOpen] = useState(false);
   const [tagPickerOpen, setTagPickerOpen] = useState(false);
   /* Escape puts the tag list away wherever the focus is in the panel — on a tag, on the search field, or
      nowhere — rather than only from the search field, and the panel stays open behind it. */
@@ -663,6 +665,7 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
   );
 
   return (
+    <>
     <Overlay
       open
       onClose={onClose}
@@ -760,6 +763,16 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
                   }}
                 >
                   <span><Icon name="external" size="sm" /> {t('task.openInTodoist')}</span>
+                </button>
+                {/* Focus: plan a focus block on this task */}
+                <button
+                  className="opt"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setPlanOpen(true);
+                  }}
+                >
+                  <span><Icon name="calendar" size="sm" /> {t('focus.planBlock')}</span>
                 </button>
                 {!demo && !isTemporaryId(item.id) && (
                   <button
@@ -1217,5 +1230,8 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
         </aside>
       </div>
     </Overlay>
+    {/* Focus: plan a focus block dialog */}
+    {planOpen && item && <PlanDialog task={item} onClose={() => setPlanOpen(false)} />}
+    </>
   );
 }
