@@ -21,6 +21,8 @@ export interface FocusSceneProps {
   variant?: 'card' | 'wide';
   /** Accessible description, already translated. */
   ariaLabel: string;
+  /** Leaves the clock out, for a page that shows its own above the scene. */
+  hideTimer?: boolean;
 }
 
 const TOTAL_BRICKS = 36;
@@ -109,6 +111,7 @@ export function FocusScene({
   celebrating = false,
   variant = 'card',
   ariaLabel,
+  hideTimer = false,
 }: FocusSceneProps) {
   const isWide = variant === 'wide';
   const [bursting, setBursting] = useState(false);
@@ -228,9 +231,9 @@ export function FocusScene({
       </div>
 
       {/* Timer overlay (top right) */}
-      <div className="px-timer-box">
+      {!hideTimer && <div className="px-timer-box">
         <span className="px-timer-digits">{time}</span>
-      </div>
+      </div>}
 
       {/* Fireworks celebration */}
       {bursting && <Fireworks />}

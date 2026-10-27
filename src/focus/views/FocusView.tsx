@@ -259,7 +259,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
           </div>
         </div>}
         <div className="fx-hint">
-          <button className="fx-link" onClick={() => void openSidecar()}>↗ {t('focus.openSidecar')}</button>
+          <button className="fx-link" onClick={openSidecar}>↗ {t('focus.openSidecar')}</button>
           <button className="fx-link" onClick={() => setPreview(true)}>✦ {t('focus.previewFireworks')}</button>
           <span>{t('focus.hint')}</span>
         </div>

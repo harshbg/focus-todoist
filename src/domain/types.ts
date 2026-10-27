@@ -370,6 +370,8 @@ export type ViewId =
   | 'someday'
   | 'review'
   | 'focus'
+  /** The focus timer on a page of its own, for a tab beside the work. */
+  | 'sidecar'
   | 'progress'
   | 'dashboard'
   | 'settings'

@@ -22,6 +22,7 @@ import { QUICK_ADD, QuickAdd } from './QuickAdd';
 import { WeekView } from './views/WeekView';
 import { FocusView } from './focus/views/FocusView';
 import { ProgressView } from './focus/views/ProgressView';
+import { SidecarPage } from './focus/views/Sidecar';
 import { ModeSwitch } from './focus/views/ModeSwitch';
 import { SearchView } from './views/SearchView';
 import { UpcomingView } from './views/UpcomingView';
@@ -327,6 +328,8 @@ export function App() {
   }
 
   if (QUICK_ADD) return <QuickAdd />;
+  // The focus sidecar is a page of its own, without the app around it.
+  if (route.view === 'sidecar') return <ConfirmProvider><SidecarPage /></ConfirmProvider>;
 
   /* Until the first sync says whether this account still owes its Setup, a
      neutral screen rather than the views, which the Setup would then cover a
