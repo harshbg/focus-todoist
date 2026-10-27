@@ -10,6 +10,7 @@ import { useT } from '@/hooks/useT';
 import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
 import { FocusScene } from '../pixel/FocusScene';
+import { QuestPips } from '../pixel/QuestPips';
 import { entryKey } from '../domain/log';
 import { todayProgress } from '../domain/metrics';
 import { focusQueue } from '../domain/queue';
@@ -212,9 +213,15 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
         <div><strong className="fx-today-minutes">{progress.minutes}</strong> <span className="fx-today-unit">{t('focus.minutes')}</span></div>
         <div className="fx-bar"><span style={{ width: `${progress.share * 100}%` }} /></div>
         <p className="fx-today-note">{progress.remaining === 0 ? t('focus.targetReached') : t('focus.remaining', { remaining: formatDuration(progress.remaining, locale), target: formatDuration(progress.target, locale) })}</p>
-        <div className="fx-quest"><span>{t('focus.dailyQuest')}</span><div className="fx-pips" aria-label={t('focus.questProgress', { count: progress.pips.filter(Boolean).length })}>
-          {progress.pips.map((lit, index) => <i key={index} className={lit ? 'is-on' : ''} />)}
-        </div></div>
+        <div className="fx-quest">
+          <span>{t('focus.dailyQuest')}</span>
+          <QuestPips
+            fill={progress.pipFill}
+            size={16}
+            className="fx-pips"
+            ariaLabel={t('focus.questProgress', { count: progress.pips.filter(Boolean).length })}
+          />
+        </div>
       </div>
     </header>
 
@@ -230,7 +237,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
         {!justLogged && <div className="fx-chips">{prefs.blockLengths.map((minutes) => <button key={minutes} className="fx-chip" aria-pressed={length === minutes} disabled={Boolean(active)} onClick={() => setLength(minutes)}>{formatDuration(minutes, locale)}</button>)}</div>}
         <FocusScene progress={active ? elapsed / (active.plannedMin * 60_000) : justLogged || preview ? 1 : 0}
           time={formatClock(remaining)} celebrating={Boolean(justLogged) || preview}
-          quest={{ label: t('focus.dailyQuest'), minutesLabel: t('focus.questMinutes', { minutes: shortDuration(progress.minutes), target: shortDuration(progress.target) }), pips: progress.pips }}
+          quest={{ label: t('focus.dailyQuest'), minutesLabel: t('focus.questMinutes', { minutes: shortDuration(progress.minutes), target: shortDuration(progress.target) }), pipFill: progress.pipFill, pips: progress.pips }}
           ariaLabel={t('focus.sceneLabel', { time: formatClock(remaining) })} />
         {/* Blocks start from the queue; here only the running block's controls. */}
         {active && <div className="fx-actions fx-center">

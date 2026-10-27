@@ -41,11 +41,17 @@ export interface TodayProgress {
   share: number;
   /** Four daily-quest pips; pip i is lit once today reaches (i + 1) quarters of the target. */
   pips: [boolean, boolean, boolean, boolean];
+  /** Fractional progress per pip (0–1 each), e.g. [1, 1, 1, 0.5] for 3h 30m of 4h. */
+  pipFill: [number, number, number, number];
 }
 
 export function todayProgress(entries: FocusEntry[], settings: FocusSettings, now: Date): TodayProgress {
   const minutes = dayTotals(entries).get(dayKey(now)) ?? 0;
   const target = settings.dailyTargetMin;
+  const quarterSize = target / 4;
+  const pipFill: [number, number, number, number] = target > 0
+    ? ([0, 1, 2, 3].map((i) => Math.max(0, Math.min(1, (minutes - i * quarterSize) / quarterSize))) as [number, number, number, number])
+    : [1, 1, 1, 1];
   return {
     minutes,
     target,
@@ -53,6 +59,7 @@ export function todayProgress(entries: FocusEntry[], settings: FocusSettings, no
     // A target of 0 would read as NaN; treat it as already met.
     share: target > 0 ? Math.min(1, minutes / target) : 1,
     pips: [1, 2, 3, 4].map((quarter) => minutes >= quarter * target / 4) as TodayProgress['pips'],
+    pipFill,
   };
 }
 

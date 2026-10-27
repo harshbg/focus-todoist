@@ -6,6 +6,7 @@ import { useData } from '@/hooks/useData';
 import { useT } from '@/hooks/useT';
 import { useStore } from '@/store/store';
 import { FocusScene } from '../pixel/FocusScene';
+import { QuestPips } from '../pixel/QuestPips';
 import { shortDuration } from '../domain/format';
 import { todayProgress } from '../domain/metrics';
 import { entriesForMode } from '../domain/modeEntries';
@@ -55,7 +56,12 @@ export function SidecarPage() {
   const lengths = linked.minutes && !prefs.blockLengths.includes(linked.minutes)
     ? [linked.minutes, ...prefs.blockLengths] : prefs.blockLengths;
   const remaining = active ? remainingMs(active, now) : (linked.minutes ?? prefs.blockLengths[0] ?? 30) * 60_000;
-  const quest = { label: t('focus.dailyQuest'), minutesLabel: t('focus.questMinutes', { minutes: shortDuration(progress.minutes), target: shortDuration(progress.target) }), pips: progress.pips };
+  const quest = {
+    label: t('focus.dailyQuest'),
+    minutesLabel: t('focus.questMinutes', { minutes: shortDuration(progress.minutes), target: shortDuration(progress.target) }),
+    pipFill: progress.pipFill,
+    pips: progress.pips,
+  };
 
   const begin = (minutes: number) => {
     const title = task?.content ?? query.trim();
@@ -80,6 +86,51 @@ export function SidecarPage() {
     window.close();
     window.location.hash = '#/focus';
   };
+
+  // Keyboard: Space starts or pauses, Escape stops, 1/2/3 pick the first three lengths when idle.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+      if (event.key === ' ' || event.code === 'Space') {
+        event.preventDefault();
+        if (active) {
+          if (active.pausedAt === null) pause();
+          else resume();
+        } else if (justLogged) {
+          const minutes = prefs.blockLengths[0] ?? 25;
+          start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: justLogged.title, lane: justLogged.lane, plannedMin: minutes });
+        } else {
+          const minutes = lengths[0] ?? prefs.blockLengths[0] ?? 25;
+          begin(minutes);
+        }
+      } else if (event.key === 'Escape') {
+        if (active) {
+          event.preventDefault();
+          void stop();
+        }
+      } else if (!active && (event.key === '1' || event.key === '2' || event.key === '3')) {
+        const index = Number(event.key) - 1;
+        if (justLogged) {
+          const minutes = prefs.blockLengths[index];
+          if (minutes !== undefined) {
+            event.preventDefault();
+            start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: justLogged.title, lane: justLogged.lane, plannedMin: minutes });
+          }
+        } else {
+          const minutes = lengths[index];
+          if (minutes !== undefined) {
+            event.preventDefault();
+            begin(minutes);
+          }
+        }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [active, justLogged, pause, resume, start, prefs.blockLengths, lengths, begin, stop]);
 
   // While a block runs the page keeps to the clock, the task and the scene.
   return <div className={`focus-theme fx-sc${active ? ' is-running' : ''}`}>
@@ -141,9 +192,12 @@ export function SidecarPage() {
     {!active && <>
       <div className="fx-sc-quest">
         <div><p className="fx-sc-kicker">{t('focus.dailyQuest')}</p><p className="fx-sc-type">{quest.minutesLabel}</p></div>
-        <div className="fx-sc-pips" aria-label={t('focus.questProgress', { count: progress.pips.filter(Boolean).length })}>
-          {progress.pips.map((lit, index) => <i key={index} className={lit ? 'is-on' : ''} />)}
-        </div>
+        <QuestPips
+          fill={progress.pipFill}
+          size={16}
+          className="fx-sc-pips"
+          ariaLabel={t('focus.questProgress', { count: progress.pips.filter(Boolean).length })}
+        />
       </div>
 
       <div className="fx-sc-pick">

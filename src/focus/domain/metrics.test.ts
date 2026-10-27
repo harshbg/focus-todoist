@@ -41,6 +41,17 @@ describe('daily and weekly totals', () => {
     expect(todayProgress([], { ...settings, dailyTargetMin: 0 }, now)).toMatchObject({ remaining: 0, share: 1 });
   });
 
+  it('computes fractional pip fill and caps each pip at 1', () => {
+    // 4h target = 240 min, quarters are 60 min
+    expect(todayProgress([], settings, now).pipFill).toEqual([0, 0, 0, 0]);
+    expect(todayProgress([entry('2026-10-20T09:00', 30)], settings, now).pipFill).toEqual([0.5, 0, 0, 0]);
+    expect(todayProgress([entry('2026-10-20T09:00', 60)], settings, now).pipFill).toEqual([1, 0, 0, 0]);
+    expect(todayProgress([entry('2026-10-20T09:00', 210)], settings, now).pipFill).toEqual([1, 1, 1, 0.5]);
+    expect(todayProgress([entry('2026-10-20T09:00', 240)], settings, now).pipFill).toEqual([1, 1, 1, 1]);
+    expect(todayProgress([entry('2026-10-20T09:00', 300)], settings, now).pipFill).toEqual([1, 1, 1, 1]);
+    expect(todayProgress([], { ...settings, dailyTargetMin: 0 }, now).pipFill).toEqual([1, 1, 1, 1]);
+  });
+
   it('counts only full temple hours and caps blocks at the target', () => {
     expect(weeklyTemple([entry('2026-10-19T09:00', 119)], settings, now))
       .toMatchObject({ minutes: 119, blocks: 1, totalBlocks: 20 });
