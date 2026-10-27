@@ -74,8 +74,16 @@ describe('readFocusPreferences', () => {
   });
 
   it('accepts booleans and falls back for malformed booleans', () => {
-    expect(readFocusPreferences({ taskComment: true, sound: false })).toMatchObject({ taskComment: true, sound: false });
-    expect(readFocusPreferences({ taskComment: 'true', sound: 0 })).toMatchObject({ taskComment: false, sound: true });
+    expect(readFocusPreferences({ taskComment: true, sound: false, calendarDefault: true })).toMatchObject({
+      taskComment: true,
+      sound: false,
+      calendarDefault: true,
+    });
+    expect(readFocusPreferences({ taskComment: 'true', sound: 0, calendarDefault: 'yes' })).toMatchObject({
+      taskComment: false,
+      sound: true,
+      calendarDefault: false,
+    });
     expect(readFocusPreferences({ guidance: { startAlerts: true, gentleRestart: 'yes' } }).guidance)
       .toEqual({ startAlerts: true, gentleRestart: false, weeklyInsight: false });
   });

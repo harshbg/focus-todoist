@@ -1135,3 +1135,56 @@
   .focus-theme .fx-sc-pick { grid-template-columns: 1fr; }
   .focus-theme .fx-sc-quality { flex-direction: column; align-items: flex-start; }
 }
+
+/* Calendar & planning: PlanForm & PlanDialog (CALENDAR.md) */
+.focus-theme .fx-plan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.focus-theme .fx-plan-form input[type="datetime-local"] {
+  display: block;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--fx-hairline);
+  background: var(--fx-surface);
+  color: var(--fx-ink);
+  font: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.focus-theme .fx-plan-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.focus-theme .fx-plan-calendar {
+  user-select: none;
+  font-size: 13.5px;
+  color: var(--fx-ink);
+}
+.focus-theme.fx-plan-dialog,
+.focus-theme .fx-plan-dialog {
+  padding: 24px 28px 28px;
+  background-color: var(--fx-card);
+  color: var(--fx-ink);
+}
+.focus-theme .fx-plan-dialog .sheet-head {
+  padding: 0 0 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--fx-hairline);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.focus-theme .fx-plan-dialog .sheet-head .fx-h2 {
+  font-size: 24px;
+  margin: 4px 0 0;
+  color: var(--fx-ink);
+}
+.focus-theme .fx-plan-dialog .sheet-body {
+  padding: 0;
+}
