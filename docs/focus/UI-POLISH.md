@@ -50,6 +50,41 @@ Keep the structure, and adjust only CSS unless noted:
 
 ## 4. (Done by Claude: the task field's list. Skip it.)
 
+## 5. The daily quest, in the scene's pixel style (user request)
+
+The daily quest shows up in three places: the overlay at the top left of the
+scene (`FocusScene.tsx`, `.px-quest*` in pixel.css), the Focus page's
+"Today's progress" card (`.fx-pips` in FocusView.tsx), and the sidecar's line
+under the scene (`.fx-sc-pips` in Sidecar.tsx). Today the pips are flat CSS
+circles. They should look like part of the pixel world:
+
+- **One `QuestPips` component** in `src/focus/pixel/QuestPips.tsx`, used in all
+  three places. Each pip is an SVG drawn on an 8 × 8 grid with
+  `shapeRendering="crispEdges"`, so it reads as a pixel coin, not a smooth circle.
+  - Shape by rows: `..XXXX..`, `.XXXXXX.`, then four rows of `XXXXXXXX`,
+    then `.XXXXXX.`, `..XXXX..`.
+  - Lit pip: face `#5d9443`. Add a highlight `#8cc46a` on the top-left edge
+    pixels (top row and left column of the shape) and a shade `#3f6e2c` on
+    the bottom-right edge pixels.
+  - Unlit pip: the same shape in greys (face `#a5a7a2`, highlight `#c4c6c1`,
+    shade `#7d7f7a`).
+  - **The pip being filled** fills from the bottom: green rows up to its share,
+    grey above. Snap to whole pixel rows.
+- **Fractional progress**: add `pipFill: [number, number, number, number]` to
+  `TodayProgress` in `src/focus/domain/metrics.ts` (each 0–1, so 3h 30m of
+  4h is `[1, 1, 1, 0.5]`), with a test. Keep `pips` for existing callers. Pass
+  `pipFill` instead of `pips` to `FocusScene`'s `quest` prop and to the other two
+  places.
+- **Type**: the quest's label ("DAILY QUEST") and minutes ("3h 30m / 4h") use
+  **Courier Prime 700** (already loaded) on the Focus page too, as the sidecar
+  already does (`--fx-type`):
+  - The label is uppercase with letter-spacing 0.14em.
+  - The minutes line sits under the pips with letter-spacing 0.04em.
+  - Order: label, pips, minutes.
+- Sizes: the pips are about the height of the label's capitals ×1.6 in the
+  scene, and 16 px in the two small places. Spacing between pips is a quarter
+  of a pip.
+
 ## Done means
 
 `npm run lint`, `npm run typecheck`, `npm test` and `npm run build` all
