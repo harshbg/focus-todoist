@@ -3,6 +3,7 @@ import { CLOUD, PALETTE } from './sprites';
 import { bricksLaid, pyramidBricks } from './layout';
 import { PixelSprite } from './PixelSprite';
 import { Fireworks } from './Fireworks';
+import { QuestPips } from './QuestPips';
 import './pixel.css';
 
 export interface FocusSceneProps {
@@ -13,7 +14,8 @@ export interface FocusSceneProps {
   quest: {
     label: string;
     minutesLabel: string;
-    pips: [boolean, boolean, boolean, boolean];
+    pipFill: [number, number, number, number];
+    pips?: [boolean, boolean, boolean, boolean];
   };
   /** Shows <Fireworks/> over the scene. */
   celebrating?: boolean;
@@ -171,9 +173,13 @@ export function FocusScene({
   const rightTreeX = width - treeInset;
   const treeProgress = Math.max(0, Math.min(1, progress));
 
-  // Clouds: in the sky
-  const cloud1 = fill ? { x: Math.round(width * 0.14), y: 16 } : isWide ? { x: 42, y: 10 } : { x: 26, y: 14 };
-  const cloud2 = fill ? { x: Math.round(width * 0.54), y: 24 } : isWide ? { x: 196, y: 14 } : { x: 130, y: 20 };
+  // Clouds: in the sky; in the wide scene they sit in the right half away from quest pips
+  const cloud1 = isWide
+    ? (fill ? { x: Math.round(width * 0.56), y: 12 } : { x: 156, y: 10 })
+    : (fill ? { x: Math.round(width * 0.14), y: 16 } : { x: 26, y: 14 });
+  const cloud2 = isWide
+    ? (fill ? { x: Math.round(width * 0.78), y: 22 } : { x: 218, y: 18 })
+    : (fill ? { x: Math.round(width * 0.54), y: 24 } : { x: 130, y: 20 });
 
   // Pyramid bricks to render at current progress
   const laidCount = bricksLaid(progress, TOTAL_BRICKS);
@@ -242,15 +248,8 @@ export function FocusScene({
       {/* Quest overlay (top left) */}
       <div className="px-quest">
         <span className="px-quest-label">{quest.label}</span>
+        <QuestPips fill={quest.pipFill ?? quest.pips?.map((p) => (p ? 1 : 0)) ?? [0, 0, 0, 0]} />
         <span className="px-quest-minutes">{quest.minutesLabel}</span>
-        <div className="px-quest-pips" aria-hidden="true">
-          {quest.pips.map((lit, i) => (
-            <span
-              key={i}
-              className={`px-quest-pip ${lit ? 'px-quest-pip--lit' : 'px-quest-pip--unlit'}`}
-            />
-          ))}
-        </div>
       </div>
 
       {/* Timer overlay (top right) */}
