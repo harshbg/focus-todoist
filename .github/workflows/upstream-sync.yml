@@ -1,0 +1,40 @@
+name: Upstream Sync
+
+# Check for changes in the upstream repository weekly and offer them as a pull request.
+on:
+  schedule:
+    # Every Monday at 06:17 UTC
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout focus
+        uses: actions/checkout@v4
+        with:
+          ref: focus
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Add upstream remote and fetch
+        run: |
+          git remote add upstream https://github.com/julesvbertolino/todoist-enhanced.git || git remote set-url upstream https://github.com/julesvbertolino/todoist-enhanced.git
+          git fetch upstream
+
+      - name: Run upstream sync
+        run: bash scripts/upstream-sync.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

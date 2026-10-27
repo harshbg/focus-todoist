@@ -41,3 +41,21 @@ Focus for Todoist is built on [Enhanced for Todoist by Jules Bertolino (MIT lice
 ## Disclaimer
 
 Focus for Todoist is an independent project. It is not created by, affiliated with, or supported by Todoist. “Todoist” is a trademark of Todoist Inc. This project uses the Todoist API and is provided as is, without warranty. For problems with your Todoist account or Todoist itself, contact Todoist; for issues with this app, use this repository's [issue tracker](https://github.com/harshbg/focus-todoist/issues).
+
+## Keeping up with upstream
+
+Upstream changes from [Enhanced for Todoist](https://github.com/julesvbertolino/todoist-enhanced) are offered as pull requests rather than merged automatically. A GitHub Actions workflow (`.github/workflows/upstream-sync.yml`) runs weekly on Monday at 06:17 UTC and on `workflow_dispatch`. It checks for upstream commits that `focus` lacks, merges them into an `upstream-sync/<yyyy-mm-dd>` branch, and runs the test suite (`npm ci`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build`). Clean merges open a pull request into `focus`; failing checks open a draft pull request naming the failing step; and merge conflicts abort the merge and open a draft pull request pointing to upstream's HEAD with the list of conflicting files. If a sync pull request from an earlier run is still open, the job skips to avoid duplicates.
+
+To run or preview the sync by hand on a Mac:
+
+```bash
+# Preview what would be done without making changes
+bash scripts/upstream-sync.sh --dry-run
+
+# Run the sync and open a pull request
+bash scripts/upstream-sync.sh
+```
+
+To allow the workflow to create pull requests, enable this setting in GitHub:
+**Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests**.
+
