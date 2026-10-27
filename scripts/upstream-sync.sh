@@ -164,7 +164,7 @@ if [ "$DRY_RUN" = true ]; then
   echo "$COMMIT_LIST" | sed 's/^/    /'
   echo ""
   echo "  Actions that would be taken:"
-  echo "  1. Configure git identity as github-actions[bot]"
+  echo "  1. Merge as github-actions[bot] (your git config is left alone)"
   echo "  2. Create branch '$SYNC_BRANCH' from '$BASE_BRANCH'"
   echo "  3. Attempt merge of '$UPSTREAM_REF' into '$SYNC_BRANCH'"
   echo "  4. On clean merge:"
