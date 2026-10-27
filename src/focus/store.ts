@@ -86,6 +86,16 @@ function publishActive(active: ActiveBlock | null): void {
   }
 }
 
+/**
+ * The log as Todoist holds it now. A tab in the background stops polling, and
+ * a block often ends in one, so it reads first: writing from a stale copy would
+ * add a second comment for the week or drop a block saved on another device.
+ */
+async function freshEntries(): Promise<FocusEntry[]> {
+  await useStore.getState().refresh();
+  return readFocusLog(useStore.getState().snapshot);
+}
+
 async function writeLog(after: FocusEntry[]): Promise<void> {
   const app = useStore.getState();
   const plan = planLogWrite(app.snapshot, after, new Date());
@@ -125,7 +135,7 @@ export const useFocusStore = create<FocusStore>()((set, get) => ({
     set({ active: null });
     publishActive(null);
     if (!entry) return null;
-    const entries = readFocusLog(useStore.getState().snapshot);
+    const entries = await freshEntries();
     await writeLog(upsertEntry(entries, entry));
     if (generation === displayGeneration) set({ justLogged: entry });
     return entry;
@@ -140,7 +150,7 @@ export const useFocusStore = create<FocusStore>()((set, get) => ({
     if (!current) return;
     const generation = displayGeneration;
     const entry = { ...current, rating };
-    const entries = readFocusLog(useStore.getState().snapshot);
+    const entries = await freshEntries();
     await writeLog(upsertEntry(entries, entry));
     if (generation === displayGeneration) set({ justLogged: entry });
   },
@@ -149,11 +159,11 @@ export const useFocusStore = create<FocusStore>()((set, get) => ({
     set({ justLogged: null });
   },
   async logManual(entry) {
-    const entries = readFocusLog(useStore.getState().snapshot);
+    const entries = await freshEntries();
     await writeLog(upsertEntry(entries, { ...entry, source: 'manual' }));
   },
   async editEntry(key, patch) {
-    const entries = readFocusLog(useStore.getState().snapshot);
+    const entries = await freshEntries();
     const current = entries.find((entry) => entryKey(entry) === key);
     if (!current) return;
     const generation = displayGeneration;
@@ -163,7 +173,7 @@ export const useFocusStore = create<FocusStore>()((set, get) => ({
     if (generation === displayGeneration && justLogged && entryKey(justLogged) === key) set({ justLogged: updated });
   },
   async deleteEntry(key) {
-    const entries = readFocusLog(useStore.getState().snapshot);
+    const entries = await freshEntries();
     const generation = displayGeneration;
     await writeLog(removeEntry(entries, key));
     const justLogged = get().justLogged;
