@@ -1,3 +1,5 @@
+import { usePhone } from '@/hooks/usePhone';
+import { useKeyboardInset } from '@/hooks/useKeyboardInset';
 import { uploadAttachment } from '@/api/uploads';
 import { useMarkedWorkProjects } from '@/focus/scope';
 import type { NoteAttachment } from '@/domain/types';
@@ -62,6 +64,8 @@ export function Composer({
   const addComment = useStore((s) => s.addComment);
   const createTasks = useStore((s) => s.createTasks);
   const confirm = useConfirm();
+  const phone = usePhone();
+  useKeyboardInset(open && phone);
   const naturalDates = useStore((s) => s.prefs.naturalDates);
   const dateFormat = useStore((s) => s.prefs.dateFormat);
   const mode = useMode();
@@ -481,6 +485,27 @@ export function Composer({
     return id;
   }
 
+  /* Where the task goes: a chip among the others on a wide screen, and on a phone
+     the left of the bar the send button sits on, as in the validated design (#294). */
+  const placement = (
+    <>
+      {/* One chip for both: a section is a place, not a setting applied
+              to the project chosen before it. The Inbox is a project like any
+              other, so this chip is never empty. */}
+          <PlacementField
+            variant="chip"
+            label={t('composer.project')}
+            value={{ projectId: projectId || inboxId, sectionId: sectionId || null }}
+            onNewProject={() => setNewProject(true)}
+            onChange={(place) => {
+              setProjectId(place.projectId);
+              setSectionId(place.sectionId ?? '');
+            }}
+          />
+          <AssigneeField projectId={projectId || inboxId} value={responsibleUid} onChange={setResponsibleUid} chip />
+    </>
+  );
+
   return (
     <>
     <Overlay open={open} onClose={saving ? () => {} : onClose} label={t('nav.addTask')} size="sm">
@@ -690,20 +715,7 @@ export function Composer({
           )}
           <EstimateChip minutes={minutes} onChange={setMinutes} />
 
-          {/* One chip for both: a section is a place, not a setting applied
-              to the project chosen before it. The Inbox is a project like any
-              other, so this chip is never empty. */}
-          <PlacementField
-            variant="chip"
-            label={t('composer.project')}
-            value={{ projectId: projectId || inboxId, sectionId: sectionId || null }}
-            onNewProject={() => setNewProject(true)}
-            onChange={(place) => {
-              setProjectId(place.projectId);
-              setSectionId(place.sectionId ?? '');
-            }}
-          />
-          <AssigneeField projectId={projectId || inboxId} value={responsibleUid} onChange={setResponsibleUid} chip />
+          {!phone && placement}
         </div>
 
         {/* Level 3, subtasks: open, with a heading and a count, one of the
@@ -784,6 +796,7 @@ export function Composer({
           <span className="composer-hint" aria-hidden="true">
             <kbd>⌘</kbd><kbd>↵</kbd> {t('composer.hintAdd')}
           </span>
+          {phone && <span className="composer-place">{placement}</span>}
           <button className="btn quiet" disabled={saving} onClick={onClose}>{t('composer.cancel')}</button>
           {/* Everything typed can be read as a date, a project or a tag, and then
               there is no title left for Todoist: the button says so rather than
@@ -793,11 +806,13 @@ export function Composer({
             disabled={!parsed.content.trim() || saving}
             title={name.trim() && !parsed.content.trim() ? t('composer.needsTitle') : undefined}
             aria-busy={saving}
+            aria-label={saving ? t('composer.adding') : createdTaskId ? t('composer.retryAttachments') : t('composer.add')}
             onClick={() => void submit()}
           >
             {/* The window stays open while Todoist answers (#142): the button says
                 it is sending, rather than looking switched off. */}
-            {saving ? t('composer.adding') : createdTaskId ? t('composer.retryAttachments') : t('composer.add')}
+            <span className="sendlabel">{saving ? t('composer.adding') : createdTaskId ? t('composer.retryAttachments') : t('composer.add')}</span>
+            <Icon name="arrow-up" className="sendicon" />
           </button>
         </div>
       </div>

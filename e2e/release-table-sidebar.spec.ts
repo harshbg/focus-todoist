@@ -25,7 +25,9 @@ test('table keeps task actions, editable cells, column preferences and sorting',
   await display.click();
   const menu = active(page).getByRole('dialog', { name: 'Display', exact: true });
   await menu.getByRole('button', { name: 'Table', exact: true }).click();
-  await menu.locator('.table-column-options').getByRole('button', { name: 'Description', exact: true }).click();
+  await menu.getByRole('button', { name: /^Columns/ }).click();
+  await page.locator('.sidemenu').getByRole('switch', { name: 'Description' }).click();
+  await page.keyboard.press('Escape');
   await display.click();
   const table = active(page).locator('.task-table');
   await expect(table).toBeVisible();
@@ -77,7 +79,7 @@ test('table supports bulk keyboard selection and dragging between rows', async (
   const menu = active(page).getByRole('dialog', { name: 'Display', exact: true });
   await menu.getByRole('button', { name: 'Table', exact: true }).click();
   await menu.locator('.panelgrid .fselect-face').nth(1).click();
-  await page.getByRole('option', { name: 'Manual order', exact: true }).click();
+  await page.getByRole('option', { name: 'Default', exact: true }).click();
   await display.click();
   const table = active(page).locator('.task-table');
   const tasks = table.locator('.task:not([data-depth])');

@@ -1,3 +1,4 @@
+import { PrivacyInformation } from '@/components/PrivacyInformation';
 import { EstimateConversion } from '@/components/overlays/EstimateConversion';
 import { canStoreDurations } from '@/domain/estimates';
 import { useEffect, useState } from 'react';
@@ -26,7 +27,7 @@ import { ModeSettings } from '@/focus/views/ModeSettings';
 /** Where the things this app only reads are changed. */
 const TODOIST_ACCOUNT_URL = 'https://app.todoist.com/app/settings/account';
 
-const SECTIONS = ['account', 'general', 'appearance', 'sidebar', 'lists', 'features', 'conflicts', 'modes', 'about'] as const;
+const SECTIONS = ['account', 'general', 'appearance', 'sidebar', 'lists', 'features', 'conflicts', 'modes', 'about', 'privacy'] as const;
 
 /** A date with two digits in the day and a month that is short in both
  *  languages, so every option in the list is the same length. */
@@ -36,7 +37,7 @@ type Section = (typeof SECTIONS)[number];
 /** The glyph beside each entry of the menu. */
 const SECTION_ICON: Record<Section, IconName> = {
   account: 'user', general: 'settings', appearance: 'palette', sidebar: 'sidebar',
-  lists: 'list', features: 'sparkles', conflicts: 'warning', modes: 'sliders', about: 'info',
+  lists: 'list', features: 'sparkles', conflicts: 'warning', modes: 'sliders', about: 'info', privacy: 'eye',
 };
 
 /**
@@ -512,7 +513,7 @@ export function SettingsView() {
               it is not one of theirs. The sign-in screen carries that line
               for anyone who has not connected yet; this carries it for
               everyone who has. */}
-          <section className="setsection last" id="about">
+          <section className="setsection" id="about">
             <h2>{t('settings.about')}</h2>
             <div className="setrow">
               <div>
@@ -557,6 +558,13 @@ export function SettingsView() {
             <p className="setlegal">
               {t('connect.legal', { author: AUTHOR })}
             </p>
+          </section>
+          <section className="setsection last" id="privacy">
+            <h2>{t('settings.privacy')}</h2>
+            <details className="privacy-disclosure">
+              <summary><span>{t('privacy.summary')}</span><Icon name="caret" size="sm" /></summary>
+              <PrivacyInformation />
+            </details>
           </section>
         </div>
       </div>

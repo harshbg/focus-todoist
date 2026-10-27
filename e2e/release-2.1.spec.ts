@@ -40,12 +40,16 @@ test('the sidebar editor says whether My week holds today\u2019s tasks (#195)', 
   await expect(week).toContainText('Includes today\u2019s tasks');
   const height = (await week.boundingBox())!.height;
 
-  await today.locator('input').check({ force: true });
+  // Wait for the opening dialog to settle before clicking the real control.
+  const todayCheckbox = today.getByRole('checkbox');
+  await todayCheckbox.check();
+  await expect(todayCheckbox).toBeChecked();
   await expect(week).toContainText('Includes today\u2019s tasks');
   // The list does not move when the tick is turned.
   expect((await week.boundingBox())!.height).toBe(height);
 
-  await today.locator('input').uncheck({ force: true });
+  await todayCheckbox.uncheck();
+  await expect(todayCheckbox).not.toBeChecked();
   await expect(week).toContainText('Includes today\u2019s tasks');
 });
 
@@ -64,8 +68,10 @@ test('the Inbox is drawn as a project, so its sections can be added and shown', 
 test('the Display menu offers only the tags of the page in front', async ({ demo: page }) => {
   const tagsOf = async () => {
     await page.locator('.screen.active').getByRole('button', { name: 'Display' }).click();
-    const menu = page.locator('.popover').filter({ has: page.getByRole('heading', { name: 'Tags' }) });
-    const names = await menu.locator('.chiprow.scroll .chip').allInnerTexts();
+    const menu = page.locator('.popover').filter({ has: page.getByRole('heading', { name: 'Filters' }) });
+    await menu.locator('.dfields').getByRole('button', { name: /^Tags/ }).click();
+    const names = await page.locator('.multiselect-options label .multiselect-label').allInnerTexts();
+    await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
     return names.map((n) => n.trim());
   };

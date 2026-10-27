@@ -259,3 +259,44 @@ describe('what a task row shows', () => {
     expect(hydratePreferences({ workspaceOrder: ['w1', 3, 'personal'] }, 'en').workspaceOrder).toEqual(['w1', 'personal']);
   });
 });
+
+describe('saved views of a project (#333)', () => {
+  const filtered = () => {
+    const view = defaultViewPrefs('project:site~a1');
+    view.filters.priorities = [1, 2];
+    return view;
+  };
+
+  it('shares the names and order of the views, and not which one is open here', () => {
+    const synced = syncedPreferences(prefs({
+      projectViews: { site: { tabs: [{ id: 'main', name: 'All' }, { id: 'a1', name: 'Focus' }] } },
+      activeViews: { site: 'a1' },
+    }));
+    expect(synced.projectViews.site.tabs).toHaveLength(2);
+    expect(synced).not.toHaveProperty('activeViews');
+  });
+
+  it("shares a saved view's filters, which the project's first view keeps on the device", () => {
+    const synced = syncedPreferences(prefs({ views: { 'project:site~a1': filtered(), 'project:site': defaultViewPrefs('project:site') } }));
+    expect(synced.views['project:site~a1'].filters?.priorities).toEqual([1, 2]);
+    expect(synced.views['project:site']).not.toHaveProperty('filters');
+  });
+
+  it('brings them to another device, and keeps that device\'s open view', () => {
+    const local = prefs({ activeViews: { site: 'main' } });
+    const merged = mergeSynced(local, {
+      projectViews: { site: { tabs: [{ id: 'main', name: 'All' }, { id: 'a1', name: 'Focus' }] } },
+      views: { 'project:site~a1': { mode: 'board', group: 'step', sort: 'priority', showSubtasks: true, showCompleted: false, filters: filtered().filters } },
+    }, 'en');
+    expect(merged.projectViews.site.tabs.map((tab) => tab.name)).toEqual(['All', 'Focus']);
+    expect(merged.views['project:site~a1']).toMatchObject({ mode: 'board', group: 'step' });
+    expect(merged.views['project:site~a1'].filters.priorities).toEqual([1, 2]);
+    expect(merged.activeViews).toEqual({ site: 'main' });
+  });
+
+  it('reads settings from before saved views existed', () => {
+    const hydrated = hydratePreferences({ theme: 'dark' }, 'en');
+    expect(hydrated.projectViews).toEqual({});
+    expect(hydrated.activeViews).toEqual({});
+  });
+});

@@ -9,6 +9,17 @@ export const tableColumns = (prefs: ViewPrefs): TableColumn[] => {
     column !== 'title' && TABLE_COLUMNS.includes(column) && all.indexOf(column) === at);
   return ['title', ...chosen];
 };
+/** Every column but the title, in the order Display lists them: the saved order, then any it has not met. */
+export const tableColumnOrder = (prefs: ViewPrefs): Exclude<TableColumn, 'title'>[] => {
+  const shown = tableColumns(prefs).filter((column): column is Exclude<TableColumn, 'title'> => column !== 'title');
+  const saved = (prefs.tableOrder ?? []).filter((column, at, all): column is Exclude<TableColumn, 'title'> =>
+    column !== 'title' && TABLE_COLUMNS.includes(column) && all.indexOf(column) === at);
+  /* A column shown but missing from the saved order (an older setting) takes its place among the shown ones. */
+  const order = [...saved];
+  for (const column of shown) if (!order.includes(column)) order.push(column);
+  for (const column of TABLE_COLUMNS) if (column !== 'title' && !order.includes(column)) order.push(column);
+  return order;
+};
 export const tableColumnLabel: Record<TableColumn, TranslationKey> = {
   title: 'table.title', date: 'detail.startDate', deadline: 'detail.deadline', priority: 'detail.priority',
   estimate: 'detail.estimate', labels: 'detail.labels', description: 'detail.description', project: 'detail.project',

@@ -1,7 +1,9 @@
+import { PrivacyInformation } from '@/components/PrivacyInformation';
 import { useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { TodoistMark } from '@/components/TodoistMark';
 import { WorkspacePreview } from '@/components/WorkspacePreview';
+import { Overlay } from '@/components/overlays/Overlay';
 import { useT } from '@/hooks/useT';
 import { useStore } from '@/store/store';
 import { looksLikeToken } from '@/api/auth';
@@ -31,6 +33,7 @@ export function ConnectView() {
   const [token, setToken] = useState('');
   const [status, setStatus] = useState<'idle' | 'checking' | 'invalid' | 'malformed'>('idle');
   const [leaving, setLeaving] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
   /** The address this copy was built for, once a sign-in has been refused for it. */
   const [elsewhere, setElsewhere] = useState<string | null>(null);
   /** Site storage is blocked, so a sign-in through Todoist's page cannot come back. */
@@ -80,8 +83,7 @@ export function ConnectView() {
         <h1>{t('connect.login')}</h1>
         <p className="connect-intro">{t('connect.intro')}</p>
 
-        <button
-          className="btn primary lg connect-submit"
+        <button className="btn primary lg connect-submit"
           disabled={leaving}
           onClick={() => {
             const expected = builtForElsewhere();
@@ -113,8 +115,10 @@ export function ConnectView() {
           </p>
         )}
 
-        <button className="btn soft lg connect-demo" onClick={startDemo}>
-          {t('connect.demoInstead')}
+        <button className="btn soft lg connect-demo" onClick={startDemo} aria-label={t('connect.demoInstead')}>
+          {/* The whole sentence needs two lines on a phone; the short one needs one. */}
+          <span className="demo-long">{t('connect.demoInstead')}</span>
+          <span className="demo-short">{t('connect.demoShort')}</span>
         </button>
 
         <details
@@ -133,14 +137,13 @@ export function ConnectView() {
             placeholder={t('connect.tokenPlaceholder')}
             value={token}
             onChange={(e) => { setToken(e.target.value); setStatus('idle'); }}
-            onKeyDown={(e) => { if (e.key === 'Enter') void submit(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { void submit(); } }}
           />
 
           {status === 'invalid' && <p className="connect-error">{t('connect.invalid')}</p>}
           {status === 'malformed' && <p className="connect-error">{t('connect.malformed')}</p>}
 
-          <button
-            className="btn lg connect-token-submit"
+          <button className="btn lg connect-token-submit"
             disabled={status === 'checking'}
             onClick={() => void submit()}
           >
@@ -157,14 +160,22 @@ export function ConnectView() {
           </a>
         </details>
 
+        {/* A phone has room for one line; the rest is a sheet away (#292). */}
+        <p className="connect-privacy-line">
+          <Icon name="eye" size="sm" />
+          <span><strong>{t('connect.privacyLead').replace(/\.$/, '')}</strong>
+            {' · '}<button type="button" onClick={() => setPrivacyOpen(true)}>{t('connect.privacyLink')}</button>
+            {' · '}<a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">{t('connect.githubShort')}</a></span>
+        </p>
+
         <p className="connect-privacy">
           <Icon name="eye" size="sm" />
           <span><strong>{t('connect.privacyLead')}</strong>{' '}
-          {t('connect.privacyBody')}{' '}
+          {t('connect.privacyBody')} <> {t('connect.privacyAnalytics')}</>{' '}
           <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
             <Icon name="external" size="sm" />
             {t('connect.github')}
-          </a></span>
+          </a>{' '}<button type="button" className="privacy-link" onClick={() => setPrivacyOpen(true)}>{t('connect.privacyLink')}</button></span>
         </p>
 
         <p className="connect-legal">
@@ -177,6 +188,22 @@ export function ConnectView() {
           <small>{t('connect.version', { version: VERSION })}</small>
         </footer>
       </main>
+
+      <Overlay open={privacyOpen} onClose={() => setPrivacyOpen(false)} label={t('connect.privacyLink')} size="sm">
+        <div className="sheet-head"><h2>{t('connect.privacyLink')}</h2>
+          <button className="iconbtn" aria-label={t('common.close')} onClick={() => setPrivacyOpen(false)}><Icon name="close" /></button>
+        </div>
+        <div className="sheet-body connect-privacy-sheet">
+          <PrivacyInformation />
+          <p className="connect-privacy">
+            <Icon name="eye" size="sm" />
+            <span><strong>{t('connect.privacyLead')}</strong>{' '}{t('connect.privacyBody')} <> {t('connect.privacyAnalytics')}</>{' '}
+              <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">{t('connect.github')}</a></span>
+          </p>
+          <p className="connect-legal">{legal[0]}<strong>{AUTHOR}</strong>{legal[1]}</p>
+          <p className="connect-version">{t('connect.appName')} · {t('connect.version', { version: VERSION })}</p>
+        </div>
+      </Overlay>
     </div>
   );
 }

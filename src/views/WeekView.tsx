@@ -1,3 +1,4 @@
+import { stepLabel, type Step } from '@/domain/steps';
 import { CalendarSurface } from '@/components/CalendarSurface';
 import { pageClass } from '@/domain/pageLayout';
 import { InsightsButton } from '@/components/InsightsButton';
@@ -59,6 +60,7 @@ interface WeekViewProps {
  * that fixes nothing the composer can be opened with gets no line.
  */
 function addToGroupFor(group: GroupKey, key: string): TaskPlacement | undefined {
+  if (group === 'step') return { labels: [stepLabel(key as Step)] };
   if (group === 'project') return { projectId: key };
   if (group === 'label' && key !== 'none') return { labels: [key] };
   if (group === 'priority') {
@@ -209,7 +211,7 @@ function WeekBody({
               viewKey={viewKey}
               pageItems={current.mode === 'calendar' ? items : pool}
               modes={['list', 'board', 'table', 'calendar']}
-              groups={['none', 'project', 'priority', 'label', 'estimate']}
+              groups={['none', 'project', 'priority', 'label', 'step', 'estimate', 'day', 'month', 'year']}
             />
             <InsightsButton onClick={onInsights} />
           </>
@@ -245,11 +247,12 @@ function WeekBody({
                leave the group the moment it was saved. */
             actions={
               <button
-                className="btn sm linklike"
+                className="reschedule-overdue"
+                aria-label={t('group.rescheduleAll')}
                 onClick={() => void rescheduleOverdue()}
-                title={t('group.rescheduleAllHint')}
+                title={t('group.rescheduleAll')}
               >
-                {t('group.rescheduleAll')}
+                <Icon name="calendar" size="sm" />
               </button>
             }
           />
@@ -332,11 +335,12 @@ function WeekBody({
                 ...column,
                 action: (
                   <button
-                    className="btn sm linklike"
+                    className="reschedule-overdue"
+                    aria-label={t('group.rescheduleAll')}
                     onClick={() => void rescheduleOverdue()}
-                    title={t('group.rescheduleAllHint')}
+                    title={t('group.rescheduleAll')}
                   >
-                    {t('group.rescheduleAll')}
+                    <Icon name="calendar" size="sm" />
                   </button>
                 ),
               })

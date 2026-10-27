@@ -27,6 +27,7 @@ import { ModeSwitch } from './focus/views/ModeSwitch';
 import { SearchView } from './views/SearchView';
 import { UpcomingView } from './views/UpcomingView';
 import { SimpleListView } from './views/SimpleListView';
+import { WorkspaceView } from './views/WorkspaceView';
 import { ProjectView } from './views/ProjectView';
 import { LabelsView } from './views/LabelsView';
 import { FiltersView } from './views/FiltersView';
@@ -38,6 +39,7 @@ import { ConnectView } from './views/ConnectView';
 import { EstimateStorageDialog } from './components/overlays/EstimateStorageDialog';
 import { Walkthrough } from './components/overlays/Walkthrough';
 import { Tour } from './components/overlays/Tour';
+import { InstallPrompt } from './components/overlays/InstallPrompt';
 import { WhatsNew, type WhatsNewScope } from './components/overlays/WhatsNew';
 import { compareVersions, hasChanges, parseChangelog, unseenReleases } from './domain/changelog';
 import { VERSION } from './app-info';
@@ -448,6 +450,11 @@ export function App() {
                     {t('common.undo')}
                   </button>
                 )}
+                {toast.action && (
+                  <button onClick={() => { toast.action?.run(); dismissToast(toast.id); }}>
+                    {toast.action.label}
+                  </button>
+                )}
                 {/* Only puts the toast away. What Undo would do stays reachable
                     with ⌘Z, and a deletion still goes out when its own wait is
                     over: closing it neither sends it early nor cancels it. */}
@@ -743,6 +750,18 @@ function AppShell({
     // A new page brings a new heading to watch.
   }, [route.view, route.id]);
 
+  /* Whether the page has been scrolled at all: the bar on a phone is clear
+     at the top of a page and blurs once something goes under it (#291). */
+  const [barScrolled, setBarScrolled] = useState(false);
+  useEffect(() => {
+    const screen = document.querySelector('.screen.active');
+    if (!screen) { setBarScrolled(false); return; }
+    const sync = () => setBarScrolled(screen.scrollTop > 4);
+    sync();
+    screen.addEventListener('scroll', sync, { passive: true });
+    return () => screen.removeEventListener('scroll', sync);
+  }, [route.view, route.id]);
+
   const openTask = (id: string) => setOpenTaskId(id);
   const addTask = () => {
     setPlacement(placementForPage(route, snapshot.user?.inbox_project_id));
@@ -777,6 +796,7 @@ function AppShell({
     onProjectSheet: setProjectSheet,
   };
 
+  const insightsProject = route.view === 'project' ? route.id : route.view === 'inbox' ? snapshot.user?.inbox_project_id : undefined;
   return (
     <div
       className={`app${demo ? ' demo' : ''}${sidebarCollapsed ? ' collapsed' : ''}`}
@@ -792,7 +812,7 @@ function AppShell({
       />
 
       <main className="workspace">
-        <header className="mobile-top">
+        <header className={`mobile-top${barScrolled ? ' scrolled' : ''}`}>
           {/* This opened My week, whatever it said. It opens the navigation. */}
           <button
             className="iconbtn"
@@ -807,11 +827,19 @@ function AppShell({
               scrolled away, which is the same title arriving where it is
               needed rather than a second one standing beside it. */}
           <strong className={titleShown ? ' shown' : ''}>{contextLabel}</strong>
-          {/* Mode switch (SPEC §10.2): accessible on phone header without opening navigation. */}
-          <ModeSwitch />
-          <button className="iconbtn" aria-label={t('nav.search')} onClick={() => setSearchOpen(true)}>
-            <Icon name="search" />
-          </button>
+          <span className="mobile-top-end">
+            {/* Mode switch (SPEC §10.2): accessible on phone header without opening navigation. */}
+            <ModeSwitch />
+            {/* The demo said so in a banner that cost a row of a short screen;
+                it is a chip now, and the way out is where it always was, in
+                the navigation (#291). */}
+            {demo && (
+              <button className="demochip" onClick={() => setBrowseOpen(true)}>{t('demo.chip')}</button>
+            )}
+            <button className="iconbtn" aria-label={t('nav.search')} onClick={() => setSearchOpen(true)}>
+              <Icon name="search" />
+            </button>
+          </span>
         </header>
 
         <section className="screen active">
@@ -820,6 +848,7 @@ function AppShell({
           )}
           {route.view === 'focus' && <FocusView onOpen={openTask} />}
           {route.view === 'progress' && <ProgressView />}
+          {route.view === 'workspace' && <WorkspaceView key={`${snapshot.user?.id}:${route.id}`} workspaceId={route.id ?? 'personal'} />}
           {route.view === 'today' && <WeekView {...viewProps} scope="today" />}
           {route.view === 'search' && <SearchView query={route.query ?? ''} onOpen={openTask} />}
           {route.view === 'upcoming' && <UpcomingView {...viewProps} />}
@@ -852,16 +881,16 @@ function AppShell({
           <button
             aria-current={route.view === 'inbox' ? 'page' : undefined}
             onClick={() => navigate('inbox')}
-          >
+           aria-label={t('nav.inbox')}>
             <Icon name="inbox" size="lg" />
-            {t('nav.inbox')}
+            {t('nav.tab.inbox')}
           </button>
           <button
             aria-current={route.view === 'week' ? 'page' : undefined}
             onClick={() => navigate('week')}
-          >
+           aria-label={t('nav.week')}>
             <Icon name="week" size="lg" />
-            {t('nav.week')}
+            {t('nav.tab.week')}
           </button>
           <button className="fab" aria-label={t('nav.addTask')} onClick={addTask}>
             {/* The stylesheet paints the round accent disc on this wrapper. */}
@@ -870,9 +899,9 @@ function AppShell({
           <button
             aria-current={route.view === 'upcoming' ? 'page' : undefined}
             onClick={() => navigate('upcoming')}
-          >
+           aria-label={t('nav.upcoming')}>
             <Icon name="upcoming" size="lg" />
-            {t('nav.upcoming')}
+            {t('nav.tab.upcoming')}
           </button>
           {/* Browse was here and in the bar at the top of every page, which is
               one destination taking two of the five places a phone has. It
@@ -882,9 +911,9 @@ function AppShell({
           <button
             aria-current={route.view === 'someday' ? 'page' : undefined}
             onClick={() => navigate('someday')}
-          >
+           aria-label={t('nav.someday')}>
             <Icon name="someday" size="lg" />
-            {t('nav.someday')}
+            {t('nav.tab.someday')}
           </button>
         </nav>
       </main>
@@ -952,14 +981,16 @@ function AppShell({
         onOpen={openTask}
       />
       <BulkBar />
+      <InstallPrompt />
 
       <InsightsPanel
-        projectId={route.view === 'project' ? route.id : undefined}
-        viewKey={route.view === 'project' ? undefined : route.view === 'label' ? `label:${route.id}` : route.view === 'filter' ? `filter:${route.id}` : route.view}
+        /* The Inbox is a project too, and gets the same totals as one (#239). */
+        projectId={insightsProject}
+        viewKey={insightsProject ? undefined : route.view === 'label' ? `label:${route.id}` : route.view === 'filter' ? `filter:${route.id}` : route.view}
         open={insightsOpen}
         onClose={() => setInsightsOpen(false)}
         contextLabel={contextLabel}
-        items={route.view === 'project' ? rootItems(openItems(snapshot)).filter((item) => item.project_id === route.id) : contextItems}
+        items={insightsProject ? rootItems(openItems(snapshot)).filter((item) => item.project_id === insightsProject) : contextItems}
         onOpenTask={openTask}
       />
     </div>

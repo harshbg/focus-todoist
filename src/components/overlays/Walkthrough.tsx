@@ -58,6 +58,9 @@ export function Walkthrough({
   const [motion, setMotion] = useState<'enter' | 'forward' | 'back'>('enter');
   const previous = useRef(0);
   const current = STEPS[step];
+  /* Each step opens at its top: on a phone the picture and the choices are one scroll. */
+  const track = useRef<HTMLDivElement>(null);
+  useEffect(() => { track.current?.scrollTo({ top: 0 }); }, [current.id]);
   const pos = current.id === 'content' ? 'b' : 'a';
   const karma = karmaStanding(user?.karma);
   const avatar = avatarUrl(user);
@@ -204,7 +207,7 @@ export function Walkthrough({
               /* The sidebar and the content are one scene: the picture slides
                  across while the controls beside it change. */
               <div className="setup-view" data-motion={motion}>
-                <div className="setup-track" data-pos={pos}>
+                <div className="setup-track" data-pos={pos} ref={track}>
                   <div className="setup-controls a" {...inertWhen(current.id !== 'sidebar')}>
                     <div className="setup-stack">
                     <div>

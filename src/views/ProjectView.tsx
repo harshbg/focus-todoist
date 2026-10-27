@@ -1,3 +1,4 @@
+import { stepLabel, type Step } from '@/domain/steps';
 import { TableSurface } from '@/components/TableSurface';
 import { pageClass } from '@/domain/pageLayout';
 import { CalendarSurface } from '@/components/CalendarSurface';
@@ -33,6 +34,9 @@ import { summariseLoad } from '@/domain/load';
 import { readProjectIcon, stripProjectIcon, withProjectIcon } from '@/domain/projectIcons';
 import { bySectionOrder } from '@/domain/orderKey';
 import { useScopedItems } from '@/focus/scope';
+import { ProjectViewTabs } from '@/components/ProjectViewTabs';
+import { useActiveViewKey, useProjectViews } from '@/hooks/useProjectViews';
+import { PROJECT_GROUPS } from '@/components/DisplayMenu';
 
 interface ProjectViewProps {
   projectId: string;
@@ -151,7 +155,9 @@ function ProjectBody({
     setTimeout(focus, 30);
     await created;
   };
-  const viewKey = `project:${projectId}`;
+  /* The settings this page reads are those of its active saved view (#333). */
+  const projectViews = useProjectViews(projectId);
+  const viewKey = projectViews.activeKey;
   const current = viewPrefs(prefs, viewKey);
 
   const project = snapshot.projects[projectId];
@@ -381,9 +387,10 @@ function ProjectBody({
               viewKey={viewKey}
               pageItems={pool0}
               modes={['list', 'board', 'table', 'calendar']}
-              groups={['none', 'assignee', 'scheduled', 'priority', 'label', 'estimate', 'day']}
+              groups={PROJECT_GROUPS}
               completedToggle
               showWorkspaces={false}
+              scope={projectViews.tabs.length > 1 ? t('views.displayScope', { name: projectViews.active.name }) : undefined}
             />
             <InsightsButton onClick={onInsights} />
             {/* The same menu the sidebar row carries, asked from the page it
@@ -421,6 +428,7 @@ function ProjectBody({
         onOpenUnestimated={load.unestimatedCount > 0 ? onUnestimated : undefined}
         time={timePill}
       />
+      <ProjectViewTabs api={projectViews} />
       {current.mode !== 'calendar' && <TimePanel
         pageItems={scoped}
         pageLabel={project.name}
@@ -458,6 +466,7 @@ function ProjectBody({
             ? (name) => { void createSection(projectId, sections.length, name); }
             : undefined}
           addToGroup={(key) => {
+            if (current.group === 'step') return () => onAddTaskTo({ projectId, labels: [stepLabel(key as Step)] });
             if (current.group === 'assignee') return () => onAddTaskTo({ projectId, responsibleUid: key === 'none' ? null : key });
             if (current.group === 'day' && key !== 'none') {
               return () => onAddTaskTo({ projectId, date: key });
@@ -569,6 +578,7 @@ function ProjectBody({
              no sense on the one page where both halves of the answer are
              known. */
           addToGroup={(key) => {
+            if (current.group === 'step') return () => onAddTaskTo({ projectId, labels: [stepLabel(key as Step)] });
             if (current.group === 'assignee') return () => onAddTaskTo({ projectId, responsibleUid: key === 'none' ? null : key });
             if (current.group === 'day' && key !== 'none') {
               return () => onAddTaskTo({ projectId, date: key });
@@ -593,8 +603,9 @@ function ProjectBody({
 
 export function ProjectView(props: ProjectViewProps) {
   const prefs = useStore((s) => s.prefs);
+  const viewKey = useActiveViewKey(props.projectId);
   return (
-    <SubtasksProvider value={viewPrefs(prefs, `project:${props.projectId}`).filters.showSubtasks}>
+    <SubtasksProvider value={viewPrefs(prefs, viewKey).filters.showSubtasks}>
       <ProjectBody {...props} />
     </SubtasksProvider>
   );

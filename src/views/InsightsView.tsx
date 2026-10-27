@@ -1,3 +1,5 @@
+import { Select } from '@/components/Select';
+import { usePhone } from '@/hooks/usePhone';
 import { DashboardDisplayMenu } from '@/components/DashboardDisplayMenu';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { format } from 'date-fns';
@@ -31,6 +33,7 @@ import { toDisplayPriority, type CompletedItem } from '@/domain/types';
 import type { TranslationKey } from '@/i18n';
 import { byChildOrder } from '@/domain/orderKey';
 import { plainTitle } from '@/domain/markdown';
+import { PanelSheet } from '@/components/SheetChrome';
 
 type Tab = 'overview' | 'logbook';
 
@@ -58,6 +61,7 @@ function firstBest(values: number[]): number {
 
 export function InsightsView({ onOpen }: { onOpen?: (id: string) => void }) {
   const { t, locale } = useT();
+  const phone = usePhone();
   const [period, setPeriod] = useState<Period>('week');
   /* Which occurrence of the period: 0 is the one holding today, -1 the one
      before. The arrows move it; picking a preset resets it. */
@@ -444,9 +448,10 @@ export function InsightsView({ onOpen }: { onOpen?: (id: string) => void }) {
             <DashboardDisplayMenu />
           </>}
           {/* The two pages are one subject: each points at the other. */}
-          <button className="btn" onClick={() => (tab === 'logbook' ? navigate('insights') : navigate('insights', 'logbook'))}>
+          <button className="btn" aria-label={t(tab === 'logbook' ? 'nav.dashboard' : 'insights.logbook')}
+            onClick={() => (tab === 'logbook' ? navigate('insights') : navigate('insights', 'logbook'))}>
             <Icon name={tab === 'logbook' ? 'trend' : 'tasks'} size="sm" />
-            {t(tab === 'logbook' ? 'nav.dashboard' : 'insights.logbook')}
+            <span className="tb-label">{t(tab === 'logbook' ? 'nav.dashboard' : 'insights.logbook')}</span>
           </button>
         </div>
       </div>
@@ -504,6 +509,16 @@ export function InsightsView({ onOpen }: { onOpen?: (id: string) => void }) {
             </span>
           </span>
         )}
+        {/* Six words in a row do not fit a phone (the last one left the screen): one
+            control that opens the list, which reads top to bottom (#295). */}
+        {phone ? (
+          <Select
+            value={period}
+            ariaLabel={t('insights.span')}
+            options={SPANS.map((value) => ({ value, label: t(`insights.span.${value}` as TranslationKey), icon: 'calendar' as const }))}
+            onChange={(next) => pickSpan(next as Period)}
+          />
+        ) : (
         <div className="segmented small spanbar" role="group" aria-label={t('insights.span')}>
           {SPANS.map((value) => (
             <button
@@ -515,6 +530,7 @@ export function InsightsView({ onOpen }: { onOpen?: (id: string) => void }) {
             </button>
           ))}
         </div>
+        )}
         </div>
       </div>
 
@@ -677,7 +693,7 @@ function Logbook({ completed, onOpen }: { completed: CompletedItem[]; onOpen?: (
           </button>
 
           {filtersOpen && (
-            <div className="popover displaypanel anchor-left" role="dialog" aria-label={t('logbook.filters')}>
+            <PanelSheet className="popover displaypanel anchor-left" label={t('logbook.filters')} onClose={() => setFiltersOpen(false)}>
               <div className="panelhead">
                 <h5>{t('filter.priorities')}</h5>
                 {activeFilters > 0 && (
@@ -718,7 +734,7 @@ function Logbook({ completed, onOpen }: { completed: CompletedItem[]; onOpen?: (
                   </button>
                 ))}
               </div>
-            </div>
+            </PanelSheet>
           )}
         </div>
 

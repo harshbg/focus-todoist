@@ -8,13 +8,16 @@
  * translated string.
  */
 export const APP_NAME = 'Focus for Todoist';
-export const VERSION = '2.14.0';
+export const VERSION = '2.19.0';
 export const AUTHOR = 'Harsh Gupta';
+/* A copy served with the app, so the About section's photo shows at once. */
+export const AUTHOR_AVATAR_URL = `${import.meta.env.BASE_URL}author.png`;
 
 /** The official site, for the About section. A self-hosted copy's own address is PUBLIC_URL (vite.config.ts). */
 export const SITE_URL = 'https://todo.harshgupta.com';
 export const GITHUB_URL = 'https://github.com/harshbg/focus-todoist';
 export const AUTHOR_GITHUB_URL = 'https://github.com/harshbg';
+/** Where a bug or an idea goes. */
 export const FEEDBACK_URL = `${GITHUB_URL}/issues`;
 export const TODOIST_DEVELOPER_URL =
   'https://app.todoist.com/app/settings/integrations/developer';

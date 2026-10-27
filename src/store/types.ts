@@ -7,6 +7,7 @@ import type { Locale } from '@/i18n';
 import type { DropTarget } from '@/domain/dnd';
 import type { DustLedger } from '@/domain/views';
 import type { Preferences } from './prefs';
+import type { ProjectViewTab } from '@/domain/projectViews';
 
 export type SyncState = 'idle' | 'loading' | 'syncing' | 'error' | 'offline';
 
@@ -21,6 +22,8 @@ export interface Toast {
    * other toast waits for its turn.
    */
   tone?: 'error';
+  /** A button of its own that is not an undo, such as Reload after an update. */
+  action?: { label: string; run: () => void };
 }
 
 /**
@@ -113,6 +116,12 @@ export interface AppState {
   /* Preferences */
   setPrefs: (patch: Partial<Preferences>) => void;
   setViewPrefs: (viewKey: string, patch: Partial<ViewPrefs>) => void;
+  /** Replaces a project's saved views (their names and order); null puts it back to its single default view (#333). */
+  setProjectViews: (projectId: string, tabs: ProjectViewTab[] | null) => void;
+  /** Remembers which saved view a project was last opened on, on this device. */
+  setActiveView: (projectId: string, viewId: string) => void;
+  /** Forgets the settings kept for the views that were deleted. */
+  removeViewPrefs: (viewKeys: string[]) => void;
   setLocale: (locale: Locale) => void;
   /** Creates or updates the hidden Todoist task that is canonical for preferences. */
   /**
@@ -157,7 +166,7 @@ export interface AppState {
   updateTask: (id: string, args: Record<string, unknown>) => Promise<void>;
   /** Posts a comment on a task, with a file already uploaded when there is one. */
   /** False when Todoist refused it, so the field can give the draft back. */
-  addComment: (itemId: string, content: string, attachment?: NoteAttachment | null) => Promise<boolean>;
+  addComment: (itemId: string, content: string, attachment?: NoteAttachment | null, notify?: string[]) => Promise<boolean>;
   /** Rewrites a comment's text. */
   updateComment: (id: string, content: string) => Promise<void>;
   deleteComment: (id: string) => Promise<void>;
@@ -333,7 +342,7 @@ export interface AppState {
   duplicateSection: (id: string, name: string) => Promise<void>;
 
   /* Toasts */
-  toast: (message: string, undo?: () => void, options?: { tone?: 'error' }) => void;
+  toast: (message: string, undo?: () => void, options?: { tone?: 'error'; action?: { label: string; run: () => void }; sticky?: boolean }) => void;
   dismissToast: (id: string) => void;
 
   /* Undo */
@@ -392,7 +401,7 @@ export type Slice<T> = StateCreator<AppState, [], [], T>;
 export type SyncSlice = Pick<AppState, 'ready' | 'connected' | 'snapshot' | 'syncState' | 'syncError' | 'pendingCount' | 'demo' | 'resolvedIds' | 'signInError' | 'init' | 'connect' | 'startDemo' | 'disconnect' | 'refresh' | 'startPolling' | 'apply'>;
 export type CollabSlice = Pick<AppState, 'markNotifications' | 'answerInvitation' | 'shareProject' | 'removeCollaborator' | 'changeRole' | 'leaveProject' | 'assignTask' | 'loadProjectPeople'>;
 export type DustSlice = Pick<AppState, 'dustKept' | 'keepInSomeday'>;
-export type PreferencesSlice = Pick<AppState, 'prefs' | 'walkthrough' | 'setPrefs' | 'setViewPrefs' | 'setLocale' | 'ensurePreferencesTask' | 'beginTourPreview' | 'endTourPreview' | 'setWalkthrough'>;
+export type PreferencesSlice = Pick<AppState, 'prefs' | 'walkthrough' | 'setPrefs' | 'setViewPrefs' | 'setProjectViews' | 'setActiveView' | 'removeViewPrefs' | 'setLocale' | 'ensurePreferencesTask' | 'beginTourPreview' | 'endTourPreview' | 'setWalkthrough'>;
 export type TasksSlice = Pick<AppState, 'logbookEntry' | 'setLogbookEntry' | 'loadTask' | 'updateTask' | 'addComment' | 'updateComment' | 'deleteComment' | 'toggleReaction' | 'duplicateTask' | 'setRecurrence' | 'setEstimates' | 'toggleTask' | 'completeTasks' | 'removeTask' | 'removeTasks' | 'restoreTasks' | 'createTaskId' | 'createTask' | 'createTasks' | 'setTaskLabels' | 'setTaskPriority' | 'skipOccurrence' | 'skipOccurrences' | 'reorderSubtasks'>;
 export type TasksMoveSlice = Pick<AppState, 'sendTo' | 'sendManyTo' | 'updateMany' | 'moveMany' | 'nestMany' | 'moveTask'>;
 export type StructureSlice = Pick<AppState, 'createLabel' | 'renameLabel' | 'setLabelFavourite' | 'setLabelColour' | 'deleteLabel' | 'setFilterFavourite' | 'createFilter' | 'updateFilter' | 'deleteFilter' | 'reorderFilters' | 'reorderLabels' | 'reorderProjects' | 'nestProject' | 'moveProjectToWorkspace' | 'createProject' | 'archiveProject' | 'deleteProject' | 'duplicateProject' | 'updateProjectFields' | 'createSection' | 'moveSection' | 'removeSection' | 'archiveSection' | 'moveSectionToProject' | 'duplicateSection' | 'updateSectionFields'>;

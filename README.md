@@ -59,3 +59,8 @@ bash scripts/upstream-sync.sh
 To allow the workflow to create pull requests, enable this setting in GitHub:
 **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests**.
 
+**License:** [MIT](LICENSE).
+
+### Privacy
+
+No analytics SDK, usage counters or tracking cookies are included. Settings → Privacy explains local storage and Todoist synchronization. The same information is available before sign-in.

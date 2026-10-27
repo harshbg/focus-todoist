@@ -36,7 +36,7 @@ test('French weekday wording creates one unified chip and projects weekdays as o
   const forecasts = page.locator('[data-projection-id]').filter({ hasText: 'test' });
   expect(await forecasts.count()).toBeGreaterThan(5);
   await expect(forecasts.first().getByRole('checkbox')).toHaveAttribute('aria-disabled','true');
-  await expect(forecasts.first().locator('.check')).toHaveCSS('border-top-style','dashed');
+  await expect(forecasts.first().locator('.check.forecast-check')).toHaveCSS('border-top-color','rgba(0, 0, 0, 0)');
   await expect(page.getByText(/Future occurrences are forecasts|Some recurrence rules/)).toHaveCount(0);
   if (process.env.CAPTURE_REFINEMENTS === '1') await page.screenshot({ path: resolve(process.env.ARTIFACT_OUTPUT_DIR ?? '../../outputs', 'occurrences-revisees.png'), animations: 'disabled' });
 });
@@ -167,18 +167,15 @@ test('native team folders show their children and collapse without becoming proj
 });
 
 
-test('Display toggles have equal spacing between their separators', async ({ demo: page }) => {
+test('Display toggles have equal spacing between their rows', async ({ demo: page }) => {
   for (const view of ['today', 'upcoming', 'week']) {
     await go(page, view);
     await page.locator('.pactions').getByRole('button', { name: /^Display/ }).click();
-    const spacing = await page.locator('.display-toggles').evaluate((el) => {
-      const row = el.querySelector('.panelrow')!.getBoundingClientRect();
-      const last = el.lastElementChild!.getBoundingClientRect();
-      const before = el.previousElementSibling!.getBoundingClientRect();
-      const after = el.nextElementSibling!.getBoundingClientRect();
-      return { top: row.top - before.bottom, bottom: after.top - last.bottom };
+    const gaps = await page.locator('.dfields .display-toggles').evaluate((el) => {
+      const rows = Array.from(el.querySelectorAll('.panelrow')).map((row) => row.getBoundingClientRect());
+      return rows.slice(1).map((row, at) => row.top - rows[at].bottom);
     });
-    expect(Math.abs(spacing.top - spacing.bottom)).toBeLessThanOrEqual(1);
+    for (const gap of gaps) expect(Math.abs(gap - gaps[0])).toBeLessThanOrEqual(1);
     await page.keyboard.press('Escape');
   }
 });

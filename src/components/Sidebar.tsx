@@ -152,7 +152,9 @@ export function Sidebar({
     const scope = (key: string) => {
       const filters = viewPrefs(prefs, key).filters;
       const scoped = { ...scopedSnapshot, items: assigneeItems(scopedSnapshot, filters.assignees) };
-      const list = ['today', 'week', 'upcoming'].includes(key) ? datedRoots(openItems(scoped), scoped) : rootItems(openItems(scoped));
+      /* A project's count is Todoist's: every open task, subtasks included,
+         so the Inbox and the projects read the same number in both apps. */
+      const list = ['today', 'week', 'upcoming'].includes(key) ? datedRoots(openItems(scoped), scoped) : key === 'inbox' ? openItems(scoped) : rootItems(openItems(scoped));
       return applyFilters(list, ['today', 'week', 'upcoming'].includes(key) ? { ...filters, includeScheduled: true } : filters, snapshot, makeChildrenOf(childIndex(scoped)));
     };
     return {
@@ -169,9 +171,9 @@ export function Sidebar({
         return date !== null && date <= endOfDay(addDays(now, prefs.upcomingHorizonDays));
       }).length,
       someday: somedayItems(scope('someday')).length,
-      byProject: projectCounts(roots),
+      byProject: projectCounts(items),
     };
-  }, [roots, inboxId, snapshot, scopedSnapshot, prefs]);
+  }, [items, inboxId, snapshot, scopedSnapshot, prefs]);
 
   /** Favourites are Todoist's own star, not a separate list this app keeps. */
   const favourites = useMemo(() => {
@@ -536,10 +538,10 @@ export function Sidebar({
               <Icon name="sparkles" />
               {t('nav.whatsNew')}
             </button>
-            <a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>
+            <button onClick={() => { setMenuOpen(false); window.open(FEEDBACK_URL, '_blank', 'noopener,noreferrer'); }}>
               <Icon name="comment" />
               {t('nav.feedback')}
-            </a>
+            </button>
             <hr />
             <button onClick={() => window.open('https://app.todoist.com', '_blank', 'noopener')}>
               <Icon name="external" />
@@ -611,6 +613,7 @@ export function Sidebar({
               logo={workspace.workspaceId ? snapshot.workspaces[workspace.workspaceId]?.logo_big ?? null : null}
               workspaceId={workspace.workspaceId}
               open={openGroups[key] ?? true}
+              onOpen={() => navigate('workspace', key)}
               onToggle={() => toggleGroup(key)}
               onAdd={() => onProjectSheet({
                 mode: 'create',
@@ -670,7 +673,7 @@ export function Sidebar({
  * resting sidebar stays quiet.
  */
 function SideGroup({
-  title, logo, workspaceId, open, onToggle, onAdd, addLabel, dropTarget, children,
+  title, logo, workspaceId, open, onToggle, onOpen, onAdd, addLabel, dropTarget, children,
 }: {
   title: string;
   /** A workspace's own picture, when Todoist has one; its initial stands in when it has not. */
@@ -678,6 +681,7 @@ function SideGroup({
   workspaceId?: string | null;
   open: boolean;
   onToggle: () => void;
+  onOpen?: () => void;
   onAdd?: () => void;
   addLabel?: string;
   /** When set, the heading itself takes a drop. */
@@ -686,7 +690,7 @@ function SideGroup({
 }) {
   const head = () => (
     <div className="side-head">
-        <button className="side-headbtn" aria-expanded={open} onClick={onToggle}>
+        <button className="side-headbtn" aria-expanded={onOpen ? undefined : open} onClick={onOpen ?? onToggle}>
           {workspaceId && <WorkspaceAvatar small id={workspaceId} name={title} logo={logo} />}
           <span>{title}</span>
         </button>
