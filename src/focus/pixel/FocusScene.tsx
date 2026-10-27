@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CLOUD, PALETTE } from './sprites';
 import { bricksLaid, pyramidBricks } from './layout';
 import { PixelSprite } from './PixelSprite';
@@ -23,6 +23,11 @@ export interface FocusSceneProps {
   ariaLabel: string;
   /** Leaves the clock out, for a page that shows its own above the scene. */
   hideTimer?: boolean;
+  /**
+   * Fills a box whose height the page sets: the sky widens with the window
+   * while the pyramid and trees keep their size, as in the sidecar.
+   */
+  fill?: boolean;
 }
 
 const TOTAL_BRICKS = 36;
@@ -112,8 +117,21 @@ export function FocusScene({
   variant = 'card',
   ariaLabel,
   hideTimer = false,
+  fill = false,
 }: FocusSceneProps) {
   const isWide = variant === 'wide';
+  const panel = useRef<HTMLDivElement>(null);
+  const [aspect, setAspect] = useState(3.5);
+  useEffect(() => {
+    const element = panel.current;
+    if (!fill || !element || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      if (width > 0 && height > 0) setAspect(width / height);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [fill]);
   const [bursting, setBursting] = useState(false);
   useEffect(() => {
     if (!celebrating) { setBursting(false); return; }
@@ -122,8 +140,8 @@ export function FocusScene({
     return () => window.clearTimeout(timer);
   }, [celebrating]);
   // Wide: 280×80 (3.5:1), Card: 192×120 (1.6:1)
-  const width = isWide ? 280 : 192;
-  const height = isWide ? 80 : 120;
+  const height = fill ? 120 : isWide ? 80 : 120;
+  const width = fill ? Math.max(192, Math.round(height * aspect)) : isWide ? 280 : 192;
   const groundHeight = 12;
   const groundY = height - groundHeight;
   const skyHeight = groundY;
@@ -134,7 +152,7 @@ export function FocusScene({
   const pyramidUnitsW = PYRAMID_ROWS * BRICK_W;
   const pyramidUnitsH = PYRAMID_ROWS * BRICK_H;
   // One scale for both axes keeps the bricks square-cornered, as in the classic pyramid.
-  const scale = (skyHeight * 0.66) / pyramidUnitsH;
+  const scale = (skyHeight * (fill ? 0.5 : 0.66)) / pyramidUnitsH;
   const scaleX = scale;
   const scaleY = scale;
 
@@ -144,14 +162,18 @@ export function FocusScene({
   const pyramidTop = groundY - pyramidHeight;
 
   // Trees: tiered pines that grow with the block, centred in the space beside the pyramid.
-  const treeCell = Math.min((pyramidLeft - 4) / 11.5, (skyHeight * 0.5) / TREE_TOTAL_ROWS);
-  const leftTreeX = pyramidLeft / 2;
-  const rightTreeX = width - pyramidLeft / 2;
+  const treeCell = fill
+    ? (skyHeight * 0.26) / TREE_TOTAL_ROWS
+    : Math.min((pyramidLeft - 4) / 11.5, (skyHeight * 0.5) / TREE_TOTAL_ROWS);
+  // A filled scene keeps its trees near the edges, however wide the sky.
+  const treeInset = fill ? treeCell * 6 + 4 : pyramidLeft / 2;
+  const leftTreeX = treeInset;
+  const rightTreeX = width - treeInset;
   const treeProgress = Math.max(0, Math.min(1, progress));
 
   // Clouds: in the sky
-  const cloud1 = isWide ? { x: 42, y: 10 } : { x: 26, y: 14 };
-  const cloud2 = isWide ? { x: 196, y: 14 } : { x: 130, y: 20 };
+  const cloud1 = fill ? { x: Math.round(width * 0.14), y: 16 } : isWide ? { x: 42, y: 10 } : { x: 26, y: 14 };
+  const cloud2 = fill ? { x: Math.round(width * 0.54), y: 24 } : isWide ? { x: 196, y: 14 } : { x: 130, y: 20 };
 
   // Pyramid bricks to render at current progress
   const laidCount = bricksLaid(progress, TOTAL_BRICKS);
@@ -163,7 +185,8 @@ export function FocusScene({
 
   return (
     <div
-      className={`px-panel px-scene px-scene--${variant}`}
+      ref={panel}
+      className={`px-panel px-scene px-scene--${variant}${fill ? ' px-scene--fill' : ''}`}
       role="img"
       aria-label={ariaLabel}
     >
@@ -171,7 +194,7 @@ export function FocusScene({
         aria-hidden="true"
         shapeRendering="crispEdges"
         viewBox={`0 0 ${width} ${height}`}
-        style={{ width: '100%', height: 'auto', display: 'block' }}
+        style={fill ? { width: '100%', height: '100%', display: 'block' } : { width: '100%', height: 'auto', display: 'block' }}
       >
         {/* Sky */}
         <rect width={width} height={height} fill="var(--px-sky)" />

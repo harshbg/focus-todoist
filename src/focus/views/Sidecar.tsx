@@ -54,11 +54,9 @@ export function SidecarPage() {
   const chosenLane = task ? laneOf(task.labels) : lane;
   const lengths = linked.minutes && !prefs.blockLengths.includes(linked.minutes)
     ? [linked.minutes, ...prefs.blockLengths] : prefs.blockLengths;
-  const remaining = active ? remainingMs(active, now) : (linked.minutes ?? prefs.blockLengths[0] ?? 30) * 60_000;
+  const [length, setLength] = useState(linked.minutes ?? prefs.blockLengths[0] ?? 30);
+  const remaining = active ? remainingMs(active, now) : length * 60_000;
   const quest = { label: t('focus.dailyQuest'), minutesLabel: t('focus.questMinutes', { minutes: shortDuration(progress.minutes), target: shortDuration(progress.target) }), pips: progress.pips };
-  const status = active
-    ? (active.pausedAt !== null ? t('focus.paused') : active.mode === 'unwind' ? t('focus.unwind') : t('focus.inFocus'))
-    : justLogged ? t('focus.blockComplete') : t('focus.ready');
 
   const begin = (minutes: number) => {
     const title = task?.content ?? query.trim();
@@ -84,32 +82,31 @@ export function SidecarPage() {
     window.location.hash = '#/focus';
   };
 
-  return <div className="focus-theme fx-sc">
-    <header className="fx-sc-head">
-      <span className="fx-sc-brand"><span aria-hidden="true">✦</span> {t('connect.appName')}</span>
-      <button className="fx-sc-close" aria-label={t('common.close')} onClick={close}>×</button>
-    </header>
+  // While a block runs the page keeps to the clock, the task and the scene.
+  return <div className={`focus-theme fx-sc${active ? ' is-running' : ''}`}>
+    {!active && <button className="fx-sc-close" aria-label={t('common.close')} onClick={close}>×</button>}
 
     <div className="fx-sc-status">
-      <p className="fx-sc-eyebrow">{status}</p>
+      {!active && justLogged && <p className="fx-sc-eyebrow">{t('focus.blockComplete')}</p>}
       <div className="fx-sc-clock" role="timer">{formatClock(remaining)}</div>
+      {!active && !justLogged && <div className="fx-sc-lengths" role="group" aria-label={t('focus.startBlock')}>
+        {lengths.map((minutes) => <button key={minutes} aria-pressed={length === minutes}
+          onClick={() => setLength(minutes)}>{formatDuration(minutes, locale)}</button>)}
+      </div>}
     </div>
+    {active && <h1 className="fx-sc-running">{active.title}</h1>}
 
-    <FocusScene variant="wide" hideTimer
+    <FocusScene variant="wide" hideTimer fill
       progress={active ? elapsedMs(active, now) / (active.plannedMin * 60_000) : justLogged ? 1 : 0}
       time={formatClock(remaining)} celebrating={Boolean(justLogged)} quest={quest}
       ariaLabel={t('focus.sceneLabel', { time: formatClock(remaining) })} />
 
-    {active && <section className="fx-sc-card">
-      <p className="fx-sc-kicker">{status}</p>
-      <h1 className="fx-sc-title">{active.title}</h1>
-      <div className="fx-sc-buttons">
-        {active.pausedAt === null
-          ? <button className="fx-sc-btn" onClick={pause}>{t('focus.pause')}</button>
-          : <button className="fx-sc-btn fx-sc-btn--go" onClick={resume}>{t('focus.resume')}</button>}
-        <button className="fx-sc-btn" onClick={() => void stop()}>{t('focus.stop')}</button>
-      </div>
-    </section>}
+    {active && <div className="fx-sc-buttons fx-sc-center">
+      {active.pausedAt === null
+        ? <button className="fx-sc-btn fx-sc-btn--go" onClick={pause}>{t('focus.pause')}</button>
+        : <button className="fx-sc-btn fx-sc-btn--go" onClick={resume}>{t('focus.resume')}</button>}
+      <button className="fx-sc-link" onClick={() => void stop()}>{t('focus.stop')}</button>
+    </div>}
 
     {!active && justLogged && <section className="fx-sc-card fx-sc-card--done">
       <div className="fx-sc-logged">
@@ -132,37 +129,32 @@ export function SidecarPage() {
       </div>
     </section>}
 
-    {!active && !justLogged && <section className="fx-sc-card">
-      <p className="fx-sc-kicker">{t('focus.ready')}</p>
-      <h1 className="fx-sc-title">{task?.content ?? (query.trim() || t('focus.sidecarPick'))}</h1>
-      <p className="fx-sc-type">{t('focus.startBlock')}</p>
-      <div className="fx-sc-buttons">
-        {lengths.map((minutes) => <button key={minutes} className="fx-sc-btn fx-sc-btn--go" disabled={!task && !query.trim()}
-          onClick={() => begin(minutes)}>{formatDuration(minutes, locale)}</button>)}
-        <button className="fx-sc-btn" onClick={takeBreak}>{t('focus.takeBreak', { minutes: prefs.breakMin })}</button>
-      </div>
-    </section>}
+    {!active && !justLogged && <div className="fx-sc-buttons fx-sc-center">
+      <button className="fx-sc-btn fx-sc-btn--go" disabled={!task && !query.trim()} onClick={() => begin(length)}>{t('focus.startFocus')}</button>
+      <button className="fx-sc-btn fx-sc-btn--icon" aria-label={t('focus.reset')} title={t('focus.reset')}
+        onClick={() => { setTaskId(null); setQuery(''); setLane(null); setLength(prefs.blockLengths[0] ?? 30); }}>↺</button>
+    </div>}
 
-    <div className="fx-sc-quest">
-      <div><p className="fx-sc-kicker">{t('focus.dailyQuest')}</p><p className="fx-sc-type">{quest.minutesLabel}</p></div>
-      <div className="fx-sc-pips" aria-label={t('focus.questProgress', { count: progress.pips.filter(Boolean).length })}>
-        {progress.pips.map((lit, index) => <i key={index} className={lit ? 'is-on' : ''} />)}
+    {!active && <>
+      <div className="fx-sc-quest">
+        <div><p className="fx-sc-kicker">{t('focus.dailyQuest')}</p><p className="fx-sc-type">{quest.minutesLabel}</p></div>
+        <div className="fx-sc-pips" aria-label={t('focus.questProgress', { count: progress.pips.filter(Boolean).length })}>
+          {progress.pips.map((lit, index) => <i key={index} className={lit ? 'is-on' : ''} />)}
+        </div>
       </div>
-    </div>
 
-    <div className="fx-sc-pick">
-      <label className="fx-sc-field"><span className="fx-sc-kicker">{t('focus.sidecarTask')}</span>
-        <TaskSearch items={items} value={query} selectedId={taskId} placeholder={t('focus.addWork')}
-          onChange={(value) => { setQuery(value); setTaskId(null); }}
-          onSelect={(item) => { setQuery(item.content); setTaskId(item.id); setLane(laneOf(item.labels)); }} />
-      </label>
-      <div className="fx-sc-field"><span className="fx-sc-kicker">{t('focus.lane')}</span>
-        <div className="fx-sc-lanes">{settings.lanes.map((name) => <button key={name} className="fx-sc-lane" aria-pressed={chosenLane === name}
-          disabled={Boolean(active)} onClick={() => chooseLane(name)}>{name}</button>)}</div>
+      <div className="fx-sc-pick">
+        <label className="fx-sc-field"><span className="fx-sc-kicker">{t('focus.sidecarTask')}</span>
+          <TaskSearch items={items} value={query} selectedId={taskId} placeholder={t('focus.sidecarTask')}
+            onChange={(value) => { setQuery(value); setTaskId(null); }}
+            onSelect={(item) => { setQuery(item.content); setTaskId(item.id); setLane(laneOf(item.labels)); }} />
+        </label>
+        <div className="fx-sc-field"><span className="fx-sc-kicker">{t('focus.lane')}</span>
+          <div className="fx-sc-lanes">{settings.lanes.map((name) => <button key={name} className="fx-sc-lane" aria-pressed={chosenLane === name}
+            onClick={() => chooseLane(name)}>{name}</button>)}</div>
+        </div>
       </div>
-    </div>
-
-    <p className="fx-sc-foot">{t('focus.sidecarHint')}</p>
+    </>}
   </div>;
 }
 

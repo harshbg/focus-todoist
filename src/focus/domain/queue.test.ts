@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Item } from '@/domain/types';
-import { focusQueue, searchTasks } from './queue';
+import { focusQueue, searchTasks, taskChoices } from './queue';
 
 const task = (id: string, content: string, extras: Partial<Item> = {}): Item => ({
   id, content, labels: [], checked: false, is_deleted: false, due: null, ...extras,
@@ -28,5 +28,22 @@ describe('focus task choices', () => {
     }));
     expect(focusQueue(items, ['9'], now)).toHaveLength(8);
     expect(focusQueue(items, ['9'], now)[0].id).toBe('9');
+  });
+
+  it('offers timed tasks in time order, then today and overdue, then the week, and filters by typing', () => {
+    const now = new Date(2026, 9, 27, 9);
+    const due = (date: string) => ({ date } as Item['due']);
+    const items = [
+      task('later', 'Later timed', { due: due('2026-10-29T10:00:00') }),
+      task('soon', 'Soon timed', { due: due('2026-10-27T14:30:00') }),
+      task('overdue', 'Overdue', { due: due('2026-10-25') }),
+      task('week', 'This week', { due: due('2026-10-30') }),
+      task('far', 'Far away', { due: due('2026-12-01') }),
+      task('none', 'No date'),
+      task('done', 'Done timed', { checked: true, due: due('2026-10-27T10:00:00') }),
+    ];
+    expect(taskChoices(items, '', now).map((item) => item.id)).toEqual(['soon', 'later', 'overdue', 'week']);
+    expect(taskChoices(items, 'a', now).map((item) => item.id)).toEqual(['later', 'far', 'none']);
+    expect(taskChoices(Array.from({ length: 12 }, (_, i) => task(String(i), `T ${i}`, { due: due('2026-10-27') })), '', now)).toHaveLength(8);
   });
 });

@@ -48,31 +48,7 @@ Keep the structure, and adjust only CSS unless noted:
   running. Ignore keys while typing in the task field. Small `useEffect` in
   Sidecar.tsx.
 
-## 4. The task field opens a list (user request)
-
-The "Task" field on the Focus page, the sidecar's task field and the planning
-form all use `src/focus/views/TaskSearch.tsx`. Today it suggests nothing until you
-type. Wanted:
-
-- **On focus or click with the field empty**, open the list right away. Show
-  open tasks (no checked or deleted ones), soonest first:
-  1. tasks with a due **time** today or later, in time order, each showing its
-     time (e.g. `14:30`, or `Tue 09:00` when not today, formatted with
-     `Intl.DateTimeFormat(locale)` like `PlanBlock.tsx` does) and its
-     duration or estimate when it has one,
-  2. then tasks due today or overdue without a time,
-  3. then the rest of the week's tasks.
-  At most 8 rows; the list scrolls if it is taller than the space.
-- **While typing**, it filters the same way it does now (case-insensitive,
-  substring), and keeps the time on the rows that have one.
-- Arrow keys, Enter and click work as now. Escape and clicking outside close
-  the list. Choosing a task closes it.
-- Put the ordering in a pure function in `src/focus/domain/queue.ts`
-  (`taskChoices(items, query, now): Item[]`) with tests in `queue.test.ts`
-  (time order, the time-less today/overdue group, query filtering, the limit
-  of 8). Keep `searchTasks` for any other caller.
-- Style the time as a muted mono label at the row's right (`.fx-suggest` in
-  focus.css, `--fx-*` tokens).
+## 4. (Done by Claude: the task field's list. Skip it.)
 
 ## Done means
 
