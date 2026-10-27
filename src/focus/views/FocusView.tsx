@@ -28,6 +28,7 @@ import { openSidecar } from './Sidecar';
 import { PlanBlock } from './PlanBlock';
 import { GuidanceNudges } from './Guidance';
 import { shortDuration } from '../domain/format';
+import { taskColorStyle } from '@/focus/taskColors';
 import './focus.css';
 
 const QUEUE_KEY = 'tde.focus.queue';
@@ -289,7 +290,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
       <ul className="fx-queue">{queue.map((item) => {
         const taskLane = settings.lanes.find((name) => item.labels.some((label) => label.toLowerCase() === name.toLowerCase()));
         return <li key={item.id} className="fx-queue-item"><i className="fx-mark" aria-hidden="true" />
-          <div className="fx-queue-text"><button className="fx-queue-title" onClick={() => onOpen(item.id)} dangerouslySetInnerHTML={{ __html: renderTitle(item.content) }} />
+          <div className="fx-queue-text"><button className="fx-queue-title" style={taskColorStyle(prefs.taskColors?.[item.id])} onClick={() => onOpen(item.id)} dangerouslySetInnerHTML={{ __html: renderTitle(item.content) }} />
             <span className="fx-queue-meta">{[estimateOf(item) !== null ? formatDuration(estimateOf(item)!, locale) : null, taskLane].filter(Boolean).join(' · ')}</span></div>
           <button className="fx-icon-btn" disabled={Boolean(active)} aria-label={t('focus.startTaskNamed', { title: plainTitle(item.content) })} onClick={() => startFor(item, item.content, 'focus', length)}>▶</button>
           {pinned.includes(item.id) && <button className="fx-icon-btn" aria-label={t('focus.removeQueue', { title: plainTitle(item.content) })} onClick={() => saveQueue(pinned.filter((id) => id !== item.id))}>×</button>}

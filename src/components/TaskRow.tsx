@@ -27,6 +27,8 @@ import { dateTone, deadlineDate, dueDate, formatRelativeDay, formatTime, hasTime
 import { markerStyle } from '@/domain/colors';
 import { renderInlineMarkdown, renderTitle } from '@/domain/markdown';
 import type { DetailChip } from '@/domain/taskDetails';
+// Custom task title colour in this app (FORMATTING.md §2)
+import { taskColorStyle, useTaskColor } from '@/focus/taskColors';
 
 /**
  * Whether rows draw the subtasks nested under them.
@@ -227,6 +229,7 @@ export function TaskRow({
   const children = childrenOf(item.id);
   const openChildren = children.filter((c) => !c.checked);
   const doneChildren = children.length - openChildren.length;
+  const taskColor = useTaskColor(item.id);
 
   const { minutes, computed } = effectiveEstimate(item, childrenOf);
   const priority = toDisplayPriority(item.priority);
@@ -485,6 +488,7 @@ export function TaskRow({
           <span className="trow-title">
             <span
               className="ttitle"
+              style={taskColorStyle(taskColor)}
               dangerouslySetInnerHTML={{ __html: renderTitle(displayTaskContent(item)) }}
             />
             {showSubtasks && openChildren.length > 0 && !item.projection && !table && (

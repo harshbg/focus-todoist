@@ -57,6 +57,9 @@ export const DEFAULT_FOCUS_SETTINGS: FocusSettings = {
   exemptDays: [],
 };
 
+export const TASK_COLORS = ['red', 'orange', 'yellow', 'green', 'blue', 'purple'] as const;
+export type TaskColor = (typeof TASK_COLORS)[number];
+
 /** Everything the focus feature keeps in the app's preferences (SPEC §2.2). */
 export interface FocusPreferences extends FocusSettings {
   workProjectIds: string[];
@@ -73,6 +76,8 @@ export interface FocusPreferences extends FocusSettings {
   calendarDefault: boolean;
   /** Gentle guidance nudges, all opt-in; they show only while the app is open. */
   guidance: { startAlerts: boolean; gentleRestart: boolean; weeklyInsight: boolean };
+  /** Custom task title colours shown only in this app (FORMATTING.md §2). */
+  taskColors: Record<string, TaskColor>;
 }
 
 export const DEFAULT_FOCUS_PREFERENCES: FocusPreferences = {
@@ -92,4 +97,5 @@ export const DEFAULT_FOCUS_PREFERENCES: FocusPreferences = {
   sound: true,
   calendarDefault: false,
   guidance: { startAlerts: false, gentleRestart: false, weeklyInsight: false },
+  taskColors: {},
 };

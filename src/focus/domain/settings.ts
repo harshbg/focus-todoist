@@ -1,6 +1,13 @@
 import { isMatch } from 'date-fns';
 import type { Mode } from './mode';
-import { DEFAULT_FOCUS_PREFERENCES, type ExemptDay, type FocusPreferences, type FocusSettings } from './types';
+import {
+  DEFAULT_FOCUS_PREFERENCES,
+  type ExemptDay,
+  type FocusPreferences,
+  type FocusSettings,
+  TASK_COLORS,
+  type TaskColor,
+} from './types';
 
 function integerInRange(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
@@ -64,6 +71,7 @@ export function readFocusPreferences(stored: unknown): FocusPreferences {
     workProjectIds: [...defaults.workProjectIds],
     personal: { ...defaults.personal, workdays: [...defaults.personal.workdays], lanes: [...defaults.personal.lanes] },
     guidance: { ...defaults.guidance },
+    taskColors: { ...defaults.taskColors },
   };
   if (stored === null || typeof stored !== 'object' || Array.isArray(stored)) return result;
 
@@ -115,6 +123,22 @@ export function readFocusPreferences(stored: unknown): FocusPreferences {
     for (const key of ['startAlerts', 'gentleRestart', 'weeklyInsight'] as const) {
       if (typeof guidance[key] === 'boolean') result.guidance[key] = guidance[key];
     }
+  }
+
+  if (fields.taskColors !== null && typeof fields.taskColors === 'object' && !Array.isArray(fields.taskColors)) {
+    const raw = fields.taskColors as Record<string, unknown>;
+    const colors: Record<string, TaskColor> = {};
+    let count = 0;
+    for (const [id, color] of Object.entries(raw)) {
+      const trimmed = id.trim();
+      if (!trimmed) continue;
+      if (typeof color === 'string' && (TASK_COLORS as readonly string[]).includes(color)) {
+        colors[trimmed] = color as TaskColor;
+        count += 1;
+        if (count >= 300) break;
+      }
+    }
+    result.taskColors = colors;
   }
   return result;
 }

@@ -4,6 +4,7 @@ import type { Item } from '@/domain/types';
 import { renderTitle } from '@/domain/markdown';
 import { taskChoices } from '../domain/queue';
 import { useT } from '@/hooks/useT';
+import { taskColorStyle, useTaskColors } from '@/focus/taskColors';
 
 /** A task's due time as the list shows it: `14:30` today, `Thu 10:00` later on. */
 function timeLabel(item: Item, locale: string): string | null {
@@ -25,6 +26,7 @@ interface TaskSearchProps {
 
 export function TaskSearch({ items, value, onChange, onSelect, onCreate, selectedId, placeholder }: TaskSearchProps) {
   const { t, locale } = useT();
+  const taskColors = useTaskColors();
   const [active, setActive] = useState(0);
   // The list opens on focus, so a planned task is a click away before typing anything.
   const [open, setOpen] = useState(false);
@@ -63,7 +65,7 @@ export function TaskSearch({ items, value, onChange, onSelect, onCreate, selecte
             <li key={item.id} className={index === active ? 'is-active' : ''}>
               {/* mousedown keeps the field focused, so the list is still there for the click */}
               <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { onSelect(item); setOpen(false); }}>
-                <span className="fx-suggest-title" dangerouslySetInnerHTML={{ __html: renderTitle(item.content) }} />
+                <span className="fx-suggest-title" style={taskColorStyle(taskColors[item.id])} dangerouslySetInnerHTML={{ __html: renderTitle(item.content) }} />
                 {timeLabel(item, locale) && <span className="fx-suggest-time">{timeLabel(item, locale)}</span>}
               </button>
             </li>

@@ -12,6 +12,7 @@ describe('readFocusPreferences', () => {
     expect(result.workdays).not.toBe(DEFAULT_FOCUS_PREFERENCES.workdays);
     expect(result.lanes).not.toBe(DEFAULT_FOCUS_PREFERENCES.lanes);
     expect(result.blockLengths).not.toBe(DEFAULT_FOCUS_PREFERENCES.blockLengths);
+    expect(result.taskColors).not.toBe(DEFAULT_FOCUS_PREFERENCES.taskColors);
   });
 
   it.each([
@@ -133,6 +134,38 @@ describe('readFocusPreferences', () => {
         lanes: 'bad',
       },
     }).personal).toEqual(DEFAULT_FOCUS_PREFERENCES.personal);
+  });
+
+  it('keeps valid taskColors, filters out unknown colours and blank IDs, and caps at 300', () => {
+    expect(readFocusPreferences({}).taskColors).toEqual({});
+    expect(readFocusPreferences({ taskColors: null }).taskColors).toEqual({});
+    expect(readFocusPreferences({ taskColors: 'invalid' }).taskColors).toEqual({});
+
+    const raw: Record<string, unknown> = {
+      'task-1': 'red',
+      ' task-2 ': 'blue',
+      '': 'green',
+      '   ': 'yellow',
+      'task-3': 'neon',
+      'task-4': 123,
+      'task-5': null,
+      'task-6': 'orange',
+    };
+    expect(readFocusPreferences({ taskColors: raw }).taskColors).toEqual({
+      'task-1': 'red',
+      'task-2': 'blue',
+      'task-6': 'orange',
+    });
+
+    const many: Record<string, string> = {};
+    for (let i = 0; i < 350; i++) {
+      many[`t-${i}`] = 'purple';
+    }
+    const parsed = readFocusPreferences({ taskColors: many }).taskColors;
+    expect(Object.keys(parsed)).toHaveLength(300);
+    expect(parsed['t-0']).toBe('purple');
+    expect(parsed['t-299']).toBe('purple');
+    expect(parsed['t-300']).toBeUndefined();
   });
 });
 

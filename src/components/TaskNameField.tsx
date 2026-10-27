@@ -1,5 +1,6 @@
 import {
   createElement, useEffect, useLayoutEffect, useRef, useState,
+  type CSSProperties,
   type ChangeEvent, type ClipboardEvent, type KeyboardEvent, type MouseEvent, type MutableRefObject,
   type SyntheticEvent,
 } from 'react';
@@ -71,6 +72,8 @@ interface TaskNameFieldProps {
   ariaLabel: string;
   snapshot: Snapshot;
   naturalDates: boolean;
+  /** Custom style (e.g. task colour in task panel, FORMATTING.md §2). */
+  style?: CSSProperties;
   /**
    * A field that wraps rather than scrolling, for the task panel's title.
    *
@@ -139,7 +142,7 @@ interface TaskNameFieldProps {
 export function TaskNameField({
   value, onChange, onSubmit, placeholder, ariaLabel, snapshot, naturalDates,
   refusals, onRefusals, multiline = false, fieldClassName, onBlur, onCancel, fieldRef, onPasteList,
-  estimateOnly = false, autoFocus, peopleOf,
+  estimateOnly = false, autoFocus, peopleOf, style,
 }: TaskNameFieldProps) {
   const { t } = useT();
   const createLabel = useStore((s) => s.createLabel);
@@ -459,7 +462,7 @@ export function TaskNameField({
   };
 
   return (
-    <div className={`namefield${multiline ? ' multiline' : ''}`}>
+    <div className={`namefield${multiline ? ' multiline' : ''}`} style={style}>
       <div className="namemirror" ref={mirrorRef} aria-hidden="true">
         {pieces.map((piece, index) =>
           piece.kind && !piece.refused
@@ -488,6 +491,7 @@ export function TaskNameField({
           if (fieldRef) fieldRef.current = node;
         },
         className: fieldClassName ?? 'composer-name',
+        style,
         placeholder,
         'aria-label': ariaLabel,
         autoFocus: autoFocus ?? !multiline,

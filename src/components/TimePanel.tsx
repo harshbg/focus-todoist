@@ -14,6 +14,8 @@ import {
 import { displayTaskContent, toDisplayPriority, type Item } from '@/domain/types';
 import { renderTitle } from '@/domain/markdown';
 import type { TranslationKey } from '@/i18n';
+// Custom task title colour in this app (FORMATTING.md §2)
+import { taskColorStyle, useTaskColor } from '@/focus/taskColors';
 
 interface TimePanelProps {
   /** The page's own tasks, after its Display filters: what "in this page" means. */
@@ -302,6 +304,7 @@ function TimeRow({ item, when, onOpen }: { item: Item; when: FitBucketKey; onOpe
   };
 
   const counted = countedMinutes(item, childrenOf);
+  const taskColor = useTaskColor(item.id);
   /* An estimate worked out rather than written on the task is starred, as it
      is in the list: a sum of subtasks, or a quick tag counted as five. */
   const assumed = effectiveEstimate(item, childrenOf).minutes === null;
@@ -380,6 +383,7 @@ function TimeRow({ item, when, onOpen }: { item: Item; when: FitBucketKey; onOpe
       <span className="timemain">
         <span
           className="ttitle"
+          style={taskColorStyle(taskColor)}
           dangerouslySetInnerHTML={{ __html: renderTitle(displayTaskContent(item)) }}
         />
         {where && <span className="timewhere">{where}</span>}
