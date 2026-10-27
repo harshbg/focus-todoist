@@ -1104,10 +1104,10 @@
   font-family: var(--fx-type); font-weight: 700; color: #2f3338; opacity: 1;
   font-size: clamp(13px, 1.7vw, 24px); letter-spacing: 0.04em;
 }
-.focus-theme.fx-sc .px-quest-pips { gap: 0.275em; margin: 2px 0; }
+.focus-theme.fx-sc .px-quest-pips { font-size: clamp(13px, 1.7vw, 24px); gap: 0.4em; margin: 4px 0 4px 0.2em; }
 .focus-theme.fx-sc .px-quest-pips .px-coin {
-  width: 1.1em;
-  height: 1.1em;
+  width: 1.6em;
+  height: 1.6em;
   flex-shrink: 0;
 }
 .focus-theme .fx-sc-card { flex: none; width: min(100%, 1060px); margin: 4px auto 0; box-sizing: border-box; padding: 20px 22px; background: var(--fx-card); border: var(--fx-frame); box-shadow: var(--fx-drop); display: flex; flex-direction: column; gap: 14px; }

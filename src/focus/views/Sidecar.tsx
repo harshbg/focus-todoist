@@ -1,5 +1,5 @@
 import '@/focus/fonts';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useConfirm } from '@/components/overlays/Confirm';
 import { formatDuration } from '@/domain/estimates';
 import { useData } from '@/hooks/useData';
@@ -88,49 +88,53 @@ export function SidecarPage() {
   };
 
   // Keyboard: Space starts or pauses, Escape stops, 1/2/3 pick the first three lengths when idle.
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
+  const onKey = useRef<(event: KeyboardEvent) => void>(() => {});
+  // One listener reads the latest handler, so it sees this render's state without rebinding.
+  onKey.current = (event: KeyboardEvent) => {
+    const target = event.target as HTMLElement | null;
+    // A focused button already answers Space itself; acting here too would start or pause twice.
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'BUTTON' || target.isContentEditable)) return;
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
 
-      if (event.key === ' ' || event.code === 'Space') {
+    if (event.key === ' ' || event.code === 'Space') {
+      event.preventDefault();
+      if (active) {
+        if (active.pausedAt === null) pause();
+        else resume();
+      } else if (justLogged) {
+        const minutes = prefs.blockLengths[0] ?? 25;
+        start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: justLogged.title, lane: justLogged.lane, plannedMin: minutes });
+      } else {
+        const minutes = lengths[0] ?? prefs.blockLengths[0] ?? 25;
+        begin(minutes);
+      }
+    } else if (event.key === 'Escape') {
+      if (active) {
         event.preventDefault();
-        if (active) {
-          if (active.pausedAt === null) pause();
-          else resume();
-        } else if (justLogged) {
-          const minutes = prefs.blockLengths[0] ?? 25;
+        void stop();
+      }
+    } else if (!active && (event.key === '1' || event.key === '2' || event.key === '3')) {
+      const index = Number(event.key) - 1;
+      if (justLogged) {
+        const minutes = prefs.blockLengths[index];
+        if (minutes !== undefined) {
+          event.preventDefault();
           start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: justLogged.title, lane: justLogged.lane, plannedMin: minutes });
-        } else {
-          const minutes = lengths[0] ?? prefs.blockLengths[0] ?? 25;
+        }
+      } else {
+        const minutes = lengths[index];
+        if (minutes !== undefined) {
+          event.preventDefault();
           begin(minutes);
         }
-      } else if (event.key === 'Escape') {
-        if (active) {
-          event.preventDefault();
-          void stop();
-        }
-      } else if (!active && (event.key === '1' || event.key === '2' || event.key === '3')) {
-        const index = Number(event.key) - 1;
-        if (justLogged) {
-          const minutes = prefs.blockLengths[index];
-          if (minutes !== undefined) {
-            event.preventDefault();
-            start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: justLogged.title, lane: justLogged.lane, plannedMin: minutes });
-          }
-        } else {
-          const minutes = lengths[index];
-          if (minutes !== undefined) {
-            event.preventDefault();
-            begin(minutes);
-          }
-        }
       }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [active, justLogged, pause, resume, start, prefs.blockLengths, lengths, begin, stop]);
+    }
+  };
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => onKey.current(event);
+    window.addEventListener('keydown', listener);
+    return () => window.removeEventListener('keydown', listener);
+  }, []);
 
   // While a block runs the page keeps to the clock, the task and the scene.
   return <div className={`focus-theme fx-sc${active ? ' is-running' : ''}`}>

@@ -156,15 +156,17 @@
 .px-quest-pips {
   display: flex;
   align-items: center;
-  gap: calc(1.1em * 0.25);
+  /* Sized from the label's type, so the coins stand about 1.6 capitals tall wherever the quest is. */
+  font-size: clamp(9px, 1.5cqw, 11px);
+  gap: 0.4em;
   margin-top: 2px;
   margin-bottom: 2px;
 }
 
 .px-quest-pips .px-coin {
   display: block;
-  width: 1.1em;
-  height: 1.1em;
+  width: 1.6em;
+  height: 1.6em;
   flex-shrink: 0;
 }
 
