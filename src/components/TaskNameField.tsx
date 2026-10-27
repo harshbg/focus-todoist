@@ -15,6 +15,7 @@ import type { Snapshot } from '@/domain/types';
 import { PersonAvatar } from './PersonAvatar';
 import { bySectionOrder } from '@/domain/orderKey';
 import { splitPastedList } from '@/domain/pastedList';
+import { toggleWrap } from '@/domain/markdown';
 
 /** A name with its spaces, case and accents set aside, as the parser reads it. */
 const squash = (text: string): string =>
@@ -533,6 +534,30 @@ export function TaskNameField({
              twice — two handlers for one keystroke, and the task arrived in
              Todoist in duplicate. */
           if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') return;
+
+          /* Cmd/Ctrl+B and Cmd/Ctrl+I toggle bold and italic Markdown formatting in the task name. */
+          if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'B' || e.key === 'i' || e.key === 'I')) {
+            e.preventDefault();
+            const marker = (e.key === 'b' || e.key === 'B') ? '**' : '*';
+            const input = e.currentTarget;
+            const from = input.selectionStart ?? value.length;
+            const to = input.selectionEnd ?? from;
+            const next = toggleWrap(value, from, to, marker);
+            const carried = carryRanges(refusals, value, next.text);
+            if (carried.length !== refusals.length
+              || carried.some((r, at) => r.start !== refusals[at].start)) {
+              onRefusals(carried);
+            }
+            onChange(next.text);
+            input.setSelectionRange(next.start, next.end);
+            setCaret(next.start);
+            requestAnimationFrame(() => {
+              input.focus();
+              input.setSelectionRange(next.start, next.end);
+              setCaret(next.start);
+            });
+            return;
+          }
 
           if (options.length > 0) {
             if (e.key === 'ArrowDown') {

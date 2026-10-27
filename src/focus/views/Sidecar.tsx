@@ -2,6 +2,7 @@ import '@/focus/fonts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useConfirm } from '@/components/overlays/Confirm';
 import { formatDuration } from '@/domain/estimates';
+import { plainTitle, renderTitle } from '@/domain/markdown';
 import { useData } from '@/hooks/useData';
 import { useT } from '@/hooks/useT';
 import { useStore } from '@/store/store';
@@ -66,7 +67,7 @@ export function SidecarPage() {
   const begin = (minutes: number) => {
     const title = task?.content ?? query.trim();
     if (!title) return;
-    start({ mode: 'focus', focusMode, taskId: task?.id ?? null, title, lane: chosenLane, plannedMin: minutes });
+    start({ mode: 'focus', focusMode, taskId: task?.id ?? null, title: plainTitle(title), lane: chosenLane, plannedMin: minutes });
   };
   const takeBreak = () => start({ mode: 'unwind', focusMode, taskId: null, title: t('focus.unwind'), lane: null, plannedMin: prefs.breakMin });
   const stop = async () => {
@@ -103,7 +104,7 @@ export function SidecarPage() {
         else resume();
       } else if (justLogged) {
         const minutes = prefs.blockLengths[0] ?? 25;
-        start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: justLogged.title, lane: justLogged.lane, plannedMin: minutes });
+        start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: plainTitle(justLogged.title), lane: justLogged.lane, plannedMin: minutes });
       } else {
         const minutes = lengths[0] ?? prefs.blockLengths[0] ?? 25;
         begin(minutes);
@@ -119,7 +120,7 @@ export function SidecarPage() {
         const minutes = prefs.blockLengths[index];
         if (minutes !== undefined) {
           event.preventDefault();
-          start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: justLogged.title, lane: justLogged.lane, plannedMin: minutes });
+          start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: plainTitle(justLogged.title), lane: justLogged.lane, plannedMin: minutes });
         }
       } else {
         const minutes = lengths[index];
@@ -144,7 +145,7 @@ export function SidecarPage() {
       {!active && justLogged && <p className="fx-sc-eyebrow">{t('focus.blockComplete')}</p>}
       <div className="fx-sc-clock" role="timer">{formatClock(remaining)}</div>
     </div>
-    {active && <h1 className="fx-sc-running">{active.title}</h1>}
+    {active && <h1 className="fx-sc-running" dangerouslySetInnerHTML={{ __html: renderTitle(active.title) }} />}
 
     <FocusScene variant="wide" hideTimer fill
       progress={active ? elapsedMs(active, now) / (active.plannedMin * 60_000) : justLogged ? 1 : 0}
@@ -161,7 +162,7 @@ export function SidecarPage() {
     {!active && justLogged && <section className="fx-sc-card fx-sc-card--done">
       <div className="fx-sc-logged">
         <span className="fx-sc-check" aria-hidden="true">✓</span>
-        <div><p className="fx-sc-kicker">{t('focus.blockLogged')}</p><h1 className="fx-sc-title">{justLogged.title}</h1></div>
+        <div><p className="fx-sc-kicker">{t('focus.blockLogged')}</p><h1 className="fx-sc-title" dangerouslySetInnerHTML={{ __html: renderTitle(justLogged.title) }} /></div>
       </div>
       <div className="fx-sc-quality">
         <div><p className="fx-sc-type">{t('focus.quality')} {t('focus.optional')}</p><p className="fx-sc-ask">{t('focus.howFelt')}</p></div>
@@ -173,7 +174,7 @@ export function SidecarPage() {
       <p className="fx-sc-type">{t('focus.continueSame')}</p>
       <div className="fx-sc-buttons">
         {prefs.blockLengths.map((minutes) => <button key={minutes} className="fx-sc-btn fx-sc-btn--go"
-          onClick={() => start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: justLogged.title, lane: justLogged.lane, plannedMin: minutes })}>{formatDuration(minutes, locale)}</button>)}
+          onClick={() => start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: plainTitle(justLogged.title), lane: justLogged.lane, plannedMin: minutes })}>{formatDuration(minutes, locale)}</button>)}
         <button className="fx-sc-btn" onClick={() => { dismiss(); setTaskId(null); setQuery(''); setLane(null); }}>{t('focus.newTask')}</button>
         <button className="fx-sc-btn" onClick={takeBreak}>{t('focus.takeBreak', { minutes: prefs.breakMin })}</button>
       </div>
@@ -183,7 +184,7 @@ export function SidecarPage() {
       <p className="fx-sc-kicker">{t('focus.ready')}</p>
       {/* With no task yet, the title opens the task list below. */}
       {task || query.trim()
-        ? <h1 className="fx-sc-title">{task?.content ?? query.trim()}</h1>
+        ? <h1 className="fx-sc-title" dangerouslySetInnerHTML={{ __html: renderTitle(task?.content ?? query.trim()) }} />
         : <button className="fx-sc-title fx-sc-pickbtn" onClick={() => document.querySelector<HTMLInputElement>('.fx-sc-pick input')?.focus()}>{t('focus.sidecarPick')}</button>}
       <p className="fx-sc-type">{t('focus.startBlock')}</p>
       <div className="fx-sc-buttons">

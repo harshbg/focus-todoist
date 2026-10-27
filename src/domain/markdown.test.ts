@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { plainTitle, renderTitle, titleLinks } from './markdown';
+import { plainTitle, renderTitle, titleLinks, toggleWrap } from './markdown';
 
 describe('task titles with links (#101)', () => {
   it('renders a Markdown link and a bare address as anchors that open a new tab', () => {
@@ -78,5 +78,126 @@ describe('text that looks like an internal placeholder (#135)', () => {
   it('still renders a code span inside a link label', () => {
     expect(renderTitle('[`x`](https://example.com)'))
       .toContain('<a href="https://example.com" target="_blank" rel="noopener noreferrer"><code>x</code></a>');
+  });
+});
+
+describe('plainTitle with italic and emphasis', () => {
+  it('strips italic asterisks and underscores alongside bold markers', () => {
+    expect(plainTitle('Read *the brief* and **bold note**')).toBe('Read the brief and bold note');
+    expect(plainTitle('Read _the brief_ and __bold note__')).toBe('Read the brief and bold note');
+    expect(plainTitle('***Both bold and italic***')).toBe('Both bold and italic');
+  });
+});
+
+describe('toggleWrap', () => {
+  it('wraps an unformatted selection with ** for bold and * for italic', () => {
+    expect(toggleWrap('hello world', 0, 5, '**')).toEqual({
+      text: '**hello** world',
+      start: 2,
+      end: 7,
+    });
+    expect(toggleWrap('hello world', 6, 11, '*')).toEqual({
+      text: 'hello *world*',
+      start: 7,
+      end: 12,
+    });
+  });
+
+  it('unwraps a selection that is surrounded by markers', () => {
+    expect(toggleWrap('**hello** world', 2, 7, '**')).toEqual({
+      text: 'hello world',
+      start: 0,
+      end: 5,
+    });
+    expect(toggleWrap('hello *world*', 7, 12, '*')).toEqual({
+      text: 'hello world',
+      start: 6,
+      end: 11,
+    });
+  });
+
+  it('handles an empty selection by inserting the marker pair and placing the caret between', () => {
+    const boldEmpty = toggleWrap('hello', 5, 5, '**');
+    expect(boldEmpty).toEqual({
+      text: 'hello****',
+      start: 7,
+      end: 7,
+    });
+    // Pressing it again on an empty pair unwraps it
+    expect(toggleWrap(boldEmpty.text, boldEmpty.start, boldEmpty.end, '**')).toEqual({
+      text: 'hello',
+      start: 5,
+      end: 5,
+    });
+
+    const italicEmpty = toggleWrap('hello', 2, 2, '*');
+    expect(italicEmpty).toEqual({
+      text: 'he**llo',
+      start: 3,
+      end: 3,
+    });
+    expect(toggleWrap(italicEmpty.text, italicEmpty.start, italicEmpty.end, '*')).toEqual({
+      text: 'hello',
+      start: 2,
+      end: 2,
+    });
+  });
+
+  it('unwraps a selection that already includes the markers', () => {
+    expect(toggleWrap('**hello** world', 0, 9, '**')).toEqual({
+      text: 'hello world',
+      start: 0,
+      end: 5,
+    });
+    expect(toggleWrap('say *hello*', 4, 11, '*')).toEqual({
+      text: 'say hello',
+      start: 4,
+      end: 9,
+    });
+    // Selecting bold text and toggling italic wraps it in italic instead of stripping bold
+    expect(toggleWrap('**hello**', 0, 9, '*')).toEqual({
+      text: '***hello***',
+      start: 1,
+      end: 10,
+    });
+  });
+
+  it('handles * inside ** formatting correctly', () => {
+    // Wrap entire inner text of bold in italic
+    expect(toggleWrap('**hello**', 2, 7, '*')).toEqual({
+      text: '***hello***',
+      start: 3,
+      end: 8,
+    });
+    // Unwrap italic from bold+italic
+    expect(toggleWrap('***hello***', 3, 8, '*')).toEqual({
+      text: '**hello**',
+      start: 2,
+      end: 7,
+    });
+    // Unwrap bold from bold+italic
+    expect(toggleWrap('***hello***', 3, 8, '**')).toEqual({
+      text: '*hello*',
+      start: 1,
+      end: 6,
+    });
+    // Wrap a single word inside bold in italic
+    expect(toggleWrap('**foo bar**', 6, 9, '*')).toEqual({
+      text: '**foo *bar***',
+      start: 7,
+      end: 10,
+    });
+    // Unwrap that word inside bold
+    expect(toggleWrap('**foo *bar***', 7, 10, '*')).toEqual({
+      text: '**foo bar**',
+      start: 6,
+      end: 9,
+    });
+    // Selection that already includes the inner marker inside bold
+    expect(toggleWrap('**foo *bar* baz**', 6, 11, '*')).toEqual({
+      text: '**foo bar baz**',
+      start: 6,
+      end: 9,
+    });
   });
 });

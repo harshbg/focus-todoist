@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { isToday, parseISO } from 'date-fns';
 import type { Item } from '@/domain/types';
+import { renderTitle } from '@/domain/markdown';
 import { taskChoices } from '../domain/queue';
 import { useT } from '@/hooks/useT';
 
@@ -62,7 +63,7 @@ export function TaskSearch({ items, value, onChange, onSelect, onCreate, selecte
             <li key={item.id} className={index === active ? 'is-active' : ''}>
               {/* mousedown keeps the field focused, so the list is still there for the click */}
               <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { onSelect(item); setOpen(false); }}>
-                <span className="fx-suggest-title">{item.content}</span>
+                <span className="fx-suggest-title" dangerouslySetInnerHTML={{ __html: renderTitle(item.content) }} />
                 {timeLabel(item, locale) && <span className="fx-suggest-time">{timeLabel(item, locale)}</span>}
               </button>
             </li>

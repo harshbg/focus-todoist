@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { parseISO } from 'date-fns';
 import { formatDuration } from '@/domain/estimates';
+import { plainTitle } from '@/domain/markdown';
 import type { Item } from '@/domain/types';
 import { useT } from '@/hooks/useT';
 import { notificationsSupported } from '../alerts';
@@ -55,7 +56,7 @@ export function GuidanceNudges({ items, entries, onReturn }: { items: Item[]; en
   return <div className="fx-nudges">
     {showRestart && <section className="fx-card fx-nudge" aria-live="polite">
       <p className="fx-eyebrow">{t('focus.restartEyebrow')}</p>
-      <p className="fx-nudge-text">{t('focus.restartText', { title: missed.content })}</p>
+      <p className="fx-nudge-text">{t('focus.restartText', { title: plainTitle(missed.content) })}</p>
       <div className="fx-actions">
         <button className="fx-btn fx-btn--primary" onClick={() => { settle(missed.id); onReturn(missed, RESTART_LENGTH_MIN); }}>
           {t('focus.restartGo', { length: formatDuration(RESTART_LENGTH_MIN, locale) })}</button>

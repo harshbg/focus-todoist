@@ -235,8 +235,96 @@ export function plainTitle(content: string): string {
   return content
     .replace(/\[([^\]]+)\]\((?:[^)\s]+)\)/g, '$1')
     .replace(/\*\*([^*]+)\*\*|__([^_]+)__/g, (_m, a?: string, b?: string) => a ?? b ?? '')
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1$2')
+    .replace(/(^|[^_])_([^_\n]+)_/g, '$1$2')
     .replace(/~~([^~]+)~~/g, '$1')
     .replace(/`([^`]+)`/g, '$1');
+}
+
+/**
+ * Wraps or unwraps text with a markdown marker (e.g. `**` for bold, `*` for italic).
+ *
+ * If the selection already includes the markers, or is directly surrounded by them,
+ * it unwraps. If the selection is empty, inserts the marker pair and places the
+ * caret between them.
+ */
+export function toggleWrap(
+  text: string,
+  start: number,
+  end: number,
+  marker: string,
+): { text: string; start: number; end: number } {
+  if (!marker) return { text, start, end };
+
+  const s = Math.min(start, end);
+  const e = Math.max(start, end);
+  const char = marker[0];
+  const markerLen = marker.length;
+
+  let leftCount = 0;
+  while (s - 1 - leftCount >= 0 && text[s - 1 - leftCount] === char) {
+    leftCount++;
+  }
+  let rightCount = 0;
+  while (e + rightCount < text.length && text[e + rightCount] === char) {
+    rightCount++;
+  }
+
+  const isSurrounded =
+    markerLen === 1
+      ? leftCount >= 1 && rightCount >= 1 && leftCount % 2 === 1 && rightCount % 2 === 1
+      : leftCount >= 2 && rightCount >= 2;
+
+  // With no selection, unwrap if inside empty markers, or insert pair and put caret between.
+  if (s === e) {
+    if (isSurrounded) {
+      return {
+        text: text.slice(0, s - markerLen) + text.slice(e + markerLen),
+        start: s - markerLen,
+        end: s - markerLen,
+      };
+    }
+    return {
+      text: text.slice(0, s) + marker + marker + text.slice(s),
+      start: s + markerLen,
+      end: s + markerLen,
+    };
+  }
+
+  // Check if selection already includes the markers.
+  const selected = text.slice(s, e);
+  let lead = 0;
+  while (lead < selected.length && selected[lead] === char) lead++;
+  let trail = 0;
+  while (trail < selected.length && selected[selected.length - 1 - trail] === char) trail++;
+
+  const isSelfWrapped =
+    selected.length >= 2 * markerLen &&
+    lead >= markerLen &&
+    trail >= markerLen &&
+    (markerLen === 1 ? lead % 2 === 1 && trail % 2 === 1 : true);
+
+  if (isSelfWrapped) {
+    return {
+      text: text.slice(0, s) + selected.slice(markerLen, selected.length - markerLen) + text.slice(e),
+      start: s,
+      end: s + selected.length - 2 * markerLen,
+    };
+  }
+
+  if (isSurrounded) {
+    return {
+      text: text.slice(0, s - markerLen) + text.slice(s, e) + text.slice(e + markerLen),
+      start: s - markerLen,
+      end: e - markerLen,
+    };
+  }
+
+  return {
+    text: text.slice(0, s) + marker + selected + marker + text.slice(e),
+    start: s + markerLen,
+    end: e + markerLen,
+  };
 }
 
 /** The links a title carries, labelled, in the order they are written. */

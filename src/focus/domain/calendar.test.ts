@@ -120,4 +120,16 @@ describe('googleCalendarUrl', () => {
     expect(url).toContain('dates=20261027T233000/20261028T003000');
     expect(url).not.toContain('Z');
   });
+
+  it('strips markdown formatting from task titles', () => {
+    const url = googleCalendarUrl({
+      title: 'Finish **feature** and *docs*',
+      start: '2026-10-27T10:00',
+      minutes: 45,
+      link: sampleLink,
+    });
+
+    const parsed = new URL(url);
+    expect(parsed.searchParams.get('text')).toBe('Focus: Finish feature and docs');
+  });
 });

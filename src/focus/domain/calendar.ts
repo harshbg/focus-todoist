@@ -1,3 +1,5 @@
+import { plainTitle } from '@/domain/markdown';
+
 /**
  * Google Calendar integration and sidecar link generation for planned focus blocks.
  *
@@ -64,7 +66,7 @@ export interface GoogleCalendarInput {
  */
 export function googleCalendarUrl(input: GoogleCalendarInput): string {
   const dates = formatCalendarDates(input.start, input.minutes);
-  const text = encodeURIComponent(`Focus: ${input.title}`);
+  const text = encodeURIComponent(`Focus: ${plainTitle(input.title)}`);
   const details = encodeURIComponent(`Start this focus block:\n${input.link}`);
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}`;
 }
