@@ -1322,3 +1322,6 @@
 .focus-theme .fx-plan-dialog .sheet-body {
   padding: 0;
 }
+
+/* The task panel's "Focus block" row: a field-like button that opens the planning form */
+.propbtn { display: flex; align-items: center; gap: 8px; width: 100%; cursor: pointer; text-align: left; color: var(--text-2, inherit); }

@@ -1094,6 +1094,14 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
             />
           </div>
 
+          {/* Focus: plan a block on this task, with an optional Google Calendar event. */}
+          <div className="prop" data-prop="focus">
+            <PropLabel name={t('focus.planTitle')} prop="focus" />
+            <button type="button" className="fselect-face propbtn" onClick={() => setPlanOpen(true)}>
+              <Icon name="calendar" size="sm" /> {t('focus.planBlock')}
+            </button>
+          </div>
+
           <div className="prop" data-prop="priority">
             <PropLabel name={t('detail.priority')} prop="priority" />
             {/* One chip on a phone, as in the composer: four pills would be most of the row. */}

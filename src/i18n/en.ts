@@ -84,6 +84,7 @@ export const en = {
   'focus.reminderNote': "These work only while this app is open in a tab. Todoist's own reminders reach your phone for planned blocks.",
   'focus.planCalendar': 'Also add to Google Calendar',
   'focus.planBlock': 'Plan a focus block…',
+  'focus.planTitle': "Focus block",
   'focus.completeLead': 'Focus block complete. Continue the same task or take a reset.',
   'focus.quality': 'Focus quality',
   'focus.optional': 'Optional',
