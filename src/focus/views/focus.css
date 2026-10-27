@@ -1152,4 +1152,3 @@
 .focus-theme .fx-suggest-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .focus-theme .fx-suggest-time { flex: none; font-family: var(--fx-mono); font-size: 11px; color: var(--fx-muted); }
 .focus-theme .fx-sc-pickbtn { border: 0; padding: 0; background: none; text-align: left; cursor: pointer; text-decoration: underline; text-decoration-color: var(--fx-hairline); text-underline-offset: 4px; }
-.focus-theme .fx-sc-pick .fx-suggest { top: auto; bottom: calc(100% + 4px); } /* the field sits at the page's foot, so the list opens upward */
