@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { formatDuration } from '@/domain/estimates';
-import { plainTitle } from '@/domain/markdown';
 import type { Item } from '@/domain/types';
 import { useT } from '@/hooks/useT';
-import { useStore } from '@/store/store';
-import { googleCalendarUrl, sidecarLink } from '../domain/calendar';
+import { canPlanBlock, usePlanBlock } from '../planBlock';
 import { setFocusPreferences, useFocusPreferences } from '../store';
 import { TaskSearch } from './TaskSearch';
 
@@ -23,57 +21,36 @@ export interface PlanFormProps {
  */
 export function PlanForm({ items, task: propTask, lengths: propLengths, onScheduled }: PlanFormProps) {
   const { t, locale } = useT();
-  const updateTask = useStore((state) => state.updateTask);
   const prefs = useFocusPreferences();
   const lengths = propLengths ?? prefs.blockLengths;
+  const { schedule, saving } = usePlanBlock();
 
   const [query, setQuery] = useState(propTask ? propTask.content : '');
   const [taskId, setTaskId] = useState<string | null>(propTask ? propTask.id : null);
   const [when, setWhen] = useState('');
   const [length, setLength] = useState(lengths[1] ?? lengths[0] ?? 60);
   const [addToCalendar, setAddToCalendar] = useState(() => prefs.calendarDefault);
-  const [saving, setSaving] = useState(false);
 
   const task = propTask ?? (items ? items.find((item) => item.id === taskId) ?? null : null);
   // A recurring task's date is its rule; overwriting it would end the series.
   const recurring = Boolean(task?.due?.is_recurring);
+  const canSchedule = canPlanBlock(task, when, length) && !saving;
 
   const toggleCalendar = (checked: boolean) => {
     setAddToCalendar(checked);
     setFocusPreferences({ calendarDefault: checked });
   };
 
-  const schedule = async () => {
+  const handleSchedule = async () => {
     if (!task || !when || recurring || saving) return;
-
-    if (addToCalendar) {
-      const base = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : '';
-      const link = sidecarLink(base, task.id, length);
-      const url = googleCalendarUrl({
-        title: plainTitle(task.content),
-        start: when,
-        minutes: length,
-        link,
-      });
-      // Opened synchronously in the click handler before any await to avoid popup blocking.
-      window.open(url, '_blank', 'noopener');
-    }
-
-    setSaving(true);
-    try {
-      const date = `${when}:00`;
-      await updateTask(task.id, {
-        due: { date, string: date, lang: 'en', timezone: null, is_recurring: false },
-        duration: { amount: length, unit: 'minute' },
-      });
+    const ok = await schedule(task, when, length, addToCalendar);
+    if (ok) {
       if (!propTask) {
         setQuery('');
         setTaskId(null);
       }
       setWhen('');
       onScheduled?.();
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -116,8 +93,8 @@ export function PlanForm({ items, task: propTask, lengths: propLengths, onSchedu
         <button
           type="button"
           className="fx-btn fx-btn--primary"
-          disabled={!task || !when || recurring || saving}
-          onClick={() => void schedule()}
+          disabled={!canSchedule}
+          onClick={() => void handleSchedule()}
         >
           {t('focus.planSchedule')}
         </button>
