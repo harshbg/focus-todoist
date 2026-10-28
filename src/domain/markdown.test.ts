@@ -201,3 +201,12 @@ describe('toggleWrap', () => {
     });
   });
 });
+
+describe('plainTitle keeps characters that are not emphasis', () => {
+  it('strips italic at word edges only', () => {
+    expect(plainTitle('Read *this* now')).toBe('Read this now');
+    expect(plainTitle('rename file_name_here')).toBe('rename file_name_here');
+    expect(plainTitle('compute 2*3*4')).toBe('compute 2*3*4');
+    expect(plainTitle('_quietly_ done')).toBe('quietly done');
+  });
+});

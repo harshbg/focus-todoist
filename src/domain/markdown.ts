@@ -235,8 +235,9 @@ export function plainTitle(content: string): string {
   return content
     .replace(/\[([^\]]+)\]\((?:[^)\s]+)\)/g, '$1')
     .replace(/\*\*([^*]+)\*\*|__([^_]+)__/g, (_m, a?: string, b?: string) => a ?? b ?? '')
-    .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1$2')
-    .replace(/(^|[^_])_([^_\n]+)_/g, '$1$2')
+    // Italic only at word edges, so snake_case and 2*3*4 keep their characters.
+    .replace(/(?<![\w*])\*(?!\s)([^*\n]+?)(?<!\s)\*(?![\w*])/g, '$1')
+    .replace(/(?<![\w_])_(?!\s)([^_\n]+?)(?<!\s)_(?![\w_])/g, '$1')
     .replace(/~~([^~]+)~~/g, '$1')
     .replace(/`([^`]+)`/g, '$1');
 }
