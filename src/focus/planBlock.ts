@@ -34,6 +34,23 @@ export function canPlanBlock(task: Item | null, start: string, minutes?: number)
 }
 
 /**
+ * Tests whether a new task in the composer can be scheduled on Google Calendar (PLAN-UI.md §2).
+ * It only does something when the new task has a date with a time of day.
+ */
+export function canAddToCalendar(date?: string | null): boolean {
+  if (!date) return false;
+  return date.trim().includes('T');
+}
+
+/**
+ * Computes the planned block length in minutes for a composer task (PLAN-UI.md §2):
+ * the task's estimate if given and positive, else 60 minutes.
+ */
+export function composerPlanLength(minutes?: number | null): number {
+  return minutes !== null && minutes !== undefined && minutes > 0 ? minutes : 60;
+}
+
+/**
  * Computes the initial planned block length in minutes for a task:
  * prefilled with the task's duration or estimate if it has one, else 60 minutes.
  */
@@ -51,7 +68,7 @@ export function initialPlanLength(task: Item | null): number {
  * embedding the sidecar deep-work URL in its details.
  */
 export function getCalendarUrl(
-  task: Item,
+  task: Pick<Item, 'id' | 'content'>,
   start: string,
   minutes: number,
   baseOriginAndPath?: string,
@@ -61,10 +78,25 @@ export function getCalendarUrl(
   const link = sidecarLink(base, task.id, minutes);
   return googleCalendarUrl({
     title: plainTitle(task.content),
-    start,
+    start: start.trim(),
     minutes,
     link,
   });
+}
+
+/**
+ * Builds the Google Calendar event creation URL for a newly created composer task (PLAN-UI.md §2).
+ * Length defaults to the task's estimate if given, else 60 minutes.
+ */
+export function composerCalendarUrl(
+  id: string,
+  content: string,
+  start: string,
+  minutes?: number | null,
+  baseOriginAndPath?: string,
+): string {
+  const length = composerPlanLength(minutes);
+  return getCalendarUrl({ id, content }, start, length, baseOriginAndPath);
 }
 
 export type PlanBlockSchedule = (

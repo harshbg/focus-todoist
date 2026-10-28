@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { item, due } from '@/test/items';
 import {
+  canAddToCalendar,
   canPlanBlock,
+  composerCalendarUrl,
+  composerPlanLength,
   getCalendarUrl,
   initialPlanLength,
   normalizeStartDateTime,
@@ -116,5 +119,65 @@ describe('getCalendarUrl', () => {
     const url = getCalendarUrl(task, '2026-10-28T14:00', 30, 'https://example.com/');
     const parsed = new URL(url);
     expect(parsed.searchParams.get('text')).toBe('Focus: Review design RFC');
+  });
+});
+
+describe('canAddToCalendar (composer)', () => {
+  it('accepts date strings with time of day', () => {
+    expect(canAddToCalendar('2026-10-28T14:30')).toBe(true);
+    expect(canAddToCalendar('2026-10-28T14:30:00')).toBe(true);
+    expect(canAddToCalendar('  2026-10-28T09:00:00  ')).toBe(true);
+  });
+
+  it('refuses dates without a time of day', () => {
+    expect(canAddToCalendar('2026-10-28')).toBe(false);
+    expect(canAddToCalendar('2026-12-31')).toBe(false);
+  });
+
+  it('refuses empty, whitespace, null or undefined date strings', () => {
+    expect(canAddToCalendar('')).toBe(false);
+    expect(canAddToCalendar('   ')).toBe(false);
+    expect(canAddToCalendar(null)).toBe(false);
+    expect(canAddToCalendar(undefined)).toBe(false);
+  });
+});
+
+describe('composerPlanLength', () => {
+  it('uses estimate minutes when positive', () => {
+    expect(composerPlanLength(25)).toBe(25);
+    expect(composerPlanLength(90)).toBe(90);
+  });
+
+  it('defaults to 60 minutes when estimate is null, undefined, 0, or negative', () => {
+    expect(composerPlanLength(null)).toBe(60);
+    expect(composerPlanLength(undefined)).toBe(60);
+    expect(composerPlanLength(0)).toBe(60);
+    expect(composerPlanLength(-15)).toBe(60);
+  });
+});
+
+describe('composerCalendarUrl', () => {
+  it('builds Google Calendar URL using given estimate length', () => {
+    const url = composerCalendarUrl('new-task-1', 'Build feature', '2026-10-28T15:00:00', 45, 'https://example.com/app/');
+    expect(url.startsWith('https://calendar.google.com/calendar/render?')).toBe(true);
+
+    const parsed = new URL(url);
+    expect(parsed.searchParams.get('action')).toBe('TEMPLATE');
+    expect(parsed.searchParams.get('text')).toBe('Focus: Build feature');
+    expect(parsed.searchParams.get('dates')).toBe('20261028T150000/20261028T154500');
+    expect(parsed.searchParams.get('details')).toContain('https://example.com/app/#/sidecar?task=new-task-1&min=45');
+  });
+
+  it('defaults length to 60 minutes when minutes argument is omitted or null', () => {
+    const url = composerCalendarUrl('new-task-2', 'Refactor code', '2026-10-28T10:00', null, 'https://example.com/');
+    const parsed = new URL(url);
+    expect(parsed.searchParams.get('dates')).toBe('20261028T100000/20261028T110000');
+    expect(parsed.searchParams.get('details')).toContain('min=60');
+  });
+
+  it('strips markdown from title in composer task', () => {
+    const url = composerCalendarUrl('new-task-3', 'Fix [critical bug](https://issue.com) in `auth`', '2026-10-28T11:00', 30, 'https://example.com/');
+    const parsed = new URL(url);
+    expect(parsed.searchParams.get('text')).toBe('Focus: Fix critical bug in auth');
   });
 });

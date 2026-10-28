@@ -1428,3 +1428,9 @@
   text-align: left;
   color: var(--text);
 }
+
+/* Disabled planning toggle chip in composer (PLAN-UI.md §2) */
+.fselect-face.chipface:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
