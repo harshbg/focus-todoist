@@ -123,7 +123,7 @@ test.describe('setup and settings (v2)', () => {
   test('About credits the upstream project and the fork author', async ({ demo: page }) => {
     await go(page, '#/settings');
     const about = page.locator('#about');
-    await expect(about).toContainText('Focus for Todoist is built on Enhanced for Todoist by Jules Bertolino (MIT licence)');
+    await expect(about).toContainText('Deep Work with Todoist is built on Enhanced for Todoist by Jules Bertolino (MIT licence)');
     await expect(about.getByRole('link', { name: 'Enhanced for Todoist' })).toHaveAttribute('href', 'https://github.com/julesvbertolino/todoist-enhanced');
     await expect(about).toContainText('Harsh Gupta');
     await expect(page.locator('.coffee-callout')).toHaveCount(0);

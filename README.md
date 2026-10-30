@@ -1,6 +1,6 @@
-# Focus for Todoist
+# Deep Work with Todoist
 
-[Focus for Todoist](https://todo.harshgupta.com) is an independent Todoist front end for planning tasks and protecting time for deep work. It adds a gamified focus timer to a weekly planning interface. Pick a Todoist task, run a focus block, and review your progress. Durable focus records and settings stay in Todoist; the browser talks to the Todoist API directly. There is no application server or separate account.
+[Deep Work with Todoist](https://todo.harshgupta.com) is an independent Todoist front end for planning tasks and protecting time for deep work. It adds a gamified focus timer to a weekly planning interface. Pick a Todoist task, run a focus block, and review your progress. Durable focus records and settings stay in Todoist; the browser talks to the Todoist API directly. There is no application server or separate account.
 
 [Open the app](https://todo.harshgupta.com) · [Report a bug or an idea](https://github.com/harshbg/focus-todoist/issues)
 
@@ -36,11 +36,11 @@ The browser stores local working data and the active timer on the device. Durabl
 
 ## Credit and licence
 
-Focus for Todoist is built on [Enhanced for Todoist by Jules Bertolino (MIT licence)](https://github.com/julesvbertolino/todoist-enhanced). The [MIT licence](LICENSE) retains the original copyright notice and adds Harsh Gupta's.
+Deep Work with Todoist is built on [Enhanced for Todoist by Jules Bertolino (MIT licence)](https://github.com/julesvbertolino/todoist-enhanced). The [MIT licence](LICENSE) retains the original copyright notice and adds Harsh Gupta's.
 
 ## Disclaimer
 
-Focus for Todoist is an independent project. It is not created by, affiliated with, or supported by Todoist. “Todoist” is a trademark of Todoist Inc. This project uses the Todoist API and is provided as is, without warranty. For problems with your Todoist account or Todoist itself, contact Todoist; for issues with this app, use this repository's [issue tracker](https://github.com/harshbg/focus-todoist/issues).
+Deep Work with Todoist is an independent project. It is not created by, affiliated with, or supported by Todoist. “Todoist” is a trademark of Todoist Inc. This project uses the Todoist API and is provided as is, without warranty. For problems with your Todoist account or Todoist itself, contact Todoist; for issues with this app, use this repository's [issue tracker](https://github.com/harshbg/focus-todoist/issues).
 
 ## Keeping up with upstream
 

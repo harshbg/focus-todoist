@@ -29,6 +29,7 @@ export const PREFERENCES_TASK_CONTENT = '* Enhanced for Todoist settings';
  * every browser, but it is not a task — it is not in the Inbox count, in
  * Todoist's search, in filters, or in the way of an empty Inbox.
  */
+// Kept as it was when the app was named Focus for Todoist: the marker finds the settings already saved in Todoist.
 export const SETTINGS_COMMENT_MARKER = 'Focus for Todoist · settings (edited by the app, please leave as is)';
 const LEGACY_SETTINGS_COMMENT_MARKER = 'Enhanced for Todoist · settings (edited by the app, please leave as is)';
 

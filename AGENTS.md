@@ -1,4 +1,4 @@
-# Focus for Todoist — agent guide
+# Deep Work with Todoist — agent guide
 
 A fork of [Enhanced for Todoist](https://github.com/julesvbertolino/todoist-enhanced)
 (MIT) that adds a gamified deep-work timer. The feature is specified in

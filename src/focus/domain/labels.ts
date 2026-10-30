@@ -1,5 +1,5 @@
 /**
- * Label helpers for Focus for Todoist.
+ * Label helpers for Deep Work with Todoist.
  */
 
 /**

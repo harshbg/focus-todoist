@@ -7,7 +7,7 @@
  * The About section reads from here; the sign-in screen uses the matching
  * translated string.
  */
-export const APP_NAME = 'Focus for Todoist';
+export const APP_NAME = 'Deep Work with Todoist';
 export const VERSION = '2.19.0';
 export const AUTHOR = 'Harsh Gupta';
 /* A copy served with the app, so the About section's photo shows at once. */

@@ -64,7 +64,7 @@ export const APP_DEFINE = {
 function oauthClientDocument(publicUrl: string): Plugin {
   const body = `{
   "client_id": "${publicUrl}oauth/client.json",
-  "client_name": "Focus for Todoist",
+  "client_name": "Deep Work with Todoist",
   "client_uri": "${publicUrl}",
   "logo_uri": "${publicUrl}icon-192.png",
   "redirect_uris": [
@@ -117,8 +117,8 @@ export default defineConfig({
            was installed from. Chromium browsers — Brave included — will not
            offer to install a manifest they cannot tell apart from another. */
         id: './',
-        name: 'Focus for Todoist',
-        short_name: 'Focus for Todoist',
+        name: 'Deep Work with Todoist',
+        short_name: 'Deep Work',
         description: 'An independent project, not created by, affiliated with, or supported by Todoist. Plan your week and track deep work with a gamified timer.',
         theme_color: '#d1453b',
         background_color: '#ffffff',
