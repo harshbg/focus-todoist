@@ -1,0 +1,7 @@
+# Cloudflare Pages reads this file (it ignores .htaccess): the same headers as
+# .htaccess and vite.config.ts, which say why each one is there. Keep the three in step.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.todoist.com https://cloudflareinsights.com; img-src 'self' data: blob: https:; font-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; frame-src 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()

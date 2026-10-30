@@ -13,9 +13,10 @@ import { fileURLToPath, URL } from 'node:url';
 const SECURITY_HEADERS = {
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self'",
+    // Cloudflare Web Analytics: its beacon script and where it reports anonymous visits.
+    "script-src 'self' https://static.cloudflareinsights.com",
     "style-src 'self' 'unsafe-inline'",
-    "connect-src 'self' https://api.todoist.com",
+    "connect-src 'self' https://api.todoist.com https://cloudflareinsights.com",
     "img-src 'self' data: blob: https:",
     "font-src 'self'",
     "manifest-src 'self'",

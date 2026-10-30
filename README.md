@@ -63,4 +63,4 @@ To allow the workflow to create pull requests, enable this setting in GitHub:
 
 ### Privacy
 
-No analytics SDK, usage counters or tracking cookies are included. Settings → Privacy explains local storage and Todoist synchronization. The same information is available before sign-in.
+Only anonymous usage is counted. Settings → Privacy explains local storage and Todoist synchronization. The same information is available before sign-in.
