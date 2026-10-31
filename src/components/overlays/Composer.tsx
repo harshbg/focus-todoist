@@ -354,7 +354,7 @@ export function Composer({
     if (!content) return;
     submitting.current = true;
     setSaving(true);
-    /* Focus for Todoist (PLAN-UI.md §2): open calendar tab synchronously before await to prevent popup blocking */
+    /* Deep Work (PLAN-UI.md §2): open calendar tab synchronously before await to prevent popup blocking */
     const shouldAddCalendar = Boolean(calendarOn && canAddToCalendar(date) && !createdId.current);
     const tab = shouldAddCalendar && typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
     try {
@@ -374,7 +374,7 @@ export function Composer({
       }
       createdId.current = id;
       setCreatedTaskId(id);
-      /* Focus for Todoist (PLAN-UI.md §2): set calendar URL and clear opener */
+      /* Deep Work (PLAN-UI.md §2): set calendar URL and clear opener */
       if (tab) {
         try {
           tab.location.href = composerCalendarUrl(id, content, date, minutes);
@@ -507,7 +507,7 @@ export function Composer({
     return id;
   }
 
-  /* Focus for Todoist (PLAN-UI.md §2): Google Calendar focus block toggle is active only when date has a time */
+  /* Deep Work (PLAN-UI.md §2): Google Calendar focus block toggle is active only when date has a time */
   const canCalendar = canAddToCalendar(date);
 
   /* Where the task goes: a chip among the others on a wide screen, and on a phone
@@ -740,7 +740,7 @@ export function Composer({
           )}
           <EstimateChip minutes={minutes} onChange={setMinutes} />
 
-          {/* Focus for Todoist (PLAN-UI.md §2): Google Calendar focus block toggle */}
+          {/* Deep Work (PLAN-UI.md §2): Google Calendar focus block toggle */}
           <button
             type="button"
             className={`fselect-face chipface${calendarOn ? '' : ' unset'}`}
