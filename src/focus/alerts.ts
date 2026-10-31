@@ -1,3 +1,4 @@
+import { plainTitle } from '@/domain/markdown';
 import { translate } from '@/i18n';
 import { useStore } from '@/store/store';
 import { startsBetween } from './domain/guidance';
@@ -22,7 +23,7 @@ function checkStarts(from: Date, to: Date): void {
   const open = Object.values(app.snapshot.items).filter((item) => !item.checked && !item.is_deleted);
   for (const item of startsBetween(open, from, to)) {
     try {
-      const notification = new Notification(translate(app.prefs.locale, 'focus.alertTitle'), { body: item.content, tag: `focus-start-${item.id}` });
+      const notification = new Notification(translate(app.prefs.locale, 'focus.alertTitle'), { body: plainTitle(item.content), tag: `focus-start-${item.id}` });
       notification.onclick = () => { window.focus(); location.hash = '#/focus'; notification.close(); };
     } catch {
       // Some browsers only notify from a service worker; the in-app planning list still shows it.

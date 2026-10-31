@@ -9,6 +9,8 @@ import { copyText, isTemporaryId, todoistTaskUrl } from '@/api/links';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { Overlay } from './Overlay';
 import { PlanDialog } from '@/focus/views/PlanDialog';
+import { TASK_COLORS, setTaskColor, taskColorStyle, useTaskColor } from '@/focus/taskColors';
+import type { TranslationKey } from '@/i18n/en';
 import { isTopOverlay } from './overlayStack';
 import { Icon } from '../Icon';
 import { ProgressRing } from '../ProgressRing';
@@ -248,6 +250,15 @@ function PropLabel({ name, prop }: { name: string; prop: string }) {
   );
 }
 
+const COLOR_LABELS: Record<(typeof TASK_COLORS)[number], TranslationKey> = {
+  red: 'focus.colorRed',
+  orange: 'focus.colorOrange',
+  yellow: 'focus.colorYellow',
+  green: 'focus.colorGreen',
+  blue: 'focus.colorBlue',
+  purple: 'focus.colorPurple',
+};
+
 export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
   const phone = usePhone();
   const pendingWrites = useStore((s) => s.pendingCount);
@@ -273,6 +284,7 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
   const overlayId = useId();
 
   const item = taskId ? snapshot.items[taskId] : null;
+  const currentColor = useTaskColor(item?.id);
   useProjectPeople(item?.project_id);
   const loadTask = useStore((s) => s.loadTask);
   const logbookEntry = useStore((s) => s.logbookEntry);
@@ -852,6 +864,7 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
                   role="button"
                   tabIndex={0}
                   aria-label={t('detail.title')}
+                  style={taskColorStyle(currentColor)}
                   onClick={(e) => {
                     if ((e.target as Element).closest('a[href]')) return;
                     setEditingTitle(true);
@@ -883,6 +896,7 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
                   refusals={refusals}
                   onRefusals={setRefusals}
                   multiline
+                  style={taskColorStyle(currentColor)}
                   fieldClassName="titlefield"
                   fieldRef={titleRef}
                 />
@@ -1100,6 +1114,40 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
             <button type="button" className="fselect-face propbtn" onClick={() => setPlanOpen(true)}>
               <Icon name="calendar" size="sm" /> {t('focus.planBlock')}
             </button>
+          </div>
+
+          {/* Focus: custom task title colour in this app (FORMATTING.md §2) */}
+          <div className="prop" data-prop="color">
+            <PropLabel name={t('focus.color')} prop="color" />
+            <div className="color-swatches" role="radiogroup" aria-label={t('focus.color')}>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={!currentColor}
+                aria-label={t('focus.colorNone')}
+                title={t('focus.colorNone')}
+                className={`color-swatch none${!currentColor ? ' selected' : ''}`}
+                onClick={() => setTaskColor(item.id, null, snapshot)}
+              >
+                <span className="swatch-none-line" />
+              </button>
+              {TASK_COLORS.map((c) => {
+                const label = t(COLOR_LABELS[c]);
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    role="radio"
+                    aria-checked={currentColor === c}
+                    aria-label={label}
+                    title={label}
+                    className={`color-swatch swatch-${c}${currentColor === c ? ' selected' : ''}`}
+                    style={{ backgroundColor: `var(--task-color-${c})` }}
+                    onClick={() => setTaskColor(item.id, c, snapshot)}
+                  />
+                );
+              })}
+            </div>
           </div>
 
           <div className="prop" data-prop="priority">

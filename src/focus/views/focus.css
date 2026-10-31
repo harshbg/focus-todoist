@@ -3,6 +3,85 @@
    Scoped under .focus-theme so the rest of the app is untouched.
    ========================================================================== */
 
+/* Custom task title colours shown only in this app (FORMATTING.md §2) */
+:root {
+  --task-color-red: #b83228;
+  --task-color-orange: #a4551d;
+  --task-color-yellow: #855f00;
+  --task-color-green: #2e7d32;
+  --task-color-blue: #1d62c9;
+  --task-color-purple: #6844a8;
+}
+
+:root[data-theme="dark"] {
+  --task-color-red: #ea7f76;
+  --task-color-orange: #e89048;
+  --task-color-yellow: #deb532;
+  --task-color-green: #7ec276;
+  --task-color-blue: #72a3eb;
+  --task-color-purple: #b095ea;
+}
+
+/* Swatches for task colour picker (FORMATTING.md §2) */
+.color-swatches {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.color-swatch {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.color-swatch:hover {
+  transform: scale(1.15);
+}
+
+.color-swatch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.color-swatch.selected {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px currentColor;
+}
+
+.color-swatch.swatch-red.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--task-color-red); }
+.color-swatch.swatch-orange.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--task-color-orange); }
+.color-swatch.swatch-yellow.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--task-color-yellow); }
+.color-swatch.swatch-green.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--task-color-green); }
+.color-swatch.swatch-blue.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--task-color-blue); }
+.color-swatch.swatch-purple.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--task-color-purple); }
+
+.color-swatch.none {
+  background: var(--btn-soft);
+  border: 1px solid var(--border-strong);
+}
+
+.color-swatch.none.selected {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--muted);
+}
+
+.color-swatch.none .swatch-none-line {
+  display: block;
+  width: 12px;
+  height: 1.5px;
+  background: var(--muted);
+  transform: rotate(-45deg);
+}
+
 /* 1. Theme Tokens & Root */
 .focus-theme {
   --fx-paper: #f4f1ea;

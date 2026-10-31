@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { formatDuration } from '@/domain/estimates';
+import { plainTitle } from '@/domain/markdown';
 import type { Item } from '@/domain/types';
 import { useT } from '@/hooks/useT';
 import { useStore } from '@/store/store';
@@ -49,7 +50,7 @@ export function PlanForm({ items, task: propTask, lengths: propLengths, onSchedu
       const base = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : '';
       const link = sidecarLink(base, task.id, length);
       const url = googleCalendarUrl({
-        title: task.content,
+        title: plainTitle(task.content),
         start: when,
         minutes: length,
         link,

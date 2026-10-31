@@ -1,5 +1,6 @@
 import {
   createElement, useEffect, useLayoutEffect, useRef, useState,
+  type CSSProperties,
   type ChangeEvent, type ClipboardEvent, type KeyboardEvent, type MouseEvent, type MutableRefObject,
   type SyntheticEvent,
 } from 'react';
@@ -15,6 +16,7 @@ import type { Snapshot } from '@/domain/types';
 import { PersonAvatar } from './PersonAvatar';
 import { bySectionOrder } from '@/domain/orderKey';
 import { splitPastedList } from '@/domain/pastedList';
+import { toggleWrap } from '@/domain/markdown';
 
 /** A name with its spaces, case and accents set aside, as the parser reads it. */
 const squash = (text: string): string =>
@@ -70,6 +72,8 @@ interface TaskNameFieldProps {
   ariaLabel: string;
   snapshot: Snapshot;
   naturalDates: boolean;
+  /** Custom style (e.g. task colour in task panel, FORMATTING.md §2). */
+  style?: CSSProperties;
   /**
    * A field that wraps rather than scrolling, for the task panel's title.
    *
@@ -138,7 +142,7 @@ interface TaskNameFieldProps {
 export function TaskNameField({
   value, onChange, onSubmit, placeholder, ariaLabel, snapshot, naturalDates,
   refusals, onRefusals, multiline = false, fieldClassName, onBlur, onCancel, fieldRef, onPasteList,
-  estimateOnly = false, autoFocus, peopleOf,
+  estimateOnly = false, autoFocus, peopleOf, style,
 }: TaskNameFieldProps) {
   const { t } = useT();
   const createLabel = useStore((s) => s.createLabel);
@@ -458,7 +462,7 @@ export function TaskNameField({
   };
 
   return (
-    <div className={`namefield${multiline ? ' multiline' : ''}`}>
+    <div className={`namefield${multiline ? ' multiline' : ''}`} style={style}>
       <div className="namemirror" ref={mirrorRef} aria-hidden="true">
         {pieces.map((piece, index) =>
           piece.kind && !piece.refused
@@ -487,6 +491,7 @@ export function TaskNameField({
           if (fieldRef) fieldRef.current = node;
         },
         className: fieldClassName ?? 'composer-name',
+        style,
         placeholder,
         'aria-label': ariaLabel,
         autoFocus: autoFocus ?? !multiline,
@@ -533,6 +538,30 @@ export function TaskNameField({
              twice — two handlers for one keystroke, and the task arrived in
              Todoist in duplicate. */
           if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') return;
+
+          /* Cmd/Ctrl+B and Cmd/Ctrl+I toggle bold and italic Markdown formatting in the task name. */
+          if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'B' || e.key === 'i' || e.key === 'I')) {
+            e.preventDefault();
+            const marker = (e.key === 'b' || e.key === 'B') ? '**' : '*';
+            const input = e.currentTarget;
+            const from = input.selectionStart ?? value.length;
+            const to = input.selectionEnd ?? from;
+            const next = toggleWrap(value, from, to, marker);
+            const carried = carryRanges(refusals, value, next.text);
+            if (carried.length !== refusals.length
+              || carried.some((r, at) => r.start !== refusals[at].start)) {
+              onRefusals(carried);
+            }
+            onChange(next.text);
+            input.setSelectionRange(next.start, next.end);
+            setCaret(next.start);
+            requestAnimationFrame(() => {
+              input.focus();
+              input.setSelectionRange(next.start, next.end);
+              setCaret(next.start);
+            });
+            return;
+          }
 
           if (options.length > 0) {
             if (e.key === 'ArrowDown') {
