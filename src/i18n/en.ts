@@ -85,6 +85,8 @@ export const en = {
   'focus.planCalendar': 'Also add to Google Calendar',
   'focus.planBlock': 'Plan a focus block…',
   'focus.planTitle': "Focus block",
+  'focus.planCalendarToggle': 'Google Calendar',
+  'focus.planCalendarNoTime': 'Give the task a time to add it to your calendar',
   'focus.color': 'Colour',
   'focus.colorNone': 'None',
   'focus.colorRed': 'Red',

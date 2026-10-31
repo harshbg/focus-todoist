@@ -1108,11 +1108,12 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
             />
           </div>
 
-          {/* Focus: plan a block on this task, with an optional Google Calendar event. */}
+          {/* Focus: plan a block on this task, with an optional Google Calendar event (PLAN-UI.md §1). */}
           <div className="prop" data-prop="focus">
             <PropLabel name={t('focus.planTitle')} prop="focus" />
             <button type="button" className="fselect-face propbtn" onClick={() => setPlanOpen(true)}>
-              <Icon name="calendar" size="sm" /> {t('focus.planBlock')}
+              <Icon name="calendar" size="sm" />
+              <span className="fselect-value">{t('focus.planBlock')}</span>
             </button>
           </div>
 

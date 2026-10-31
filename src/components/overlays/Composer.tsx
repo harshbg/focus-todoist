@@ -31,6 +31,7 @@ import { byLabelOrder } from '@/domain/orderKey';
 import { useMode } from '@/focus/mode-store';
 import { newTaskPlacement } from '@/focus/domain/mode';
 import { mergeLabels } from '@/focus/domain/labels';
+import { canAddToCalendar, composerCalendarUrl } from '@/focus/planBlock';
 
 interface ComposerProps {
   open: boolean;
@@ -68,6 +69,9 @@ export function Composer({
   useKeyboardInset(open && phone);
   const naturalDates = useStore((s) => s.prefs.naturalDates);
   const dateFormat = useStore((s) => s.prefs.dateFormat);
+  /* Google Calendar toggle for focus blocks (PLAN-UI.md §2) */
+  const calendarDefault = useStore((s) => s.prefs.focus.calendarDefault);
+  const [calendarOn, setCalendarOn] = useState(calendarDefault);
   const mode = useMode();
   const marked = useMarkedWorkProjects();
 
@@ -155,6 +159,8 @@ export function Composer({
     setLabels(defaultLabels ?? []);
     setPriority(defaultPriority ?? 4);
     setMinutes(defaultMinutes ?? null);
+    /* Google Calendar toggle defaults to prefs.focus.calendarDefault */
+    setCalendarOn(calendarDefault);
     setTagsOpen(false);
     setTagQuery('');
     setSubtasks([]);
@@ -170,7 +176,7 @@ export function Composer({
     /* eslint-disable-next-line react-hooks/exhaustive-deps -- the array is
        built fresh by the caller on every render; its contents are the dep. */
   }, [open, defaultProjectId, defaultSectionId, defaultDate, defaultMinutes, defaultPriority, defaultLabels?.join('\u0000'),
-    inboxId, defaultResponsibleUid]);
+    inboxId, defaultResponsibleUid, calendarDefault]);
 
   useEffect(() => {
     if (!open || !projectId || !responsibleUid || canAssign(snapshot, projectId, responsibleUid)) return;
@@ -348,6 +354,9 @@ export function Composer({
     if (!content) return;
     submitting.current = true;
     setSaving(true);
+    /* Focus for Todoist (PLAN-UI.md §2): open calendar tab synchronously before await to prevent popup blocking */
+    const shouldAddCalendar = Boolean(calendarOn && canAddToCalendar(date) && !createdId.current);
+    const tab = shouldAddCalendar && typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
     try {
       const attachments: Array<{ id: string; attachment: NoteAttachment }> = [];
       for (const entry of filesRef.current) {
@@ -359,9 +368,21 @@ export function Composer({
         attachments.push({ id: entry.id, attachment });
       }
       const id = createdId.current ?? await create(content);
-      if (!id) return;
+      if (!id) {
+        tab?.close();
+        return;
+      }
       createdId.current = id;
       setCreatedTaskId(id);
+      /* Focus for Todoist (PLAN-UI.md §2): set calendar URL and clear opener */
+      if (tab) {
+        try {
+          tab.location.href = composerCalendarUrl(id, content, date, minutes);
+          tab.opener = null;
+        } catch {
+          tab.close();
+        }
+      }
       for (const entry of attachments) {
         if (sent.current.has(entry.id)) continue;
         if (!await addComment(id, '', entry.attachment)) {
@@ -373,6 +394,7 @@ export function Composer({
       resetFiles();
       onClose();
     } catch {
+      if (!createdId.current) tab?.close();
       useStore.getState().toast(t(createdId.current ? 'composer.attachmentRetry' : 'comment.uploadFailed'));
     } finally {
       submitting.current = false;
@@ -484,6 +506,9 @@ export function Composer({
 
     return id;
   }
+
+  /* Focus for Todoist (PLAN-UI.md §2): Google Calendar focus block toggle is active only when date has a time */
+  const canCalendar = canAddToCalendar(date);
 
   /* Where the task goes: a chip among the others on a wide screen, and on a phone
      the left of the bar the send button sits on, as in the validated design (#294). */
@@ -714,6 +739,19 @@ export function Composer({
             </div>
           )}
           <EstimateChip minutes={minutes} onChange={setMinutes} />
+
+          {/* Focus for Todoist (PLAN-UI.md §2): Google Calendar focus block toggle */}
+          <button
+            type="button"
+            className={`fselect-face chipface${calendarOn ? '' : ' unset'}`}
+            aria-pressed={calendarOn}
+            disabled={!canCalendar}
+            title={!canCalendar ? t('focus.planCalendarNoTime') : undefined}
+            onClick={() => setCalendarOn((on) => !on)}
+          >
+            <Icon name="calendar" size="sm" />
+            <span className="fselect-value">{t('focus.planCalendarToggle')}</span>
+          </button>
 
           {!phone && placement}
         </div>

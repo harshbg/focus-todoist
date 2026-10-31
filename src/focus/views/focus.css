@@ -1402,5 +1402,35 @@
   padding: 0;
 }
 
+/* Planning dialog in app look (PLAN-UI.md §1) */
+.plan-dialog-body {
+  display: grid;
+  gap: var(--s4);
+}
+
+.plan-dialog-body .estfield {
+  display: flex;
+  width: 100%;
+}
+
+.plan-dialog-body .estinput {
+  width: 100%;
+  min-height: 34px;
+}
+
 /* The task panel's "Focus block" row: a field-like button that opens the planning form */
-.propbtn { display: flex; align-items: center; gap: 8px; width: 100%; cursor: pointer; text-align: left; color: var(--text-2, inherit); }
+.propbtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+}
+
+/* Disabled planning toggle chip in composer (PLAN-UI.md §2) */
+.fselect-face.chipface:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
