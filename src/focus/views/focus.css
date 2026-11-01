@@ -1434,3 +1434,7 @@
   opacity: 0.45;
   cursor: default;
 }
+
+/* The composer's calendar chip keeps its words while off: next to the date chip, a bare calendar icon was ambiguous. */
+.composer-chips .fselect-face.chipface.unset.fx-calchip { width: auto; padding: 0 10px; gap: 6px; }
+.composer-chips .fselect-face.chipface.unset.fx-calchip .fselect-value { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; }

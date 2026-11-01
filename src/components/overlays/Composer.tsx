@@ -743,14 +743,14 @@ export function Composer({
           {/* Deep Work (PLAN-UI.md §2): Google Calendar focus block toggle */}
           <button
             type="button"
-            className={`fselect-face chipface${calendarOn ? '' : ' unset'}`}
+            className={`fselect-face chipface fx-calchip${calendarOn ? '' : ' unset'}`}
             aria-pressed={calendarOn}
             disabled={!canCalendar}
             title={!canCalendar ? t('focus.planCalendarNoTime') : undefined}
             onClick={() => setCalendarOn((on) => !on)}
           >
             <Icon name="calendar" size="sm" />
-            <span className="fselect-value">{t('focus.planCalendarToggle')}</span>
+            <span className="fselect-value">{calendarOn ? t('focus.planCalendarToggle') : t('focus.planCalendarAdd')}</span>
           </button>
 
           {!phone && placement}

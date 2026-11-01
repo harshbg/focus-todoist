@@ -88,6 +88,7 @@ export const fr: Record<TranslationKey, string> = {
   'focus.planBlock': 'Planifier un bloc de concentration…',
   'focus.planTitle': "Bloc de concentration",
   'focus.planCalendarToggle': 'Google Agenda',
+  'focus.planCalendarAdd': "+ Agenda",
   'focus.planCalendarNoTime': 'Donnez une heure à la tâche pour l’ajouter à votre agenda',
   'focus.color': 'Couleur',
   'focus.colorNone': 'Aucune',
