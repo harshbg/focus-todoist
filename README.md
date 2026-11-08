@@ -44,20 +44,9 @@ Deep Work with Todoist is an independent project. It is not created by, affiliat
 
 ## Keeping up with upstream
 
-Upstream changes from [Enhanced for Todoist](https://github.com/julesvbertolino/todoist-enhanced) are offered as pull requests rather than merged automatically. A GitHub Actions workflow (`.github/workflows/upstream-sync.yml`) runs weekly on Monday at 06:17 UTC and on `workflow_dispatch`. It checks for upstream commits that `focus` lacks, merges them into an `upstream-sync/<yyyy-mm-dd>` branch, and runs the test suite (`npm ci`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build`). Clean merges open a pull request into `focus`; failing checks open a draft pull request naming the failing step; and merge conflicts abort the merge and open a draft pull request pointing to upstream's HEAD with the list of conflicting files. If a sync pull request from an earlier run is still open, the job skips to avoid duplicates.
+Upstream changes from [Enhanced for Todoist](https://github.com/julesvbertolino/todoist-enhanced) are never merged automatically. A GitHub Actions workflow (`.github/workflows/upstream-sync.yml`) runs every Monday at 06:17 UTC, and on demand from the Actions tab. When upstream has commits that `focus` lacks, it opens or updates one issue, **Upstream changes waiting**, listing them and the files that would conflict. The merge itself is then done by hand.
 
-To run or preview the sync by hand on a Mac:
-
-```bash
-# Preview what would be done without making changes
-bash scripts/upstream-sync.sh --dry-run
-
-# Run the sync and open a pull request
-bash scripts/upstream-sync.sh
-```
-
-To allow the workflow to create pull requests, enable this setting in GitHub:
-**Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests**.
+To preview the issue locally: `bash scripts/upstream-sync.sh --dry-run`.
 
 **License:** [MIT](LICENSE).
 
