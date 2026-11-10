@@ -1,19 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { resetIdbMemory } from '@/test/idbMemory';
 
-vi.mock('@/db/idb', () => ({
-  saveSnapshot: vi.fn(async () => {}),
-  enqueue: vi.fn(async () => {}),
-  dequeue: vi.fn(async () => {}),
-  updateQueued: vi.fn(async () => {}),
-  readQueue: vi.fn(async () => []),
-}));
+vi.mock('@/db/idb', async () => (await import('@/test/idbMemory')).idbMemory());
 vi.mock('@/api/commands', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/commands')>()),
   sendCommands: vi.fn(),
 }));
 
 import * as idb from '@/db/idb';
-import { sendCommands, updateItem, type CommandResult } from '@/api/commands';
+import { command, sendCommands, updateItem, type CommandResult } from '@/api/commands';
 import { emptySnapshot } from '@/domain/types';
 import { item } from '@/test/items';
 import { useStore } from './store';
@@ -24,6 +19,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.stubGlobal('navigator', { onLine: true });
   vi.clearAllMocks();
+  resetIdbMemory();
   const snapshot = emptySnapshot();
   snapshot.items.a = item({ id: 'a', content: 'Before' });
   snapshot.items.b = item({ id: 'b', content: 'Before too' });
@@ -49,6 +45,16 @@ const show = (snapshot: ReturnType<typeof emptySnapshot>) => ({
 });
 
 describe('a change Todoist refuses (#134)', () => {
+  it('rolls back a refused recurring close and explains the repeat rule', async () => {
+    const close = command('item_close', { id: 'a' });
+    sent.mockResolvedValue({ responses: [], failures: [{ uuid: close.uuid, error: 'Date is invalid', errorTag: 'INVALID_DATE', commandType: 'item_close' }], mapping: {}, delivered: [close.uuid], undelivered: [] });
+    await useStore.getState().apply([close], (snapshot) => ({
+      ...snapshot, items: { ...snapshot.items, a: { ...snapshot.items.a, checked: true } },
+    }));
+    expect(useStore.getState().snapshot.items.a.checked).toBe(false);
+    expect(idb.dequeue).toHaveBeenCalledWith([close.uuid]);
+    expect(useStore.getState().toasts[0].message).toMatch(/repeat rule|règle de répétition/);
+  });
   it('is taken back on screen, taken off the queue and reported once', async () => {
     const commands = edits();
     const result: CommandResult = {

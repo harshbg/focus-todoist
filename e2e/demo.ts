@@ -18,6 +18,8 @@ export const test = base.extend<{ demo: Page }>({
       // The demo has no Work project, so Personal mode is the one that lists its tasks.
       localStorage.setItem('tde.mode', 'personal');
       localStorage.setItem('tde.demoWork', 'off');
+      // The steps below name the demo's projects and tasks as they were before 2.29.
+      localStorage.setItem('e2eLegacyDemo', '1');
     });
     await page.goto('/');
     await page.getByRole('button', { name: 'Explore with demo data' }).click();
@@ -57,6 +59,9 @@ export const oneOffTitles = (page: Page): Promise<string[]> =>
 export async function go(page: Page, hash: string): Promise<void> {
   await page.evaluate((to) => { window.location.hash = to; }, hash);
   await expect(page.locator('.screen.active')).toBeVisible();
+  if (hash === '#/settings') await expect(page.locator('.screen.active #features')).toBeVisible();
+  if (hash === '#/review') await expect(page.locator('.screen.active .reviewrail')).toBeVisible();
+  if (hash === '#/insights') await expect(page.locator('.screen.active .ptitle')).toBeVisible();
 }
 
 /**

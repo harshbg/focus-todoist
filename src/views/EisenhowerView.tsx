@@ -1,20 +1,13 @@
 import { useMemo } from 'react';
 import { EisenhowerDisplayMenu } from '@/components/EisenhowerDisplayMenu';
 import { PageHeader } from '@/components/PageHeader';
-import { SubtasksProvider } from '@/components/TaskRow';
-import { TaskGroup } from '@/components/TaskGroup';
+import { MatrixBoard } from '@/components/MatrixBoard';
 import { useData } from '@/hooks/useData';
 import { useT } from '@/hooks/useT';
-import {
-  EISENHOWER_QUADRANTS, eisenhowerQuadrant, sortEisenhower,
-  type EisenhowerQuadrant,
-} from '@/domain/eisenhower';
+import { matrixRoots, matrixSettings } from '@/domain/eisenhower';
 import { summariseLoad } from '@/domain/load';
-import { bucketOf } from '@/domain/views';
-import { PERSONAL_WORKSPACE, rootItems } from '@/store/selectors';
 import { viewPrefs } from '@/store/prefs';
 import { useStore } from '@/store/store';
-import type { TranslationKey } from '@/i18n';
 
 interface EisenhowerViewProps {
   onOpen: (id: string) => void;
@@ -24,44 +17,22 @@ interface EisenhowerViewProps {
 export function EisenhowerView({ onOpen, onUnestimated }: EisenhowerViewProps) {
   const { t } = useT();
   const { snapshot, items, childrenOf } = useData('matrix');
-  const layout = useStore((s) => s.prefs.eisenhowerLayout);
-  const urgentRules = useStore((s) => s.prefs.eisenhowerUrgent);
-  const importantPriorities = useStore((s) => s.prefs.eisenhowerImportant);
-  const showFuture = useStore((s) => s.prefs.eisenhowerShowFuture);
-  const includeSomeday = useStore((s) => s.prefs.eisenhowerIncludeSomeday);
   const prefs = useStore((s) => s.prefs);
-  const workspaceFilter = viewPrefs(prefs, 'matrix').filters.workspaces.length ? null : prefs.eisenhowerWorkspace;
-  const weekLabel = useStore((s) => s.prefs.weekLabel);
-  const roots = useMemo(() => rootItems(items), [items]);
-  const visibleItems = useMemo(() => {
-    const now = new Date();
-    return roots.filter((item) => {
-      const bucket = bucketOf(item, now);
-      if (!showFuture && bucket === 'upcoming') return false;
-      if (!includeSomeday && bucket === 'someday') return false;
-      if (workspaceFilter) {
-        const workspaceId = snapshot.projects[item.project_id]?.workspace_id ?? null;
-        const bucket = workspaceId ?? PERSONAL_WORKSPACE;
-        if (bucket !== workspaceFilter) return false;
-      }
-      return true;
-    });
-  }, [roots, showFuture, includeSomeday, workspaceFilter, snapshot.projects]);
-  const load = useMemo(
-    () => summariseLoad(visibleItems, childrenOf, null),
-    [visibleItems, childrenOf],
+  const view = viewPrefs(prefs, 'matrix');
+  const settings = useMemo(() => matrixSettings(prefs, snapshot.user?.start_day), [prefs, snapshot.user?.start_day]);
+  const { cards, promoted } = useMemo(
+    () => matrixRoots(items, snapshot.projects, settings),
+    [items, snapshot.projects, settings],
   );
-
-  const groups = useMemo(() => {
-    const now = new Date();
-    return Object.fromEntries(EISENHOWER_QUADRANTS.map((quadrant) => [
-      quadrant,
-      sortEisenhower(visibleItems.filter((item) =>
-        eisenhowerQuadrant(
-          item, now, urgentRules, importantPriorities, weekLabel,
-        ) === quadrant)),
-    ])) as Record<EisenhowerQuadrant, typeof roots>;
-  }, [visibleItems, urgentRules, importantPriorities, weekLabel]);
+  /* The load counts a subtask that is a card of its own once, as that card. */
+  const nestedOf = useMemo(
+    () => (id: string) => childrenOf(id).filter((child) => !promoted.has(child.id)),
+    [childrenOf, promoted],
+  );
+  const load = useMemo(
+    () => summariseLoad(cards, nestedOf, null),
+    [cards, nestedOf],
+  );
 
   return (
     <div className="page eisenhower-page">
@@ -72,25 +43,14 @@ export function EisenhowerView({ onOpen, onUnestimated }: EisenhowerViewProps) {
         actions={<EisenhowerDisplayMenu />}
       />
 
-      <SubtasksProvider value={false}>
-        <div className={layout === 'matrix' ? 'eisenhower-grid' : 'eisenhower-list'}>
-          {EISENHOWER_QUADRANTS.map((quadrant) => (
-            <div className={`quadrant ${quadrant}`} key={quadrant}>
-              <TaskGroup
-                title={t(`matrix.${quadrant}.title` as TranslationKey)}
-                items={groups[quadrant]}
-                childrenOf={childrenOf}
-                onOpen={onOpen}
-                showProject
-                keepWhenEmpty
-                draggable={false}
-                collapsible={false}
-                cards
-              />
-            </div>
-          ))}
-        </div>
-      </SubtasksProvider>
+      <MatrixBoard
+        cards={cards}
+        childrenOf={childrenOf}
+        sort={view.sort}
+        settings={settings}
+        layout={prefs.eisenhowerLayout}
+        onOpen={onOpen}
+      />
     </div>
   );
 }

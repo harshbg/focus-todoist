@@ -50,6 +50,7 @@ export interface SyncedView {
   showSubtasks: boolean;
   showCompleted: boolean;
   calendar?: ViewPrefs['calendar'];
+  matrix?: ViewPrefs['matrix'];
   /**
    * Only on a saved view of a project (#333): its filters are what it is for,
    * so they go with it. The project's own first view keeps them on the device.
@@ -64,8 +65,10 @@ export interface SyncedView {
  *
  * Everything in the Settings panel — the general ones, the matrix, the look
  * (accent, theme, density) — and part of each project's Display control (see
- * SyncedView). Not whether the sidebar is folded, which is a matter of the
- * window in front of you, nor the display of pages other than projects.
+ * SyncedView), and of every other page that has one: a tag, a filter,
+ * Upcoming. Without them a sort chosen on a tag page was gone after signing out
+ * and back in. Not whether the sidebar is folded, which is a matter of the
+ * window in front of you.
  */
 export type SyncedPreferences = Omit<Preferences, 'sidebarCollapsed' | 'activeViews' | 'views'> & {
   views: Record<string, SyncedView>;
@@ -76,11 +79,11 @@ export function syncedPreferences(prefs: Preferences): SyncedPreferences {
   /* Sorted, so two devices holding the same settings write the same text
      and never take turns rewriting the comment. */
   const projectViews_ = Object.entries(views)
-    .filter(([key]) => key.startsWith('project:'))
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([key, view]): [string, SyncedView] => [key, {
       mode: view.mode,
       ...(view.calendar ? { calendar: view.calendar } : {}),
+      ...(view.matrix ? { matrix: view.matrix } : {}),
       group: view.group,
       sort: view.sort,
       showSubtasks: view.filters.showSubtasks,
@@ -136,8 +139,7 @@ export function settingsCommentMatches(content: string, prefs: Preferences): boo
 
 /**
  * Settings from the account laid over the ones on this device: the device
- * keeps what does not travel (the folded sidebar, the display of pages other
- * than projects), the account decides the rest.
+ * keeps what does not travel (the folded sidebar), the account decides the rest.
  */
 export function mergeSynced(
   local: Preferences,
@@ -145,15 +147,18 @@ export function mergeSynced(
   locale: Locale,
 ): Preferences {
   const { views: remoteViews, savedAt: _stamp, ...settings } = remote;
-  const hydrated = hydratePreferences({ ...local, ...settings, views: undefined, estimateStorage: settings.estimateStorage ?? null }, locale);
+  const legacyMatrixHorizon = settings.eisenhowerHorizon ?? (settings.eisenhowerEnabled
+    ? (settings.eisenhowerShowFuture ? 'all' : 'today') : local.eisenhowerHorizon);
+  const hydrated = hydratePreferences({ ...local, ...settings, eisenhowerHorizon: legacyMatrixHorizon, views: undefined, estimateStorage: settings.estimateStorage ?? null }, locale);
   const views = { ...local.views };
   for (const [key, shared] of Object.entries(remoteViews ?? {})) {
-    if (!key.startsWith('project:') || !shared) continue;
+    if (!shared) continue;
     const mine = local.views[key] ?? defaultViewPrefs(key);
     views[key] = {
       ...mine,
       mode: shared.mode ?? mine.mode,
       calendar: shared.calendar ?? mine.calendar,
+      matrix: shared.matrix ?? mine.matrix,
       group: shared.group ?? mine.group,
       sort: shared.sort ?? mine.sort,
       filters: {
@@ -169,10 +174,13 @@ export function mergeSynced(
 
 /** The views that make sense as a landing page: no view that needs an id. */
 export const HOME_VIEWS = [
-  'week', 'today', 'inbox', 'upcoming', 'someday', 'dashboard', 'insights', 'labels',
+  'week', 'today', 'inbox', 'upcoming', 'someday', 'matrix', 'dashboard', 'insights', 'labels',
 ] as const satisfies readonly ViewId[];
 
 export type HomeView = (typeof HOME_VIEWS)[number];
+
+/** Where the app opens when the chosen homepage is a view that is switched off. */
+export const FALLBACK_HOME: HomeView = 'week';
 
 /**
  * How much room a list gives each task.
@@ -200,6 +208,16 @@ export type Theme = (typeof THEMES)[number];
 
 export const isTheme = (value: unknown): value is Theme =>
   typeof value === 'string' && (THEMES as readonly string[]).includes(value);
+
+/**
+ * Which dark: the classic charcoal, or pure black for OLED screens (#346).
+ * Only read while the resolved scheme is dark, including when "system" lands there.
+ */
+export const DARK_STYLES = ['classic', 'amoled'] as const;
+export type DarkStyle = (typeof DARK_STYLES)[number];
+
+export const isDarkStyle = (value: unknown): value is DarkStyle =>
+  typeof value === 'string' && (DARK_STYLES as readonly string[]).includes(value);
 
 /**
  * The brand colour.
@@ -288,10 +306,14 @@ export const isTaskChips = (value: unknown): value is TaskChips =>
 export const MATRIX_LAYOUTS = ['list', 'matrix'] as const;
 export type MatrixLayout = (typeof MATRIX_LAYOUTS)[number];
 
+/** Each rule reads the date and the deadline alike: either one can make a task urgent (#329). */
 export const EISENHOWER_URGENCY_RULES = [
   'overdue', 'today', 'tomorrow', 'after-tomorrow', 'next-seven', 'week',
 ] as const;
 export type EisenhowerUrgencyRule = (typeof EISENHOWER_URGENCY_RULES)[number];
+
+export const MATRIX_HORIZONS = ['today', 'tomorrow', 'week', 'seven', 'month', 'all'] as const;
+export type MatrixHorizon = (typeof MATRIX_HORIZONS)[number];
 
 export const EISENHOWER_PRIORITIES = [1, 2, 3, 4] as const;
 export type EisenhowerPriority = (typeof EISENHOWER_PRIORITIES)[number];
@@ -332,6 +354,8 @@ export interface Preferences {
   dailyCapacity: DailyCapacity;
   weeklyCapacityOverride: number | null;
   showQuickGroup: boolean;
+  /** Lists take the whole page, on every page at once (#403). Display's Full width switch writes it. */
+  listFullWidth: boolean;
   /** The sound that plays when a task is ticked off, or none (#282). */
   completionSoundChoice: CompletionChoice;
   /** The Gathering dust group at the top of Someday (#161). */
@@ -344,6 +368,8 @@ export interface Preferences {
   density: Density;
   /** The colour scheme; "system" follows the device. */
   theme: Theme;
+  /** Classic dark or pure black, whenever the scheme is dark. */
+  darkStyle: DarkStyle;
   /** The brand colour. Every accent exists in both schemes. */
   accent: Accent;
   /** How the app is framed: a floating sidebar or a floating page. */
@@ -358,6 +384,10 @@ export interface Preferences {
   sidebarSearch: boolean;
   /** The numbers beside each list. */
   sidebarCounts: boolean;
+  /** What a Pomodoro session shows when it starts: the toolbar's timer, or the full screen. */
+  pomodoroDisplay: 'discreet' | 'fullscreen';
+  /** The choice above was offered, in the setup or after What's new. */
+  pomodoroAsked: boolean;
   /** What a task row shows, for every list (domain/taskDetails). */
   taskFields: TaskFields;
   /** The order of the chips beneath a task's title. */
@@ -418,6 +448,7 @@ export interface Preferences {
   eisenhowerImportant: EisenhowerPriority[];
   /** Whether tasks dated after today are included in the matrix. */
   eisenhowerShowFuture: boolean;
+  eisenhowerHorizon: MatrixHorizon;
   /** Whether the undated Someday backlog is included in the matrix. */
   eisenhowerIncludeSomeday: boolean;
   /** Narrows the matrix to one workspace's projects; null is every workspace. */
@@ -455,6 +486,7 @@ export const defaultPreferences = (locale: Locale): Preferences => ({
   dailyCapacity: defaultCapacity(),
   weeklyCapacityOverride: null,
   showQuickGroup: true,
+  listFullWidth: false,
   completionSoundChoice: DEFAULT_COMPLETION_CHOICE,
   showDustGroup: true,
   dustAfterMonths: DEFAULT_DUST_MONTHS,
@@ -462,6 +494,7 @@ export const defaultPreferences = (locale: Locale): Preferences => ({
   sidebarCollapsed: false,
   density: 'comfortable',
   theme: 'system',
+  darkStyle: 'classic',
   accent: 'red',
   layout: 'page-float',
   background: 'neutral',
@@ -469,6 +502,8 @@ export const defaultPreferences = (locale: Locale): Preferences => ({
   sidebarNav: defaultSidebarNav(),
   sidebarSearch: true,
   sidebarCounts: true,
+  pomodoroDisplay: 'discreet',
+  pomodoroAsked: false,
   taskFields: defaultTaskFields(),
   detailOrder: defaultDetailOrder(),
   taskChips: 'classic',
@@ -481,12 +516,13 @@ export const defaultPreferences = (locale: Locale): Preferences => ({
   weekLayout: 'unified',
   weekLabel: DEFAULT_WEEK_LABEL,
   quietAfterDays: 14,
-  includeSectionsInSearch: false,
+  includeSectionsInSearch: true,
   eisenhowerEnabled: false,
   eisenhowerLayout: 'matrix',
   eisenhowerUrgent: ['overdue', 'today'],
   eisenhowerImportant: [1, 2],
   eisenhowerShowFuture: false,
+  eisenhowerHorizon: 'week',
   eisenhowerIncludeSomeday: false,
   eisenhowerWorkspace: null,
   onboarded: false,
@@ -510,7 +546,9 @@ export const viewPrefs = (prefs: Preferences, viewKey: string): ViewPrefs => {
   if (cached) return cached;
   const base = defaultViewPrefs(viewKey);
   const saved = prefs.views[viewKey];
-  const value = saved ? { ...base, ...saved, filters: { ...base.filters, ...saved.filters } } : base;
+  const merged = saved ? { ...base, ...saved, filters: { ...base.filters, ...saved.filters } } : base;
+  /* One setting for every page: a switch set on one list is the others' too (#403). */
+  const value = merged.fullWidth === prefs.listFullWidth ? merged : { ...merged, fullWidth: prefs.listFullWidth };
   views.set(viewKey, value);
   return value;
 };
@@ -539,6 +577,7 @@ export function hydratePreferences(stored: unknown, locale: Locale): Preferences
     homepage: isHomeView(s.homepage) ? s.homepage : base.homepage,
     density: isDensity(s.density) ? s.density : base.density,
     theme: isTheme(s.theme) ? s.theme : base.theme,
+    darkStyle: isDarkStyle(s.darkStyle) ? s.darkStyle : base.darkStyle,
     accent: isAccent(s.accent) ? s.accent : base.accent,
     // Settings written by a 1.x build have neither: they get the defaults.
     layout: isLayout(s.layout) ? s.layout : base.layout,
@@ -547,6 +586,8 @@ export function hydratePreferences(stored: unknown, locale: Locale): Preferences
     sidebarNav: readSidebarNav(s.sidebarNav),
     sidebarSearch: s.sidebarSearch !== false,
     sidebarCounts: s.sidebarCounts !== false,
+    pomodoroDisplay: s.pomodoroDisplay === 'fullscreen' ? 'fullscreen' : 'discreet',
+    pomodoroAsked: s.pomodoroAsked === true,
     taskFields: readTaskFields(s.taskFields),
     detailOrder: readDetailOrder(s.detailOrder),
     // A missing choice is the published text layout, for an old account as much as a new one.
@@ -567,7 +608,7 @@ export function hydratePreferences(stored: unknown, locale: Locale): Preferences
     quietAfterDays: Number.isFinite(s.quietAfterDays) && (s.quietAfterDays as number) > 0
       ? Math.round(s.quietAfterDays as number)
       : base.quietAfterDays,
-    includeSectionsInSearch: s.includeSectionsInSearch === true,
+    includeSectionsInSearch: s.includeSectionsInSearch !== false,
     eisenhowerEnabled: s.eisenhowerEnabled === true,
     eisenhowerLayout: isMatrixLayout(s.eisenhowerLayout)
       ? s.eisenhowerLayout
@@ -579,9 +620,14 @@ export function hydratePreferences(stored: unknown, locale: Locale): Preferences
       ? s.eisenhowerImportant.filter(isEisenhowerPriority)
       : base.eisenhowerImportant,
     eisenhowerShowFuture: s.eisenhowerShowFuture === true,
+    eisenhowerHorizon: MATRIX_HORIZONS.includes(s.eisenhowerHorizon as MatrixHorizon)
+      ? s.eisenhowerHorizon as MatrixHorizon
+      : s.eisenhowerEnabled ? (s.eisenhowerShowFuture ? 'all' : 'today') : base.eisenhowerHorizon,
     eisenhowerIncludeSomeday: s.eisenhowerIncludeSomeday === true,
     eisenhowerWorkspace: typeof s.eisenhowerWorkspace === 'string' ? s.eisenhowerWorkspace : null,
     showDustGroup: s.showDustGroup !== false,
+    /* Before it was global, each page kept its own: one already on stays on. */
+    listFullWidth: typeof s.listFullWidth === 'boolean' ? s.listFullWidth : Object.values(s.views ?? {}).some((view) => view?.fullWidth === true),
     completionSoundChoice: isCompletionChoice(s.completionSoundChoice) ? s.completionSoundChoice : base.completionSoundChoice,
     // Only the delays the Settings offers: anything else reads as the default.
     dustAfterMonths: isDustMonths(s.dustAfterMonths) ? s.dustAfterMonths : base.dustAfterMonths,

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { command, MAX_COMMANDS_PER_CALL, sendCommands } from './commands';
 import { ApiError, request } from './client';
+import { SYNC_RESOURCE_TYPES } from './sync';
 
 vi.mock('./client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./client')>()),
@@ -24,6 +25,19 @@ function answerOk(mapping: Record<string, string> = {}) {
 beforeEach(() => { sent.mockReset(); });
 
 describe('sendCommands', () => {
+  it('asks for every resource a read asks for, since its token becomes the next read\'s (#467)', async () => {
+    answerOk();
+    await sendCommands('token', [command('item_update', { id: 'a' })]);
+    const asked = JSON.parse((sent.mock.calls[0][1] as { form: { resource_types: string } }).form.resource_types);
+    expect(asked).toEqual([...SYNC_RESOURCE_TYPES]);
+    expect(asked).toEqual(expect.arrayContaining(['reminders', 'workspaces', 'live_notifications', 'user', 'collaborators', 'completed_info']));
+  });
+  it('retains an invalid date tag and identifies a refused recurring close', async () => {
+    const close = command('item_close', { id: 'a' });
+    sent.mockResolvedValue({ sync_token: 'next', sync_status: { [close.uuid]: { error_code: 480, error: 'Date is invalid', error_tag: 'INVALID_DATE' } } } as never);
+    const result = await sendCommands('token', [close]);
+    expect(result.failures).toEqual([{ uuid: close.uuid, error: 'Date is invalid', errorTag: 'INVALID_DATE', commandType: 'item_close' }]);
+  });
   it('sends 250 commands in batches of at most 100', async () => {
     answerOk();
     const commands = Array.from({ length: 250 }, (_, at) => command('item_update', { id: `t${at}` }));

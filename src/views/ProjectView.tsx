@@ -9,8 +9,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, Fragment } from 'rea
 import { PageHeader } from '@/components/PageHeader';
 import { SubtasksProvider } from '@/components/TaskRow';
 import { DisplayMenu } from '@/components/DisplayMenu';
+import { PomodoroButton } from '@/components/PomodoroButton';
 import { TaskGroup } from '@/components/TaskGroup';
 import { ModeSurface } from '@/components/ModeSurface';
+import { MatrixSurface } from '@/components/MatrixBoard';
 import { EditableDescription } from '@/components/EditableDescription';
 import { EditableTitle } from '@/components/EditableTitle';
 import { ProjectMenu } from '@/components/ProjectMenu';
@@ -18,7 +20,8 @@ import type { ProjectSheetTarget } from '@/components/overlays/ProjectSheet';
 import { AddSectionLine } from '@/components/AddSectionLine';
 import { useConfirm } from '@/components/overlays/Confirm';
 import { Icon } from '@/components/Icon';
-import { ProjectIcon, ProjectIconGrid } from '@/components/ProjectIconPicker';
+import { ProjectProgress } from '@/components/ProjectProgress';
+import { ProjectIcon, ProjectIconGrid } from '@/components/ProjectIcon';
 import { markerStyle } from '@/domain/colors';
 import { TimePanel } from '@/components/TimePanel';
 import { useT } from '@/hooks/useT';
@@ -29,7 +32,7 @@ import type { Item } from '@/domain/types';
 import { useStore } from '@/store/store';
 import { newUuid } from '@/api/commands';
 import { viewPrefs } from '@/store/prefs';
-import { applyFilters, pullQuick, rootItems, sortItems } from '@/store/selectors';
+import { applyFilters, groupRoots, pullQuick, sortItems } from '@/store/selectors';
 import { summariseLoad } from '@/domain/load';
 import { readProjectIcon, stripProjectIcon, withProjectIcon } from '@/domain/projectIcons';
 import { bySectionOrder } from '@/domain/orderKey';
@@ -40,6 +43,7 @@ import { PROJECT_GROUPS } from '@/components/DisplayMenu';
 
 interface ProjectViewProps {
   projectId: string;
+  projectProgressCounts: { open: Record<string, number>; completed: Record<string, number> };
   revealSectionId?: string;
   onOpen: (id: string) => void;
   onInsights: () => void;
@@ -70,7 +74,7 @@ const priorityOf = (key: string): 1 | 2 | 3 | 4 | undefined => {
 };
 
 function ProjectBody({
-  projectId, revealSectionId, onOpen, onInsights, onUnestimated, onAddTaskTo, onProjectSheet,
+  projectId, projectProgressCounts, revealSectionId, onOpen, onInsights, onUnestimated, onAddTaskTo, onProjectSheet,
 }: ProjectViewProps) {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [iconOpen, setIconOpen] = useState(false);
@@ -175,7 +179,7 @@ function ProjectBody({
    */
   const history = useProjectCompleted(projectId, current.filters.showCompleted);
   const pool0 = useMemo(() => {
-    const openRoots = rootItems(items).filter((i) => i.project_id === projectId);
+    const openRoots = groupRoots(items.filter((i) => i.project_id === projectId), current.group === 'none' ? 'section' : current.group, current.filters.showSubtasks);
     if (!current.filters.showCompleted) return openRoots;
     // Work / Personal mode (SPEC §10.2): ticked tasks follow the mode.
     const ticked = Object.values(scopedItems).filter(
@@ -184,7 +188,7 @@ function ProjectBody({
     /* What the sync still holds wins over the history's copy of the same task. */
     const known = new Set([...openRoots, ...ticked].map((i) => i.id));
     return [...openRoots, ...ticked, ...history.filter((i) => !known.has(i.id) && !snapshot.items[i.id])];
-  }, [items, projectId, current.filters.showCompleted, snapshot, scopedItems, history]);
+  }, [items, projectId, current.filters.showCompleted, current.filters.showSubtasks, current.group, snapshot, scopedItems, history]);
   const scoped = useMemo(
     () => applyFilters(pool0, current.filters, snapshot, childrenOf),
     [pool0, current.filters, snapshot, childrenOf],
@@ -339,7 +343,8 @@ function ProjectBody({
                 <span className="hash" style={markerStyle(project.color)}>
                   {readProjectIcon(project.description)
                     ? <ProjectIcon iconId={readProjectIcon(project.description)!} style={{ color: 'inherit' }} />
-                    : '#'}
+                    : <ProjectProgress open={projectProgressCounts.open[projectId] ?? 0} completed={projectProgressCounts.completed[projectId]}
+                        label={projectProgressCounts.completed[projectId] === undefined ? t('project.progressUnknown') : (projectProgressCounts.open[projectId] ?? 0) + projectProgressCounts.completed[projectId] === 0 ? t('project.progressEmpty') : t('project.progressCompletedAll', { done: projectProgressCounts.completed[projectId], total: (projectProgressCounts.open[projectId] ?? 0) + projectProgressCounts.completed[projectId] })} />}
                 </span>
               </button>
               {iconOpen && (
@@ -383,10 +388,11 @@ function ProjectBody({
         )}
         actions={
           <>
+            <PomodoroButton />
             <DisplayMenu
               viewKey={viewKey}
               pageItems={pool0}
-              modes={['list', 'board', 'table', 'calendar']}
+              modes={['list', 'board', 'table', 'calendar', 'matrix']}
               groups={PROJECT_GROUPS}
               completedToggle
               showWorkspaces={false}
@@ -447,6 +453,8 @@ function ProjectBody({
               dropTarget: { kind: 'section' as const, sectionId: group.id, projectId },
               onAddTask: () => onAddTaskTo({ projectId, sectionId: group.id }) })),
           ]} />
+      ) : current.mode === 'matrix' ? (
+        <MatrixSurface items={scoped} childrenOf={childrenOf} sort={current.sort} showSubtasks={current.filters.showSubtasks} matrix={current.matrix} onOpen={onOpen} />
       ) : current.mode === 'calendar' ? (
         <CalendarSurface key={viewKey} viewKey={viewKey} items={pool0} onOpen={onOpen} onAddTaskTo={onAddTaskTo} />
       ) : current.mode === 'board' ? (

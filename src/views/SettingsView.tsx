@@ -1,3 +1,4 @@
+import { useDataSnapshot } from '@/hooks/useDataSnapshot';
 import { PrivacyInformation } from '@/components/PrivacyInformation';
 import { EstimateConversion } from '@/components/overlays/EstimateConversion';
 import { canStoreDurations } from '@/domain/estimates';
@@ -6,7 +7,7 @@ import { BrandIcon, Icon, type IconName } from '@/components/Icon';
 import { Select } from '@/components/Select';
 import { COMPLETION_SOUNDS, playCompletionSound, type CompletionChoice, type CompletionSound } from '@/lib/completionSound';
 import { GroupOrderEditor, SidebarNavEditor } from '@/components/SidebarNavEditor';
-import { AccentChoice, BackgroundChoice, ThemeChoice, LayoutChoice, DensityChoice, EstimateStorageChoice, TaskChipsChoice, TaskOpenChoice } from '@/components/Choosers';
+import { AccentChoice, BackgroundChoice, DarkStyleChoice, ThemeChoice, LayoutChoice, DensityChoice, EstimateStorageChoice, TaskChipsChoice, TaskOpenChoice } from '@/components/Choosers';
 import { WorkspacePreview } from '@/components/WorkspacePreview';
 import { GroupPreview } from '@/components/GroupPreview';
 import { useT } from '@/hooks/useT';
@@ -15,14 +16,16 @@ import { avatarUrl } from '@/domain/colors';
 import { formatDuration, parseDurationInput } from '@/domain/estimates';
 import { defaultCapacity, weeklyCapacity, type DailyCapacity } from '@/domain/load';
 import { DATE_FORMATS, formatDay, type DateFormat } from '@/domain/dates';
-import { HOME_VIEWS, type HomeView } from '@/store/prefs';
+import { FALLBACK_HOME, HOME_VIEWS, type HomeView } from '@/store/prefs';
 import { DEFAULT_WEEK_LABEL } from '@/domain/types';
 import { DUST_MONTHS, isDustMonths } from '@/domain/views';
 import type { Locale, TranslationKey } from '@/i18n';
 import { APP_NAME, AUTHOR, AUTHOR_GITHUB_URL, GITHUB_URL, VERSION } from '@/app-info';
 import { karmaStanding } from '@/domain/karma';
+import { PomodoroDisplayChoice } from '@/components/PomodoroDisplayChoice';
 import { projectTree } from '@/store/selectors';
 import { ModeSettings } from '@/focus/views/ModeSettings';
+import { intlDate } from '@/lib/intl';
 
 /** Where the things this app only reads are changed. */
 const TODOIST_ACCOUNT_URL = 'https://app.todoist.com/app/settings/account';
@@ -54,6 +57,7 @@ export function SettingsView() {
   const setLocale = useStore((s) => s.setLocale);
   const disconnect = useStore((s) => s.disconnect);
   const user = useStore((s) => s.snapshot.user);
+  const workspaceList = useStore((s) => s.snapshot.workspaces);
   const karma = karmaStanding(user?.karma);
 
   const current = useCurrentSection();
@@ -63,7 +67,7 @@ export function SettingsView() {
   /* Monday-first labels. 8 January 2024 was a Monday; the capacity array is
      indexed Sunday-first, so the two are mapped rather than assumed equal. */
   const dayNames = Array.from({ length: 7 }, (_, i) =>
-    new Intl.DateTimeFormat(intl, { weekday: 'short' }).format(new Date(2024, 0, 8 + i)),
+    intlDate(intl, { weekday: 'short' }).format(new Date(2024, 0, 8 + i)),
   );
 
   /* A day that does not read as a duration is refused out loud, and keeps the
@@ -82,7 +86,7 @@ export function SettingsView() {
   const toggle = (key: keyof typeof prefs.conflicts) =>
     setPrefs({ conflicts: { ...prefs.conflicts, [key]: !prefs.conflicts[key] } });
 
-  const groupsInSidebar = projectTree(useStore((s) => s.snapshot), prefs.workspaceOrder);
+  const groupsInSidebar = projectTree(useDataSnapshot(), prefs.workspaceOrder);
 
   const weekly = weeklyCapacity(prefs.dailyCapacity, prefs.weeklyCapacityOverride);
 
@@ -217,10 +221,10 @@ export function SettingsView() {
 
             <Row title={t('settings.homepage')} hint={t('settings.homepageHint')}>
               <Select
-                value={prefs.homepage}
+                value={prefs.homepage === 'matrix' && !prefs.eisenhowerEnabled ? FALLBACK_HOME : prefs.homepage}
                 onChange={(value) => setPrefs({ homepage: value as HomeView })}
                 ariaLabel={t('settings.homepage')}
-                options={HOME_VIEWS.map((view) => ({ value: view, label: t(`nav.${view}` as TranslationKey) }))}
+                options={HOME_VIEWS.filter((view) => view !== 'matrix' || prefs.eisenhowerEnabled).map((view) => ({ value: view, label: t(`nav.${view}` as TranslationKey) }))}
               />
             </Row>
             <Row title={t('settings.naturalDates')} hint={t('settings.naturalDatesHint')}>
@@ -259,6 +263,11 @@ export function SettingsView() {
             <Row title={t('settings.theme')} hint={t('settings.themeHint')} wide>
               <ThemeChoice value={prefs.theme} onChange={(value) => setPrefs({ theme: value })} />
             </Row>
+            {prefs.theme !== 'light' && (
+              <Row title={t('settings.darkStyle')} hint={t('settings.darkStyleHint')} wide>
+                <DarkStyleChoice value={prefs.darkStyle} onChange={(value) => setPrefs({ darkStyle: value })} />
+              </Row>
+            )}
             <Row title={t('settings.layout')} hint={t('settings.layoutHint')} wide>
               <LayoutChoice value={prefs.layout} onChange={(value) => setPrefs({ layout: value })} />
             </Row>
@@ -288,7 +297,8 @@ export function SettingsView() {
             {groupsInSidebar.length > 1 && (
               <Row title={t('settings.workspaceOrder')} hint={t('settings.workspaceOrderHint')} wide>
                 <div className="wsgroups"><GroupOrderEditor
-                  groups={groupsInSidebar.map((g) => ({ id: g.workspaceId ?? 'personal', name: g.name ?? t('nav.myProjects') }))}
+                  groups={groupsInSidebar.map((g) => ({ id: g.workspaceId ?? 'personal', name: g.name ?? t('nav.myProjects'), avatar: true,
+                    logo: g.workspaceId ? workspaceList[g.workspaceId]?.logo_big ?? null : user?.avatar_big ?? null }))}
                   onChange={(workspaceOrder) => setPrefs({ workspaceOrder })}
                 /></div>
               </Row>
@@ -316,6 +326,9 @@ export function SettingsView() {
           {/* Settings that shape the product rather than its formatting. */}
           <section className="setsection" id="features">
             <h2>{t('settings.features')}</h2>
+            <Row title={t('pomodoro.title')} hint={t('pomodoro.settingsIntro')} wide>
+              <PomodoroDisplayChoice value={prefs.pomodoroDisplay} onChange={(pomodoroDisplay) => setPrefs({ pomodoroDisplay, pomodoroAsked: true })} />
+            </Row>
             {/* How the pages are laid out, in one place, with a picture of it. */}
             <h3 className="setsubhead">{t('settings.groupOrganisation')}</h3>
             <p className="setgroup-hint">{t('settings.groupOrganisationHint')}</p>

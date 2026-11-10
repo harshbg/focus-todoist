@@ -117,7 +117,8 @@ export function builtForElsewhere(): string | null {
 /** Leaves for Todoist's consent page. The page is gone after this. */
 export async function beginSignIn(): Promise<boolean> {
   const verifier = randomString(64);
-  const state = randomString(24);
+  const desktop = window.enhancedDesktop?.openSignIn;
+  const state = `${desktop ? (window.enhancedDesktop?.testMode ? 'desktop_test_' : 'desktop_') : ''}${randomString(24)}`;
   /* The verifier has to survive the round trip through Todoist's page, and this
      is the only place it can. With site storage blocked it cannot, so the page
      stays where it is and says so, rather than leaving for a sign-in that could
@@ -134,7 +135,10 @@ export async function beginSignIn(): Promise<boolean> {
   url.searchParams.set('redirect_uri', redirectUri());
   url.searchParams.set('code_challenge', await challengeOf(verifier));
   url.searchParams.set('code_challenge_method', 'S256');
-  window.location.assign(url.toString());
+  if (desktop) {
+    const opened = await desktop(url.toString());
+    if (!opened) { sessionRemove(PENDING_KEY); return false; }
+  } else window.location.assign(url.toString());
   return true;
 }
 
@@ -164,9 +168,9 @@ export async function completeSignIn(): Promise<SignInResult> {
   }
   window.history.replaceState(null, '', `${window.location.pathname}${pending?.route ?? ''}`);
 
-  if (error) return error === 'access_denied' ? 'denied' : 'failed';
   // No pending sign-in, or not ours: never exchange a code this tab did not ask for.
   if (!pending || params.get('state') !== pending.state) return 'failed';
+  if (error) return error === 'access_denied' ? 'denied' : 'failed';
 
   try {
     const response = await fetch(TOKEN_URL, {
@@ -193,28 +197,42 @@ export async function completeSignIn(): Promise<SignInResult> {
 
 let renewing: Promise<OAuthCredentials | null> | null = null;
 
-async function renewNow(): Promise<OAuthCredentials | null> {
+async function renewNow(rejectedToken?: string): Promise<OAuthCredentials | null> {
   // Another tab may have renewed while this one waited for the lock.
   const current = readCredentials();
   if (!current?.refreshToken) return current;
-  if (current.expiresAt - Date.now() > RENEW_MARGIN_MS) return current;
+  if (rejectedToken && current.accessToken !== rejectedToken && current.expiresAt - Date.now() > RENEW_MARGIN_MS) return current;
+  if (!rejectedToken && current.expiresAt - Date.now() > RENEW_MARGIN_MS) return current;
 
-  const response = await fetch(TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: OAUTH_CLIENT_ID,
-      grant_type: 'refresh_token',
-      refresh_token: current.refreshToken,
-    }).toString(),
-  });
-  if (response.status === 400 || response.status === 401) {
-    // The refresh token was revoked or has expired: signing in again is the only way.
-    writeCredentials(null);
-    return null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
+  let next: OAuthCredentials;
+  try {
+    const response = await fetch(TOKEN_URL, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: OAUTH_CLIENT_ID, grant_type: 'refresh_token', refresh_token: current.refreshToken }).toString(),
+    });
+    const body = (await response.json()) as TokenResponse;
+    if (!response.ok) {
+      // A different tab or a fresh sign-in may have replaced these credentials.
+      const latest = readCredentials();
+      if (latest?.refreshToken !== current.refreshToken) return latest;
+      if ((response.status === 400 || response.status === 401) && body.error === 'invalid_grant') {
+        writeCredentials(null);
+        return null;
+      }
+      throw new Error(`Token refresh failed: ${response.status}`);
+    }
+    if (!body.access_token || typeof body.access_token !== 'string') throw new Error('Unreadable token refresh response');
+    // Never resurrect a session disconnected while the request was in flight.
+    const latest = readCredentials();
+    if (latest?.refreshToken !== current.refreshToken) return latest;
+    next = fromResponse(body, current);
+  } finally {
+    clearTimeout(timeout);
   }
-  if (!response.ok) throw new Error(`Token refresh failed: ${response.status}`);
-  const next = fromResponse((await response.json()) as TokenResponse, current);
   writeCredentials(next);
   return next;
 }
@@ -226,14 +244,11 @@ async function renewNow(): Promise<OAuthCredentials | null> {
  * Todoist no longer accepts). Throws on a network failure, which the caller
  * treats like any other: offline, try again later.
  */
-export async function freshAccessToken(force = false): Promise<string | null> {
-  let credentials = readCredentials();
+export async function freshAccessToken(force = false, rejectedAccessToken?: string): Promise<string | null> {
+  const credentials = readCredentials();
   if (!credentials) return null;
-  if (force) {
-    credentials = { ...credentials, expiresAt: 0 };
-    writeCredentials(credentials);
-  }
-  if (credentials.expiresAt - Date.now() > RENEW_MARGIN_MS) return credentials.accessToken;
+  if (force && rejectedAccessToken && credentials.accessToken !== rejectedAccessToken && credentials.expiresAt - Date.now() > RENEW_MARGIN_MS) return credentials.accessToken;
+  if (!force && credentials.expiresAt - Date.now() > RENEW_MARGIN_MS) return credentials.accessToken;
   if (!credentials.refreshToken) return credentials.accessToken;
 
   if (!renewing) {
@@ -242,9 +257,9 @@ export async function freshAccessToken(force = false): Promise<string | null> {
        rotating refresh token, and the second would be refused. */
     const run = locks
       ? new Promise<OAuthCredentials | null>((resolve, reject) => {
-        void locks.request('tde-oauth-renew', () => renewNow().then(resolve, reject));
+        void locks.request('tde-oauth-renew', () => renewNow(force ? (rejectedAccessToken ?? credentials.accessToken) : undefined).then(resolve, reject)).catch(reject);
       })
-      : renewNow();
+      : renewNow(force ? (rejectedAccessToken ?? credentials.accessToken) : undefined);
     renewing = run.finally(() => { renewing = null; });
   }
   const renewed = await renewing;

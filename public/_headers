@@ -5,3 +5,15 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+
+/sw.js
+  Cache-Control: no-cache, must-revalidate
+/registerSW.js
+  Cache-Control: no-cache, must-revalidate
+/theme-boot.js
+  Cache-Control: no-cache, must-revalidate
+/manifest.webmanifest
+  Cache-Control: no-cache, must-revalidate
+  Content-Type: application/manifest+json
+/oauth/client.json
+  Cache-Control: no-cache, must-revalidate

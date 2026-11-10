@@ -1,4 +1,4 @@
-import { request } from './client';
+import { ApiError, NotConnectedError, request } from './client';
 import type {
   Collaborator, CollaboratorState, Filter, Folder, Item, Label, LiveNotification, Note, Project, Reminder,
   Section, Snapshot, TodoistUser, Workspace,
@@ -23,6 +23,8 @@ export interface SyncResponse {
   folders?: Folder[];
   /** Complete REST folder collections read alongside this response. */
   refreshedFolderWorkspaces?: string[];
+  /** Workspaces whose folders could not be read this time: their folders are kept as they were (#466). */
+  failedFolderWorkspaces?: Array<{ id: string; error: unknown }>;
   notes?: Note[];
   /** Comments on projects rather than tasks; kept in the same collection as task comments. */
   project_notes?: Note[];
@@ -34,7 +36,7 @@ export interface SyncResponse {
   collaborators_states?: CollaboratorState[];
   user?: TodoistUser;
   temp_id_mapping?: Record<string, string>;
-  sync_status?: Record<string, 'ok' | { error_code: number; error: string }>;
+  sync_status?: Record<string, 'ok' | { error_code: number; error: string; error_tag?: string }>;
 }
 
 /**
@@ -45,6 +47,9 @@ export interface SyncResponse {
  */
 /** A full sync of a large account is a big download; it gets longer than the usual deadline. */
 const FULL_SYNC_TIMEOUT_MS = 60_000;
+/** Folder changes have no incremental resource; refresh at most ten minutes apart. */
+export const FOLDER_REFRESH_INTERVAL_MS = 10 * 60_000;
+let lastFolderRefresh = 0;
 
 export async function sync(syncToken: string, signal?: AbortSignal, knownWorkspaces: Record<string, Workspace> = {}): Promise<SyncResponse> {
   const response = await request<SyncResponse>('/sync', {
@@ -56,24 +61,46 @@ export async function sync(syncToken: string, signal?: AbortSignal, knownWorkspa
     signal,
     timeoutMs: syncToken === '*' ? FULL_SYNC_TIMEOUT_MS : undefined,
   });
+  // A new session/full sync and workspace changes always refresh immediately.
+  // Folders are read again ten minutes after the last attempt, failed or not.
+  if (!response.full_sync && syncToken !== '*' && !response.workspaces?.length && lastFolderRefresh && Date.now() - lastFolderRefresh < FOLDER_REFRESH_INTERVAL_MS) {
+    return response;
+  }
   // Folders have a separate REST resource. Read each team's complete collection
   // so renames, deletions and existing folders reach incremental clients too.
   const workspaces = Object.values(mergeCollection(knownWorkspaces, response.workspaces, response.full_sync));
   const teams = workspaces.filter((w) => !w.is_deleted && !w.is_archived);
-  const folders = await Promise.all(teams.map(async (workspace) => {
-    const all: Folder[] = [];
-    let cursor: string | null = null;
-    do {
-      const query = new URLSearchParams({ workspace_id: workspace.id, limit: '200' });
-      if (cursor) query.set('cursor', cursor);
-      const page = await request<{ results: Folder[]; next_cursor: string | null }>(`/folders?${query}`, { signal });
-      all.push(...page.results);
-      cursor = page.next_cursor;
-    } while (cursor);
-    return all;
+  /* One workspace whose folders cannot be read (a guest without access, a
+     workspace that has gone, a slow answer) used to fail the whole sync,
+     the tasks it had just read included, and on every poll after (#466). Its
+     folders are now kept as they were and read again with the others later. */
+  const results = await Promise.all(teams.map(async (workspace) => {
+    try {
+      const all: Folder[] = [];
+      let cursor: string | null = null;
+      do {
+        const query = new URLSearchParams({ workspace_id: workspace.id, limit: '200' });
+        if (cursor) query.set('cursor', cursor);
+        const page = await request<{ results: Folder[]; next_cursor: string | null }>(`/folders?${query}`, { signal });
+        all.push(...page.results);
+        cursor = page.next_cursor;
+      } while (cursor);
+      return { id: workspace.id, folders: all };
+    } catch (error) {
+      // A caller that gave up, or a token that is no longer valid, is everyone's problem.
+      if (signal?.aborted || error instanceof NotConnectedError || (error instanceof ApiError && error.isAuthError)) throw error;
+      return { id: workspace.id, folders: null, error };
+    }
   }));
-  return { ...response, folders: [...(response.folders ?? []), ...folders.flat()], refreshedFolderWorkspaces: [...new Set([...Object.keys(knownWorkspaces), ...workspaces.map((w) => w.id)])] };
-
+  lastFolderRefresh = Date.now();
+  const failed = results.filter((result) => result.folders === null);
+  const unread = new Set(failed.map((result) => result.id));
+  return {
+    ...response,
+    folders: [...(response.folders ?? []), ...results.flatMap((result) => result.folders ?? [])],
+    refreshedFolderWorkspaces: [...new Set([...Object.keys(knownWorkspaces), ...workspaces.map((w) => w.id)])].filter((id) => !unread.has(id)),
+    ...(failed.length ? { failedFolderWorkspaces: failed.map((result) => ({ id: result.id, error: result.error })) } : {}),
+  };
 }
 
 type Keyed = { id: string; is_deleted?: boolean };
@@ -90,13 +117,17 @@ function mergeCollection<T extends Keyed>(
   fullSync: boolean,
 ): Record<string, T> {
   if (!incoming) return fullSync ? {} : current;
-
+  if (!fullSync && incoming.length === 0) return current;
   const next: Record<string, T> = fullSync ? {} : { ...current };
   for (const entry of incoming) {
     if (entry.is_deleted) delete next[entry.id];
-    else next[entry.id] = entry;
+    else {
+      const old = current[entry.id];
+      next[entry.id] = old && JSON.stringify(old) === JSON.stringify(entry) ? old : entry;
+    }
   }
-  return next;
+  const keys = Object.keys(next);
+  return keys.length === Object.keys(current).length && keys.every((id) => next[id] === current[id]) ? current : next;
 }
 
 /** One state per person per project; a full sync replaces the lot. */
@@ -104,20 +135,33 @@ function mergeStates(
   current: CollaboratorState[], incoming: CollaboratorState[] | undefined, fullSync: boolean,
 ): CollaboratorState[] {
   if (!incoming) return fullSync ? [] : current;
+  if (!fullSync && incoming.length === 0) return current;
   const key = (state: CollaboratorState) => `${state.project_id}:${state.user_id}`;
   const next = new Map((fullSync ? [] : current).map((state) => [key(state), state]));
   for (const state of incoming) {
     if (state.is_deleted) next.delete(key(state));
     else next.set(key(state), state);
   }
-  return [...next.values()];
+  const values = [...next.values()];
+  return JSON.stringify(values) === JSON.stringify(current) ? current : values;
 }
 
 export function applySync(snapshot: Snapshot, response: SyncResponse): Snapshot {
   const full = response.full_sync;
+  const removed = response.refreshedFolderWorkspaces ?? [];
+  const retained = Object.values(snapshot.folders ?? {}).filter((folder) => !removed.includes(folder.workspace_id));
+  const incomingFolders = [...retained, ...(response.folders ?? [])];
+  /* A workspace whose folders could not be read keeps the ones it had, on a
+     full read as on an incremental one (#466). */
+  const keepUnread = (response.failedFolderWorkspaces ?? []).length > 0;
+  const folders = removed.length || keepUnread ? mergeCollection(snapshot.folders ?? {}, incomingFolders, true) : mergeCollection(snapshot.folders ?? {}, response.folders, full);
+  const counts = {
+    ...(full ? {} : snapshot.completedProjectCounts),
+    ...Object.fromEntries((response.completed_info ?? []).filter((info) => info.project_id && !info.section_id && !info.item_id && Number.isFinite(info.completed_items))
+      .map((info) => [info.project_id!, info.completed_items])),
+  };
   return {
-    folders: mergeCollection(Object.fromEntries(Object.entries(snapshot.folders ?? {}).filter(([, folder]) =>
-      !response.refreshedFolderWorkspaces?.includes(folder.workspace_id))), response.folders, full),
+    folders,
     items: mergeCollection(snapshot.items, response.items, full),
     projects: mergeCollection(snapshot.projects, response.projects, full),
     sections: mergeCollection(snapshot.sections, response.sections, full),
@@ -135,12 +179,8 @@ export function applySync(snapshot: Snapshot, response: SyncResponse): Snapshot 
     workspaces: mergeCollection(snapshot.workspaces, response.workspaces, full),
     notifications: mergeCollection(snapshot.notifications ?? {}, response.live_notifications, full),
     collaboratorStates: mergeStates(snapshot.collaboratorStates ?? [], response.collaborator_states ?? response.collaborators_states, full),
-    user: response.user ?? snapshot.user,
-    completedProjectCounts: {
-      ...(full ? {} : snapshot.completedProjectCounts),
-      ...Object.fromEntries((response.completed_info ?? []).filter((info) => info.project_id && !info.section_id && !info.item_id && Number.isFinite(info.completed_items))
-        .map((info) => [info.project_id!, info.completed_items])),
-    },
+    user: response.user && JSON.stringify(response.user) !== JSON.stringify(snapshot.user) ? response.user : snapshot.user,
+    completedProjectCounts: JSON.stringify(counts) === JSON.stringify(snapshot.completedProjectCounts) ? snapshot.completedProjectCounts : counts,
     syncToken: response.sync_token,
     syncedAt: Date.now(),
   };
