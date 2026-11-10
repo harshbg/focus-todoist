@@ -10,6 +10,9 @@ type Store = { getState: () => TestState; setState: (patch: Partial<TestState>) 
 
 test('#380 an icon-only button says what it is when the pointer rests on it', async ({ demo: page }) => {
   const caret = page.locator('.side-disclose').first();
+  // The Work/Personal switch makes the sidebar scroll here; a scroll puts tooltips away, so it settles first.
+  await caret.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
   await caret.hover();
   await expect(page.locator('.icontip')).toHaveText(/^Collapse /);
   await page.mouse.move(700, 400);

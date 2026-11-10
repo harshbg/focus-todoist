@@ -9,7 +9,12 @@ for (const [lang, names] of [
   test.describe(lang, () => {
   test.use({ locale: lang === 'fr' ? 'fr-FR' : 'en-US' });
   test(`the demo account in ${lang}: same person, workspaces and projects`, async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem('skipSetup', '1'));
+    // Personal mode with no project marked Work lists every project of the demo (SPEC §10.2).
+    await page.addInitScript(() => {
+      localStorage.setItem('skipSetup', '1');
+      localStorage.setItem('tde.mode', 'personal');
+      localStorage.setItem('tde.demoWork', 'off');
+    });
     await page.goto('/');
     await page.getByRole('button', { name: lang === 'fr' ? /données de démonstration/ : 'Explore with demo data' }).click();
     const side = page.locator('.sidebar');
