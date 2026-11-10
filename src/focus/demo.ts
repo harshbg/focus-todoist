@@ -18,8 +18,8 @@ export function demoFocusEntries(items: Item[], today: Date, seed = 43): FocusEn
   const tasks = items.filter((item) => !item.parent_id).slice(0, 10);
   const lanes = DEFAULT_FOCUS_PREFERENCES.lanes;
   const entries: FocusEntry[] = [];
-  // The demo's Website project is Work regardless of its translated name.
-  const workProjects = new Set(['site']);
+  // The demo's work projects are Work whatever their translated names (see scope.ts).
+  const workProjects = new Set(['studio', 'team', 'clients', 'atelier', 'aurel', 'bloom', 'site']);
 
   for (let back = 90; back >= 1; back -= 1) {
     const day = startOfDay(addDays(today, -back));
