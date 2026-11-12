@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { useStore } from '@/store/store';
 import { entryKey } from './domain/log';
 import { planLogWrite, readFocusLog, removeEntry, upsertEntry } from './domain/logStore';
+import { playChime, unlockChime } from './chime';
 import { blockEntry, isComplete, pauseBlock, readActiveBlock, resumeBlock, startBlock } from './domain/timer';
 import type { ActiveBlock } from './domain/timer';
 import type { FocusEntry, FocusPreferences, FocusRating } from './domain/types';
@@ -32,6 +33,8 @@ export interface FocusStore {
   active: ActiveBlock | null;
   /** The block just logged, for the "Block logged" card; cleared by dismiss() or the next start(). */
   justLogged: FocusEntry | null;
+  /** The length the last block was planned for: what the "continue" buttons offer first. */
+  lastPlannedMin: number | null;
 
   start(input: Pick<ActiveBlock, 'mode' | 'focusMode' | 'taskId' | 'title' | 'lane' | 'plannedMin'>): void;
   pause(): void;
@@ -105,7 +108,9 @@ async function writeLog(after: FocusEntry[]): Promise<void> {
 export const useFocusStore = create<FocusStore>()((set, get) => ({
   active: typeof window === 'undefined' ? null : storedActive(),
   justLogged: null,
+  lastPlannedMin: null,
   start(input) {
+    unlockChime();
     const active = startBlock(input, Date.now());
     displayGeneration += 1;
     set({ active, justLogged: null });
@@ -130,10 +135,13 @@ export const useFocusStore = create<FocusStore>()((set, get) => ({
   async finish() {
     const current = get().active;
     if (!current) return null;
-    const entry = blockEntry(current, Date.now());
+    const now = Date.now();
+    const entry = blockEntry(current, now);
     const generation = displayGeneration;
-    set({ active: null });
+    set({ active: null, lastPlannedMin: current.plannedMin });
     publishActive(null);
+    // A block that ran its full length rings; one stopped early does not.
+    if (isComplete(current, now) && useStore.getState().prefs.focus.sound) playChime();
     if (!entry) return null;
     const entries = await freshEntries();
     await writeLog(upsertEntry(entries, entry));
