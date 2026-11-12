@@ -15,7 +15,7 @@ import { QuestPips } from '../pixel/QuestPips';
 import { entryKey } from '../domain/log';
 import { todayProgress } from '../domain/metrics';
 import { focusQueue } from '../domain/queue';
-import { elapsedMs, formatClock, MIN_LOGGED_MINUTES, remainingMs } from '../domain/timer';
+import { continueLengths, elapsedMs, formatClock, MIN_LOGGED_MINUTES, remainingMs } from '../domain/timer';
 import type { FocusEntry, FocusRating } from '../domain/types';
 import { newTaskPlacement, type Mode } from '../domain/mode';
 import { mergeLabels } from '../domain/labels';
@@ -107,7 +107,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   const focusMode = useMode();
   const logs = useFocusLog();
   const now = useFocusNow();
-  const { active, justLogged, start, pause, resume, finish, discard, rate, dismiss, logManual, editEntry, deleteEntry } = useFocusStore();
+  const { active, justLogged, lastPlannedMin, start, pause, resume, finish, discard, rate, dismiss, logManual, editEntry, deleteEntry } = useFocusStore();
   const snapshot = useStore((state) => state.snapshot);
   const createTaskId = useStore((state) => state.createTaskId);
   const updateTask = useStore((state) => state.updateTask);
@@ -263,7 +263,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
           </div>
           <p className="fx-label fx-center">{t('focus.continueSame')}</p>
           <div className="fx-actions fx-center">
-            {prefs.blockLengths.map((minutes) => <button key={minutes} className="fx-btn fx-btn--primary" onClick={() => start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: plainTitle(justLogged.title), lane: justLogged.lane, plannedMin: minutes })}>{formatDuration(minutes, locale)}</button>)}
+            {continueLengths(prefs.blockLengths, lastPlannedMin).map((minutes, index) => <button key={minutes} className={index === 0 ? 'fx-btn fx-btn--primary' : 'fx-btn fx-btn--secondary'} onClick={() => start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: plainTitle(justLogged.title), lane: justLogged.lane, plannedMin: minutes })}>{formatDuration(minutes, locale)}</button>)}
             <button className="fx-btn fx-btn--secondary" onClick={() => { dismiss(); setSelectedId(null); setQuery(''); setLane(null); }}>{t('focus.newTask')}</button>
             <button className="fx-btn fx-btn--secondary" onClick={() => start({ mode: 'unwind', focusMode, taskId: null, title: t('focus.unwind'), lane: null, plannedMin: prefs.breakMin })}>{t('focus.takeBreak', { minutes: prefs.breakMin })}</button>
           </div>

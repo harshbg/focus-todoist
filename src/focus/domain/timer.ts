@@ -115,3 +115,12 @@ export function readActiveBlock(stored: unknown): ActiveBlock | null {
   if (block.pausedAt !== null && (block.pausedAt < block.startedAt || block.pausedMs > block.pausedAt - block.startedAt)) return null;
   return block as unknown as ActiveBlock;
 }
+
+/**
+ * The lengths to offer after a block, the one just finished first: someone who
+ * just did an hour is most likely to want another hour.
+ */
+export function continueLengths(lengths: readonly number[], last: number | null): number[] {
+  if (last === null || !Number.isInteger(last) || last < 1) return [...lengths];
+  return [last, ...lengths.filter((minutes) => minutes !== last)];
+}

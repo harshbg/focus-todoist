@@ -75,7 +75,8 @@ function Brick({ x, y, shade, className }: { x: number; y: number; shade: readon
  * in growing order — the trunk, then each row of leaves from the widest up.
  * Columns are centred on 0.
  */
-const TREE_ROWS = [11, 11, 11, 9, 7];
+// A whole crown: it widens from the trunk, holds, then rounds off to a point at the top.
+const TREE_ROWS = [7, 9, 11, 11, 11, 9, 7, 5, 3];
 const TREE_CELLS: ReadonlyArray<{ col: number; row: number; trunk: boolean }> = [
   { col: 0, row: 0, trunk: true },
   { col: 0, row: 1, trunk: true },
@@ -165,7 +166,7 @@ export function FocusScene({
 
   // Trees: tiered pines that grow with the block, centred in the space beside the pyramid.
   const treeCell = fill
-    ? (skyHeight * 0.26) / TREE_TOTAL_ROWS
+    ? (skyHeight * 0.4) / TREE_TOTAL_ROWS
     : Math.min((pyramidLeft - 4) / 11.5, (skyHeight * 0.5) / TREE_TOTAL_ROWS);
   // A filled scene keeps its trees near the edges, however wide the sky.
   const treeInset = fill ? treeCell * 6 + 4 : pyramidLeft / 2;

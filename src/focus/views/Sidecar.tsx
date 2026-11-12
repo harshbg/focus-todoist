@@ -12,7 +12,7 @@ import { shortDuration } from '../domain/format';
 import { todayProgress } from '../domain/metrics';
 import { entriesForMode } from '../domain/modeEntries';
 import { settingsFor } from '../domain/settings';
-import { elapsedMs, formatClock, MIN_LOGGED_MINUTES, remainingMs } from '../domain/timer';
+import { continueLengths, elapsedMs, formatClock, MIN_LOGGED_MINUTES, remainingMs } from '../domain/timer';
 import type { FocusRating } from '../domain/types';
 import { useMode } from '../mode-store';
 import { useFocusLog, useFocusNow, useFocusPreferences, useFocusStore } from '../store';
@@ -40,7 +40,8 @@ export function SidecarPage() {
   const now = useFocusNow();
   const updateTask = useStore((state) => state.updateTask);
   const confirm = useConfirm();
-  const { active, justLogged, start, pause, resume, finish, discard, rate, dismiss } = useFocusStore();
+  const { active, justLogged, lastPlannedMin, start, pause, resume, finish, discard, rate, dismiss } = useFocusStore();
+  const nextLengths = continueLengths(prefs.blockLengths, lastPlannedMin);
   const settings = useMemo(() => settingsFor(prefs, focusMode), [prefs, focusMode]);
   const progress = useMemo(() => todayProgress(entriesForMode(logs, focusMode), settings, new Date(now)), [logs, focusMode, settings, now]);
 
@@ -56,7 +57,8 @@ export function SidecarPage() {
   const chosenLane = task ? laneOf(task.labels) : lane;
   const lengths = linked.minutes && !prefs.blockLengths.includes(linked.minutes)
     ? [linked.minutes, ...prefs.blockLengths] : prefs.blockLengths;
-  const remaining = active ? remainingMs(active, now) : (linked.minutes ?? prefs.blockLengths[0] ?? 30) * 60_000;
+  // A finished block reads 00:00 until the next one starts, as the prototype's clock does.
+  const remaining = active ? remainingMs(active, now) : justLogged ? 0 : (linked.minutes ?? prefs.blockLengths[0] ?? 30) * 60_000;
   const quest = {
     label: t('focus.dailyQuest'),
     minutesLabel: t('focus.questMinutes', { minutes: shortDuration(progress.minutes), target: shortDuration(progress.target) }),
@@ -103,7 +105,7 @@ export function SidecarPage() {
         if (active.pausedAt === null) pause();
         else resume();
       } else if (justLogged) {
-        const minutes = prefs.blockLengths[0] ?? 25;
+        const minutes = nextLengths[0] ?? 25;
         start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: plainTitle(justLogged.title), lane: justLogged.lane, plannedMin: minutes });
       } else {
         const minutes = lengths[0] ?? prefs.blockLengths[0] ?? 25;
@@ -117,7 +119,7 @@ export function SidecarPage() {
     } else if (!active && (event.key === '1' || event.key === '2' || event.key === '3')) {
       const index = Number(event.key) - 1;
       if (justLogged) {
-        const minutes = prefs.blockLengths[index];
+        const minutes = nextLengths[index];
         if (minutes !== undefined) {
           event.preventDefault();
           start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: plainTitle(justLogged.title), lane: justLogged.lane, plannedMin: minutes });
@@ -173,7 +175,7 @@ export function SidecarPage() {
       </div>
       <p className="fx-sc-type">{t('focus.continueSame')}</p>
       <div className="fx-sc-buttons">
-        {prefs.blockLengths.map((minutes) => <button key={minutes} className="fx-sc-btn fx-sc-btn--go"
+        {nextLengths.map((minutes, index) => <button key={minutes} className={index === 0 ? 'fx-sc-btn fx-sc-btn--go' : 'fx-sc-btn'}
           onClick={() => start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: plainTitle(justLogged.title), lane: justLogged.lane, plannedMin: minutes })}>{formatDuration(minutes, locale)}</button>)}
         <button className="fx-sc-btn" onClick={() => { dismiss(); setTaskId(null); setQuery(''); setLane(null); }}>{t('focus.newTask')}</button>
         <button className="fx-sc-btn" onClick={takeBreak}>{t('focus.takeBreak', { minutes: prefs.breakMin })}</button>

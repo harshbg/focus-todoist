@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  continueLengths,
   blockEntry, elapsedMs, formatClock, isComplete, pauseBlock, readActiveBlock,
   remainingMs, resumeBlock, startBlock,
 } from './timer';
@@ -106,5 +107,13 @@ describe('stored blocks', () => {
     { ...valid, pausedAt: startedAt + minute, pausedMs: 2 * minute },
   ])('rejects an invalid stored block', (stored) => {
     expect(readActiveBlock(stored)).toBeNull();
+  });
+});
+
+describe('continueLengths', () => {
+  it('puts the length just finished first', () => {
+    expect(continueLengths([30, 60, 120], 60)).toEqual([60, 30, 120]);
+    expect(continueLengths([30, 60, 120], 45)).toEqual([45, 30, 60, 120]);
+    expect(continueLengths([30, 60, 120], null)).toEqual([30, 60, 120]);
   });
 });
