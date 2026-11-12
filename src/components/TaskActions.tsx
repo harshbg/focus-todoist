@@ -28,6 +28,7 @@ import { dropMutation, moveArgs, type DropTarget } from '@/domain/dnd';
 import { updateItem, moveItem } from '@/api/commands';
 import type { Item, Snapshot } from '@/domain/types';
 import { byChildOrder, bySectionOrder } from '@/domain/orderKey';
+import { StartFocus } from '@/focus/views/StartFocus';
 
 
 /** A word with its case and accents set aside, so "Été" is found by "ete". */
@@ -787,6 +788,8 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep, contextOnly = fa
               phone that button is the one the tray leaves out. An estimate is
               not: it is the number this whole app is built on, and asking for
               it should be a swipe rather than a trip through the panel. */}
+          {/* Deep Work: start a focus block on this task, after choosing its length. */}
+          <StartFocus task={item} variant="row" />
           <button
             className="rowact-wide"
             aria-label={t('task.edit')}

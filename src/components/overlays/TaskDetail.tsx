@@ -9,6 +9,7 @@ import { copyText, isTemporaryId, todoistTaskUrl } from '@/api/links';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { Overlay } from './Overlay';
 import { PlanDialog } from '@/focus/views/PlanDialog';
+import { StartFocus } from '@/focus/views/StartFocus';
 import { TASK_COLORS, setTaskColor, taskColorStyle, useTaskColor } from '@/focus/taskColors';
 import type { TranslationKey } from '@/i18n/en';
 import { isTopOverlay } from './overlayStack';
@@ -1111,10 +1112,13 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
           {/* Focus: plan a block on this task, with an optional Google Calendar event (PLAN-UI.md §1). */}
           <div className="prop" data-prop="focus">
             <PropLabel name={t('focus.planTitle')} prop="focus" />
-            <button type="button" className="fselect-face propbtn" onClick={() => setPlanOpen(true)}>
-              <Icon name="calendar" size="sm" />
-              <span className="fselect-value">{t('focus.planBlock')}</span>
-            </button>
+            <div className="fx-propbtns">
+              <StartFocus task={item} variant="panel" />
+              <button type="button" className="fselect-face propbtn" onClick={() => setPlanOpen(true)}>
+                <Icon name="calendar" size="sm" />
+                <span className="fselect-value">{t('focus.planBlock')}</span>
+              </button>
+            </div>
           </div>
 
           {/* Focus: custom task title colour in this app (FORMATTING.md §2) */}
