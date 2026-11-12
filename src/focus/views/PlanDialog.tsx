@@ -6,6 +6,7 @@ import { Icon } from '@/components/Icon';
 import type { Item } from '@/domain/types';
 import { hasTime } from '@/domain/dates';
 import { useT } from '@/hooks/useT';
+import { CalendarChoices } from './CalendarChoices';
 import { canPlanBlock, initialPlanLength, usePlanBlock } from '../planBlock';
 import { setFocusPreferences, useFocusPreferences } from '../store';
 import './focus.css';
@@ -28,19 +29,15 @@ export function PlanDialog({ task, onClose }: PlanDialogProps) {
   const [when, setWhen] = useState(() => (task.due && hasTime(task.due) ? task.due.date : ''));
   // Prefill length with task's duration or estimate if it has one, else 60 minutes
   const [length, setLength] = useState(() => initialPlanLength(task));
-  const [addToCalendar, setAddToCalendar] = useState(() => prefs.calendarDefault);
+  const calendars = prefs.calendars;
 
   const recurring = Boolean(task.due?.is_recurring);
   const canSchedule = canPlanBlock(task, when, length) && !saving;
 
-  const toggleCalendar = (checked: boolean) => {
-    setAddToCalendar(checked);
-    setFocusPreferences({ calendarDefault: checked });
-  };
 
   const handleSchedule = async () => {
     if (!canSchedule) return;
-    const ok = await schedule(task, when, length, addToCalendar);
+    const ok = await schedule(task, when, length, calendars);
     if (ok) {
       onClose();
     }
@@ -88,14 +85,7 @@ export function PlanDialog({ task, onClose }: PlanDialogProps) {
           />
         </div>
 
-        <label className="checkrow">
-          <input
-            type="checkbox"
-            checked={addToCalendar}
-            onChange={(e) => toggleCalendar(e.target.checked)}
-          />
-          <span>{t('focus.planCalendar')}</span>
-        </label>
+        <CalendarChoices value={calendars} onChange={(next) => setFocusPreferences({ calendars: next })} rowClassName="checkrow" />
 
         {recurring && (
           <p className="menuhint" style={{ color: 'var(--warn)' }}>

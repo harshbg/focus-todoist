@@ -1438,3 +1438,14 @@
 /* The composer's calendar chip keeps its words while off: next to the date chip, a bare calendar icon was ambiguous. */
 .composer-chips .fselect-face.chipface.unset.fx-calchip { width: auto; padding: 0 10px; gap: 6px; }
 .composer-chips .fselect-face.chipface.unset.fx-calchip .fselect-value { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; }
+
+/* Calendar choices: three checkboxes under a small label, in whichever look surrounds them */
+.fx-calchoices { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fx-calchoices legend { padding: 0; margin-bottom: 4px; font-size: 12px; font-weight: 600; color: var(--muted, var(--fx-muted)); }
+.fx-calchip-wrap { position: relative; display: inline-flex; }
+.fx-calpop { position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; min-width: 230px; padding: 12px 14px; }
+/* Other calendars still to add: a small panel at the foot of the window, in the app's own look */
+.fx-morecal { position: fixed; right: 20px; bottom: 20px; z-index: 300; max-width: 360px; padding: 14px 16px; border-radius: 14px;
+  background: var(--surface, #fff); color: var(--text, #222); box-shadow: 0 10px 30px rgba(0,0,0,.18); border: 1px solid var(--border, #e5e5e5); }
+.fx-morecal p { margin: 0 0 10px; font-size: 14px; }
+.fx-morecal-buttons { display: flex; flex-wrap: wrap; gap: 8px; }

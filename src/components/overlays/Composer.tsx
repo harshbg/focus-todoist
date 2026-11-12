@@ -31,7 +31,9 @@ import { byLabelOrder } from '@/domain/orderKey';
 import { useMode } from '@/focus/mode-store';
 import { newTaskPlacement } from '@/focus/domain/mode';
 import { mergeLabels } from '@/focus/domain/labels';
-import { canAddToCalendar, composerCalendarUrl } from '@/focus/planBlock';
+import { canAddToCalendar, composerCalendarLinks } from '@/focus/planBlock';
+import { offerCalendars } from '@/focus/calendarFollowUps';
+import { CalendarChip } from '@/focus/views/CalendarChip';
 
 interface ComposerProps {
   open: boolean;
@@ -69,9 +71,8 @@ export function Composer({
   useKeyboardInset(open && phone);
   const naturalDates = useStore((s) => s.prefs.naturalDates);
   const dateFormat = useStore((s) => s.prefs.dateFormat);
-  /* Google Calendar toggle for focus blocks (PLAN-UI.md §2) */
-  const calendarDefault = useStore((s) => s.prefs.focus.calendarDefault);
-  const [calendarOn, setCalendarOn] = useState(calendarDefault);
+  /* Deep Work: the calendars a new task's block goes to, the remembered choice. */
+  const calendars = useStore((s) => s.prefs.focus.calendars);
   const mode = useMode();
   const marked = useMarkedWorkProjects();
 
@@ -159,8 +160,6 @@ export function Composer({
     setLabels(defaultLabels ?? []);
     setPriority(defaultPriority ?? 4);
     setMinutes(defaultMinutes ?? null);
-    /* Google Calendar toggle defaults to prefs.focus.calendarDefault */
-    setCalendarOn(calendarDefault);
     setTagsOpen(false);
     setTagQuery('');
     setSubtasks([]);
@@ -176,7 +175,7 @@ export function Composer({
     /* eslint-disable-next-line react-hooks/exhaustive-deps -- the array is
        built fresh by the caller on every render; its contents are the dep. */
   }, [open, defaultProjectId, defaultSectionId, defaultDate, defaultMinutes, defaultPriority, defaultLabels?.join('\u0000'),
-    inboxId, defaultResponsibleUid, calendarDefault]);
+    inboxId, defaultResponsibleUid]);
 
   useEffect(() => {
     if (!open || !projectId || !responsibleUid || canAssign(snapshot, projectId, responsibleUid)) return;
@@ -355,7 +354,7 @@ export function Composer({
     submitting.current = true;
     setSaving(true);
     /* Deep Work (PLAN-UI.md §2): open calendar tab synchronously before await to prevent popup blocking */
-    const shouldAddCalendar = Boolean(calendarOn && canAddToCalendar(date) && !createdId.current);
+    const shouldAddCalendar = Boolean(calendars.length > 0 && canAddToCalendar(date) && !createdId.current);
     const tab = shouldAddCalendar && typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
     try {
       const attachments: Array<{ id: string; attachment: NoteAttachment }> = [];
@@ -377,8 +376,10 @@ export function Composer({
       /* Deep Work (PLAN-UI.md §2): set calendar URL and clear opener */
       if (tab) {
         try {
-          tab.location.href = composerCalendarUrl(id, content, date, minutes);
+          const [first, ...rest] = composerCalendarLinks(id, content, date, minutes, calendars);
+          tab.location.href = first.url;
           tab.opener = null;
+          if (rest.length > 0) offerCalendars(rest);
         } catch {
           tab.close();
         }
@@ -740,18 +741,8 @@ export function Composer({
           )}
           <EstimateChip minutes={minutes} onChange={setMinutes} />
 
-          {/* Deep Work (PLAN-UI.md §2): Google Calendar focus block toggle */}
-          <button
-            type="button"
-            className={`fselect-face chipface fx-calchip${calendarOn ? '' : ' unset'}`}
-            aria-pressed={calendarOn}
-            disabled={!canCalendar}
-            title={!canCalendar ? t('focus.planCalendarNoTime') : undefined}
-            onClick={() => setCalendarOn((on) => !on)}
-          >
-            <Icon name="calendar" size="sm" />
-            <span className="fselect-value">{calendarOn ? t('focus.planCalendarToggle') : t('focus.planCalendarAdd')}</span>
-          </button>
+          {/* Deep Work: the calendars this task's block goes to. */}
+          <CalendarChip disabled={!canCalendar} />
 
           {!phone && placement}
         </div>

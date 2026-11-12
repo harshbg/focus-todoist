@@ -1,4 +1,5 @@
 import { isMatch } from 'date-fns';
+import { CALENDARS } from './calendar';
 import type { Mode } from './mode';
 import {
   DEFAULT_FOCUS_PREFERENCES,
@@ -58,7 +59,9 @@ export function settingsFor(prefs: FocusPreferences, mode: Mode): FocusSettings 
  * - lanes: trimmed non-empty strings, de-duplicated case-insensitively (first
  *   spelling kept), at most 12, order kept. An empty list is allowed.
  * - blockLengths: integers 5–240, de-duplicated and sorted; an empty result is the default.
- * - taskComment, sound, calendarDefault: booleans.
+ * - taskComment, sound: booleans.
+ * - calendars: known calendar ids, once each, in CALENDARS order. Settings saved
+ *   before there was a choice say `calendarDefault: true`, which reads as Google.
  */
 export function readFocusPreferences(stored: unknown): FocusPreferences {
   const defaults = DEFAULT_FOCUS_PREFERENCES;
@@ -117,7 +120,12 @@ export function readFocusPreferences(stored: unknown): FocusPreferences {
 
   if (typeof fields.taskComment === 'boolean') result.taskComment = fields.taskComment;
   if (typeof fields.sound === 'boolean') result.sound = fields.sound;
-  if (typeof fields.calendarDefault === 'boolean') result.calendarDefault = fields.calendarDefault;
+  if (Array.isArray(fields.calendars)) {
+    const chosen = new Set(fields.calendars);
+    result.calendars = CALENDARS.filter((id) => chosen.has(id));
+  } else if (fields.calendarDefault === true) {
+    result.calendars = ['google'];
+  }
   if (fields.guidance !== null && typeof fields.guidance === 'object' && !Array.isArray(fields.guidance)) {
     const guidance = fields.guidance as Record<string, unknown>;
     for (const key of ['startAlerts', 'gentleRestart', 'weeklyInsight'] as const) {

@@ -23,6 +23,7 @@ import { WeekView } from './views/WeekView';
 import { FocusView } from './focus/views/FocusView';
 import { ProgressView } from './focus/views/ProgressView';
 import { SidecarPage } from './focus/views/Sidecar';
+import { MoreCalendars } from './focus/views/MoreCalendars';
 import { ModeSwitch } from './focus/views/ModeSwitch';
 import { SearchView } from './views/SearchView';
 import { UpcomingView } from './views/UpcomingView';
@@ -350,6 +351,8 @@ export function App() {
 
   return (
     <>
+      {/* Deep Work: the other calendars a planned block can still be added to. */}
+      <MoreCalendars />
       <ConfirmProvider>
         <DragProvider>
           <AppShell
