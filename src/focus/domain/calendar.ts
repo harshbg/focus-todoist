@@ -1,3 +1,4 @@
+import { addMinutes, format, parseISO } from 'date-fns';
 import { plainTitle } from '@/domain/markdown';
 
 /**
@@ -69,4 +70,41 @@ export function googleCalendarUrl(input: GoogleCalendarInput): string {
   const text = encodeURIComponent(`Focus: ${plainTitle(input.title)}`);
   const details = encodeURIComponent(`Start this focus block:\n${input.link}`);
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}`;
+}
+
+/** The calendars a planned block can be added to, in the order they are offered and opened. */
+export type CalendarId = 'google' | 'outlook' | 'office365';
+export const CALENDARS: readonly CalendarId[] = ['google', 'outlook', 'office365'];
+
+/** Outlook's hosts: Outlook.com for personal accounts, Outlook on the web for work or school ones. */
+const OUTLOOK_HOSTS = { outlook: 'outlook.live.com', office365: 'outlook.office.com' } as const;
+
+/**
+ * The start and end Outlook reads: ISO times carrying this device's offset for
+ * that date, so the event lands at the planned hour whatever the calendar's
+ * own time zone. The start is the block's floating local time.
+ */
+export function outlookDates(start: string, minutes: number): { startdt: string; enddt: string } {
+  const begin = parseISO(start);
+  const stamp = (date: Date) => format(date, "yyyy-MM-dd'T'HH:mm:ssXXX");
+  return { startdt: stamp(begin), enddt: stamp(addMinutes(begin, minutes)) };
+}
+
+/** Outlook's "new event" page, filled in. */
+export function outlookCalendarUrl(id: 'outlook' | 'office365', input: GoogleCalendarInput): string {
+  const { startdt, enddt } = outlookDates(input.start, input.minutes);
+  const query = [
+    ['path', '/calendar/action/compose'],
+    ['rru', 'addevent'],
+    ['subject', `Focus: ${plainTitle(input.title)}`],
+    ['startdt', startdt],
+    ['enddt', enddt],
+    ['body', `Start this focus block:\n${input.link}`],
+  ].map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&');
+  return `https://${OUTLOOK_HOSTS[id]}/calendar/0/deeplink/compose?${query}`;
+}
+
+/** The "new event" page of any calendar the app offers, filled in with the block. */
+export function calendarUrl(id: CalendarId, input: GoogleCalendarInput): string {
+  return id === 'google' ? googleCalendarUrl(input) : outlookCalendarUrl(id, input);
 }

@@ -3,7 +3,8 @@ import { useStore } from '@/store/store';
 import { plainTitle } from '@/domain/markdown';
 import { durationMinutes, readEstimate } from '@/domain/estimates';
 import type { Item } from '@/domain/types';
-import { googleCalendarUrl, sidecarLink } from './domain/calendar';
+import { calendarUrl, googleCalendarUrl, sidecarLink, type CalendarId } from './domain/calendar';
+import { offerCalendars, type CalendarLink } from './calendarFollowUps';
 
 /**
  * Normalizes an API start date-time string so Todoist accepts it as a floating
@@ -84,10 +85,35 @@ export function getCalendarUrl(
   });
 }
 
+/** The "new event" links of the chosen calendars for a planned block, in the order they are offered. */
+export function calendarLinks(
+  task: Pick<Item, 'id' | 'content'>,
+  start: string,
+  minutes: number,
+  calendars: readonly CalendarId[],
+  baseOriginAndPath?: string,
+): CalendarLink[] {
+  const base = baseOriginAndPath
+    ?? (typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : '');
+  const input = { title: plainTitle(task.content), start: start.trim(), minutes, link: sidecarLink(base, task.id, minutes) };
+  return calendars.map((id) => ({ id, url: calendarUrl(id, input) }));
+}
+
 /**
  * Builds the Google Calendar event creation URL for a newly created composer task (PLAN-UI.md §2).
  * Length defaults to the task's estimate if given, else 60 minutes.
  */
+export function composerCalendarLinks(
+  id: string,
+  content: string,
+  start: string,
+  minutes: number | null | undefined,
+  calendars: readonly CalendarId[],
+  baseOriginAndPath?: string,
+): CalendarLink[] {
+  return calendarLinks({ id, content }, start, composerPlanLength(minutes), calendars, baseOriginAndPath);
+}
+
 export function composerCalendarUrl(
   id: string,
   content: string,
@@ -103,7 +129,7 @@ export type PlanBlockSchedule = (
   task: Item,
   start: string,
   minutes: number,
-  addToCalendar: boolean,
+  calendars: readonly CalendarId[],
 ) => Promise<boolean>;
 
 export interface PlanBlockHook extends PlanBlockSchedule {
@@ -123,18 +149,15 @@ export function usePlanBlock(): PlanBlockHook {
   const savingRef = useRef(false);
 
   const schedule = useCallback<PlanBlockSchedule>(
-    async (task, start, minutes, addToCalendar) => {
+    async (task, start, minutes, calendars) => {
       if (!canPlanBlock(task, start, minutes) || savingRef.current) {
         return false;
       }
 
-      if (addToCalendar) {
-        const url = getCalendarUrl(task, start, minutes);
-        // Opened synchronously in the click event before any await to avoid popup blocking.
-        if (typeof window !== 'undefined') {
-          window.open(url, '_blank', 'noopener');
-        }
-      }
+      // A click may open one tab: the first calendar opens now, before any await,
+      // and the others wait as buttons, each opened by a click of its own.
+      const [first, ...rest] = calendarLinks(task, start, minutes, calendars);
+      if (first && typeof window !== 'undefined') window.open(first.url, '_blank', 'noopener');
 
       savingRef.current = true;
       setSaving(true);
@@ -144,6 +167,7 @@ export function usePlanBlock(): PlanBlockHook {
           due: { date, string: date, lang: 'en', timezone: null, is_recurring: false },
           duration: { amount: minutes, unit: 'minute' },
         });
+        if (rest.length > 0) offerCalendars(rest);
         return true;
       } catch {
         return false;
@@ -156,7 +180,7 @@ export function usePlanBlock(): PlanBlockHook {
   );
 
   const hookResult = Object.assign(
-    (t: Item, s: string, m: number, c: boolean) => schedule(t, s, m, c),
+    (t: Item, s: string, m: number, c: readonly CalendarId[]) => schedule(t, s, m, c),
     { schedule, saving },
   );
 

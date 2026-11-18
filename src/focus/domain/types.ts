@@ -2,6 +2,7 @@
  * The focus feature's data. A focus entry is the only fact stored (in a
  * Todoist comment, see log.ts); everything shown about it is derived.
  */
+import type { CalendarId } from './calendar';
 import type { Mode } from './mode';
 
 export type FocusRating = 1 | 2 | 3 | 4 | 5;
@@ -72,8 +73,8 @@ export interface FocusPreferences extends FocusSettings {
   /** Also leave a readable comment on the task when a block ends. */
   taskComment: boolean;
   sound: boolean;
-  /** Whether to add scheduled focus blocks to Google Calendar by default. */
-  calendarDefault: boolean;
+  /** The calendars a planned block is added to; empty adds it to none. */
+  calendars: CalendarId[];
   /** Gentle guidance nudges, all opt-in; they show only while the app is open. */
   guidance: { startAlerts: boolean; gentleRestart: boolean; weeklyInsight: boolean };
   /** Custom task title colours shown only in this app (FORMATTING.md §2). */
@@ -95,7 +96,7 @@ export const DEFAULT_FOCUS_PREFERENCES: FocusPreferences = {
   breakMin: 5,
   taskComment: false,
   sound: true,
-  calendarDefault: false,
+  calendars: [],
   guidance: { startAlerts: false, gentleRestart: false, weeklyInsight: false },
   taskColors: {},
 };

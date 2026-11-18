@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { formatCalendarDates, googleCalendarUrl, sidecarLink } from './calendar';
+import { format } from 'date-fns';
+import { calendarUrl, formatCalendarDates, googleCalendarUrl, outlookDates, sidecarLink } from './calendar';
 
 describe('sidecarLink', () => {
   it('builds a sidecar link from origin + pathname', () => {
@@ -131,5 +132,30 @@ describe('googleCalendarUrl', () => {
 
     const parsed = new URL(url);
     expect(parsed.searchParams.get('text')).toBe('Focus: Finish feature and docs');
+  });
+});
+
+describe('Outlook links', () => {
+  const input = { title: 'Write **the** brief & plan', start: '2026-11-12T23:30', minutes: 60, link: 'https://todo.example/#/sidecar?task=1&min=60' };
+
+  it('carries this device\'s offset, even when the block ends the next day', () => {
+    const begin = new Date(2026, 10, 12, 23, 30);
+    const end = new Date(2026, 10, 13, 0, 30);
+    expect(outlookDates(input.start, 60)).toEqual({
+      startdt: format(begin, "yyyy-MM-dd'T'HH:mm:ssXXX"),
+      enddt: format(end, "yyyy-MM-dd'T'HH:mm:ssXXX"),
+    });
+  });
+
+  it('opens Outlook.com or Outlook for work, with the title, times and sidecar link encoded', () => {
+    const personal = new URL(calendarUrl('outlook', input));
+    expect(personal.host).toBe('outlook.live.com');
+    expect(personal.pathname).toBe('/calendar/0/deeplink/compose');
+    expect(personal.searchParams.get('subject')).toBe('Focus: Write the brief & plan');
+    expect(personal.searchParams.get('rru')).toBe('addevent');
+    expect(personal.searchParams.get('startdt')).toBe(outlookDates(input.start, 60).startdt);
+    expect(personal.searchParams.get('body')).toContain(input.link);
+    expect(new URL(calendarUrl('office365', input)).host).toBe('outlook.office.com');
+    expect(calendarUrl('google', input)).toBe(googleCalendarUrl(input));
   });
 });

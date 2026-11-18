@@ -75,16 +75,15 @@ describe('readFocusPreferences', () => {
   });
 
   it('accepts booleans and falls back for malformed booleans', () => {
-    expect(readFocusPreferences({ taskComment: true, sound: false, calendarDefault: true })).toMatchObject({
-      taskComment: true,
-      sound: false,
-      calendarDefault: true,
-    });
-    expect(readFocusPreferences({ taskComment: 'true', sound: 0, calendarDefault: 'yes' })).toMatchObject({
-      taskComment: false,
-      sound: true,
-      calendarDefault: false,
-    });
+    expect(readFocusPreferences({ taskComment: true, sound: false })).toMatchObject({ taskComment: true, sound: false });
+    expect(readFocusPreferences({ taskComment: 'true', sound: 0 })).toMatchObject({ taskComment: false, sound: true });
+  });
+
+  it('keeps known calendars once each, in order, and reads the old Google switch as Google', () => {
+    expect(readFocusPreferences({ calendars: ['office365', 'google', 'icloud', 'google'] }).calendars).toEqual(['google', 'office365']);
+    expect(readFocusPreferences({ calendarDefault: true }).calendars).toEqual(['google']);
+    expect(readFocusPreferences({ calendarDefault: true, calendars: [] }).calendars).toEqual([]);
+    expect(readFocusPreferences({ calendarDefault: 'yes' }).calendars).toEqual([]);
     expect(readFocusPreferences({ guidance: { startAlerts: true, gentleRestart: 'yes' } }).guidance)
       .toEqual({ startAlerts: true, gentleRestart: false, weeklyInsight: false });
   });

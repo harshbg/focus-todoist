@@ -5,6 +5,7 @@ import type { Item } from '@/domain/types';
 import { useT } from '@/hooks/useT';
 import { canPlanBlock, usePlanBlock } from '../planBlock';
 import { setFocusPreferences, useFocusPreferences } from '../store';
+import { CalendarChoices } from './CalendarChoices';
 import { TaskSearch } from './TaskSearch';
 
 export interface PlanFormProps {
@@ -29,21 +30,17 @@ export function PlanForm({ items, task: propTask, lengths: propLengths, onSchedu
   const [taskId, setTaskId] = useState<string | null>(propTask ? propTask.id : null);
   const [when, setWhen] = useState('');
   const [length, setLength] = useState(lengths[1] ?? lengths[0] ?? 60);
-  const [addToCalendar, setAddToCalendar] = useState(() => prefs.calendarDefault);
+  const calendars = prefs.calendars;
 
   const task = propTask ?? (items ? items.find((item) => item.id === taskId) ?? null : null);
   // A recurring task's date is its rule; overwriting it would end the series.
   const recurring = Boolean(task?.due?.is_recurring);
   const canSchedule = canPlanBlock(task, when, length) && !saving;
 
-  const toggleCalendar = (checked: boolean) => {
-    setAddToCalendar(checked);
-    setFocusPreferences({ calendarDefault: checked });
-  };
 
   const handleSchedule = async () => {
     if (!task || !when || recurring || saving) return;
-    const ok = await schedule(task, when, length, addToCalendar);
+    const ok = await schedule(task, when, length, calendars);
     if (ok) {
       if (!propTask) {
         setQuery('');
@@ -98,15 +95,8 @@ export function PlanForm({ items, task: propTask, lengths: propLengths, onSchedu
         >
           {t('focus.planSchedule')}
         </button>
-        <label className="fx-toggle fx-plan-calendar">
-          <input
-            type="checkbox"
-            checked={addToCalendar}
-            onChange={(event) => toggleCalendar(event.target.checked)}
-          />
-          {t('focus.planCalendar')}
-        </label>
       </div>
+      <CalendarChoices value={calendars} onChange={(next) => setFocusPreferences({ calendars: next })} rowClassName="fx-toggle" />
       <p className="fx-plan-note">{t('focus.planNote')}</p>
     </div>
   );
