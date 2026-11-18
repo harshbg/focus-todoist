@@ -1,9 +1,11 @@
+import { ProjectProgress } from './ProjectProgress';
+import { readFolderState, writeFolderState } from '@/domain/folderState';
+import { matrixRoots, matrixSettings } from '@/domain/eisenhower';
 import { SidebarResize } from './SidebarResize';
-import { addDays, endOfDay } from 'date-fns';
-import { dueDate, isToday } from '@/domain/dates';
+import { isToday } from '@/domain/dates';
 import { viewPrefs } from '@/store/prefs';
 import { assigneeItems } from '@/domain/assignees';
-import { datedRoots, childIndex, makeChildrenOf, openItems, applyFilters } from '@/store/selectors';
+import { datedRoots, labelRoots, childIndex, makeChildrenOf, openItems, applyFilters } from '@/store/selectors';
 import { useFilterCounts } from '@/hooks/useFilterResult';
 import { FilterMark } from './FilterMark';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
@@ -15,15 +17,17 @@ import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
 import { navigate, type Route } from '@/hooks/useRoute';
 import { projectCounts, projectTree, rootItems, type ProjectNode } from '@/store/selectors';
-import { bucketOf, hasLabel, somedayItems, upcomingItems, weekItems } from '@/domain/views';
+import { bucketOf, monthItems, somedayItems, weekItems } from '@/domain/views';
 import { markerStyle, avatarUrl } from '@/domain/colors';
 import { firstName, karmaStanding } from '@/domain/karma';
 import { readProjectIcon } from '@/domain/projectIcons';
-import { ProjectIcon } from './ProjectIconPicker';
-import type { ViewId } from '@/domain/types';
+import { ProjectIcon } from './ProjectIcon';
+import type { GroupKey, ViewId } from '@/domain/types';
 import type { DropTarget } from '@/domain/dnd';
 import type { TranslationKey } from '@/i18n';
 import { SyncStatus } from './SyncStatus';
+import { applyUpdate, useUpdateCard, useUpdateReady } from '@/lib/appUpdate';
+import { UpdateCard } from './UpdateCard';
 import { Droppable } from './dnd/Droppable';
 import { ProjectDropRow, ProjectRowSortable } from './dnd/ProjectRowSortable';
 import { FEEDBACK_URL } from '@/app-info';
@@ -38,6 +42,7 @@ import { useScopedSnapshot } from '@/focus/scope';
 
 interface SidebarProps {
   route: Route;
+  projectProgressCounts: { open: Record<string, number>; completed: Record<string, number> };
   onAddTask: () => void;
   onSearch: () => void;
   onIssues: () => void;
@@ -73,7 +78,7 @@ const GO_KEYS: Partial<Record<ViewId, string>> = {
 const HINT_DELAY_MS = 550;
 
 export function Sidebar({
-  route, onAddTask, onSearch, onIssues, onProjectSheet, issuesCount, variant = 'rail',
+  route, projectProgressCounts, onAddTask, onSearch, onIssues, onProjectSheet, issuesCount, variant = 'rail',
 }: SidebarProps) {
   /* The list scrolls under the Add task area, which grows with its contents
      (the sync line, a second row of buttons). The scroller keeps as much room
@@ -91,6 +96,8 @@ export function Sidebar({
     return () => observer.disconnect();
   }, []);
   const { t } = useT();
+  const updateReady = useUpdateReady();
+  const announcing = useUpdateCard();
   const { snapshot, items } = useData();
   // Focus mode (SPEC §10.2): counts, favourites and the project tree follow Work / Personal.
   const scopedSnapshot = useScopedSnapshot();
@@ -108,8 +115,30 @@ export function Sidebar({
   const draggingProjectId = useStore((s) => s.draggingProjectId);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const folderOwner = demo ? null : snapshot.user?.id;
+  const [folderState, setFolderState] = useState<{ owner: string | null; values: Record<string, boolean> }>({ owner: null, values: {} });
+  const openFolders = folderState.owner === folderOwner ? folderState.values : {};
+  useEffect(() => {
+    if (!folderOwner) { setFolderState({ owner: null, values: {} }); return; }
+    const read = () => {
+      try {
+        const values = readFolderState(localStorage, folderOwner);
+        setFolderState({ owner: folderOwner, values });
+      } catch { setFolderState({ owner: folderOwner, values: {} }); }
+    };
+    read();
+    window.addEventListener('enhanced:folders-changed', read);
+    window.addEventListener('storage', read);
+    return () => { window.removeEventListener('enhanced:folders-changed', read); window.removeEventListener('storage', read); };
+  }, [folderOwner]);
+  const toggleFolder = (id: string) => {
+    const values = { ...openFolders, [id]: !(openFolders[id] ?? true) };
+    setFolderState({ owner: folderOwner ?? null, values });
+    if (!folderOwner) return;
+    try {
+      if (writeFolderState(localStorage, folderOwner, values)) window.dispatchEvent(new Event('enhanced:folders-changed'));
+    } catch { /* Keep the choice for this session if storage is unavailable. */ }
+  };
   /** The project row whose action menu is open, and the button it hangs from. */
   const [rowMenu, setRowMenu] = useState<{ key: string; anchor: HTMLElement } | null>(null);
 
@@ -144,9 +173,7 @@ export function Sidebar({
 
   useEffect(() => hideHint, []);
 
-  const roots = useMemo(() => rootItems(items), [items]);
   const inboxId = snapshot.user?.inbox_project_id;
-
   const counts = useMemo(() => {
     const now = new Date();
     const scope = (key: string) => {
@@ -154,7 +181,11 @@ export function Sidebar({
       const scoped = { ...scopedSnapshot, items: assigneeItems(scopedSnapshot, filters.assignees) };
       /* A project's count is Todoist's: every open task, subtasks included,
          so the Inbox and the projects read the same number in both apps. */
-      const list = ['today', 'week', 'upcoming'].includes(key) ? datedRoots(openItems(scoped), scoped) : key === 'inbox' ? openItems(scoped) : rootItems(openItems(scoped));
+      /* The page lists its tasks under its own grouping and "Show subtasks"
+         (#409): the count reads them from the same place. Upcoming never groups. */
+      const dated = (group: GroupKey, layout: boolean) =>
+        datedRoots(openItems(scoped), scoped, group, { subtasks: filters.showSubtasks, layout, quick: prefs.showQuickGroup });
+      const list = key === 'upcoming' ? dated('none', false) : ['today', 'week'].includes(key) ? dated(viewPrefs(prefs, key).group, viewPrefs(prefs, key).group === 'none') : key === 'inbox' ? openItems(scoped) : rootItems(openItems(scoped));
       return applyFilters(list, ['today', 'week', 'upcoming'].includes(key) ? { ...filters, includeScheduled: true } : filters, snapshot, makeChildrenOf(childIndex(scoped)));
     };
     return {
@@ -166,10 +197,13 @@ export function Sidebar({
       /* The count has to match the page. A "My week" that no longer contains
          today must not keep counting today's work. */
       week: weekItems(scope('week'), now).filter((item) => viewPrefs(prefs, 'week').filters.includeScheduled || !isToday(item, now)).length,
-      upcoming: upcomingItems(scope('upcoming')).filter((item) => {
-        const date = dueDate(item);
-        return date !== null && date <= endOfDay(addDays(now, prefs.upcomingHorizonDays));
-      }).length,
+      matrix: (() => {
+        const filters = viewPrefs(prefs, 'matrix').filters;
+        const scoped = assigneeItems(snapshot, filters.assignees);
+        const workspaceItems = filters.workspaces.length ? Object.fromEntries(Object.entries(scoped).filter(([, item]) => filters.workspaces.includes(snapshot.projects[item.project_id]?.workspace_id ?? 'personal'))) : scoped;
+        return matrixRoots(openItems({ ...snapshot, items: workspaceItems }), snapshot.projects, matrixSettings(prefs, snapshot.user?.start_day)).cards.length;
+      })(),
+      month: monthItems(scope('month')).length,
       someday: somedayItems(scope('someday')).length,
       byProject: projectCounts(items),
     };
@@ -208,8 +242,10 @@ export function Sidebar({
     };
   }, [menuOpen]);
 
-  const toggleGroup = (key: string) =>
-    setOpenGroups((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
+  /* The groups (favourites, my projects, a workspace) are remembered with the
+     folders, under a prefix no project id can have. */
+  const isGroupOpen = (key: string) => openFolders[`group:${key}`] ?? true;
+  const toggleGroup = (key: string) => toggleFolder(`group:${key}`);
 
   const workspaceOrder = useStore((s) => s.prefs.workspaceOrder);
   // Focus mode (SPEC §10.2): project tree only shows projects allowed for the current mode.
@@ -289,8 +325,9 @@ export function Sidebar({
         return navItem('inbox', 'inbox', 'nav.inbox', counts.inbox,
           inboxId ? { kind: 'project', projectId: inboxId } : undefined);
       case 'today': return navItem('today', 'calendar', 'nav.today', counts.today, { kind: 'today' });
-      case 'week': return navItem('week', 'week', 'nav.week', counts.week, { kind: 'anytime' });
-      case 'upcoming': return navItem('upcoming', 'upcoming', 'nav.upcoming', counts.upcoming);
+      case 'week': return navItem('week', 'week', 'nav.sideWeek', counts.week, { kind: 'anytime' });
+      case 'month': return navItem('month', 'calendar', 'nav.sideMonth', counts.month, { kind: 'month' });
+      case 'upcoming': return navItem('upcoming', 'upcoming', 'nav.upcoming', 0);
       case 'someday': return navItem('someday', 'someday', 'nav.someday', counts.someday, { kind: 'someday' });
       case 'focus': return navItem('focus', 'clock', 'nav.focus', 0);
       case 'progress': return navItem('progress', 'trend', 'nav.progress', 0);
@@ -301,7 +338,7 @@ export function Sidebar({
       case 'logbook':
         return navItem('insights', 'tasks', 'insights.logbook', 0, undefined,
           { id: 'logbook', current: insightsOnLogbook });
-      case 'matrix': return navItem('matrix', 'dashboard', 'nav.matrix', 0);
+      case 'matrix': return navItem('matrix', 'dashboard', 'nav.matrix', counts.matrix);
       case 'labels': return navItem('labels', 'tag', 'nav.labels', 0);
       case 'filters':
         return navItem('filters', 'filter', 'nav.filters', 0, undefined,
@@ -323,7 +360,7 @@ export function Sidebar({
               drag a project into. */}
           {node.nativeFolder ? <div className="navrow">
             <button className="navitem folderitem" aria-expanded={isOpen}
-              onClick={() => setOpenFolders((prev) => ({ ...prev, [project.id]: !isOpen }))}>
+              onClick={() => toggleFolder(project.id)}>
               <Icon name="project" /><span className="label">{project.name}</span>
               <Icon name={isOpen ? 'caret-up' : 'caret'} size="sm" className="disclose" />
             </button>
@@ -332,7 +369,7 @@ export function Sidebar({
               className="navitem folderitem"
               data-tour="folder"
               aria-expanded={isOpen}
-              onClick={() => setOpenFolders((prev) => ({ ...prev, [project.id]: !isOpen }))}
+              onClick={() => toggleFolder(project.id)}
             >
               <Icon name="project" />
               <span className="label">{project.name}</span>
@@ -386,15 +423,15 @@ export function Sidebar({
                  instruction to go to the project. */
               onClick={() => { if (!dragClock.justEnded()) navigate('project', project.id); }}
             >
-              {folderLike
-                ? <Icon name="project" />
-                : (
+              {
                   <span className="hash" style={markerStyle(project.color)}>
                     {customIcon
                       ? <ProjectIcon iconId={customIcon} size="sm" style={{ color: 'inherit' }} />
-                      : '#'}
+                      : <ProjectProgress open={projectProgressCounts.open[project.id] ?? 0} completed={projectProgressCounts.completed[project.id]}
+                          label={projectProgressCounts.completed[project.id] === undefined ? t('project.progressUnknown') : (projectProgressCounts.open[project.id] ?? 0) + projectProgressCounts.completed[project.id] === 0 ? t('project.progressEmpty') : t('project.progressCompletedAll', { done: projectProgressCounts.completed[project.id], total: (projectProgressCounts.open[project.id] ?? 0) + projectProgressCounts.completed[project.id] })} />}
+
                   </span>
-                )}
+              }
               <span className="label">{project.name}</span>
             </button>
 
@@ -423,7 +460,7 @@ export function Sidebar({
                 className={`navtwist${folderLike ? ' foldertoggle' : ''}`}
                 aria-expanded={childrenOpen}
                 aria-label={project.name}
-                onClick={() => setOpenFolders((prev) => ({ ...prev, [project.id]: !childrenOpen }))}
+                onClick={() => toggleFolder(project.id)}
               >
                 <Icon name={childrenOpen ? 'caret-up' : 'caret'} size="sm" />
               </button>
@@ -576,7 +613,7 @@ export function Sidebar({
         {(favourites.labels.length > 0 || favourites.projects.length > 0 || favourites.filters.length > 0) && (
           <SideGroup
             title={t('nav.favourites')}
-            open={openGroups.favourites ?? true}
+            open={isGroupOpen('favourites')}
             onToggle={() => toggleGroup('favourites')}
             /* The whole section, not its heading: "put this in there" is
                aimed at the box, and asking for the one line of text at the
@@ -586,7 +623,7 @@ export function Sidebar({
             {favourites.projects.map((p) =>
               projectNode({ project: p, children: [] }, 'fav-'))}
             {favourites.labels.map((l) =>
-              tagItem(l.name, l.color, roots.filter((i) => hasLabel(i, l.name)).length))}
+              tagItem(l.name, l.color, labelRoots(items, l.name, snapshot).length))}
             {/* The count is Todoist's answer to the query, asked again when
                 the tasks change; it shows once Todoist has answered. */}
             {favourites.filters.map((f) => (
@@ -610,9 +647,9 @@ export function Sidebar({
             <SideGroup
               key={key}
               title={workspace.name ?? t('nav.myProjects')}
-              logo={workspace.workspaceId ? snapshot.workspaces[workspace.workspaceId]?.logo_big ?? null : null}
-              workspaceId={workspace.workspaceId}
-              open={openGroups[key] ?? true}
+              logo={workspace.workspaceId ? snapshot.workspaces[workspace.workspaceId]?.logo_big ?? null : snapshot.user?.avatar_big ?? null}
+              workspaceId={workspace.workspaceId ?? 'personal'}
+              open={isGroupOpen(key)}
               onOpen={() => navigate('workspace', key)}
               onToggle={() => toggleGroup(key)}
               onAdd={() => onProjectSheet({
@@ -637,6 +674,16 @@ export function Sidebar({
         <div className="footrow">
           <SyncStatus />
         </div>
+        {updateReady && (
+          <div className="updatewrap">
+            {!sheet && <UpdateCard />}
+            <button className={`updatebtn${announcing && !sheet ? ' announced' : ''}`} onClick={applyUpdate} title={t('update.hint')}>
+              <Icon name="sparkles" size="sm" />
+              <span>{t('update.available')}</span>
+              <strong>{t('update.apply')}</strong>
+            </button>
+          </div>
+        )}
             </div>
 
       {hint && createPortal(
@@ -652,12 +699,13 @@ export function Sidebar({
     {collapsed && (
       <div className="expand-wrap">
         <button
-          className="iconbtn"
+          className="iconbtn hasdot"
           aria-label={t('nav.showSidebar')}
           title={t('nav.showSidebar')}
           onClick={() => setPrefs({ sidebarCollapsed: false })}
         >
           <Icon name="sidebar" />
+          {updateReady && <span className="belldot" aria-hidden="true" />}
         </button>
       </div>
     )}
@@ -688,6 +736,7 @@ function SideGroup({
   dropTarget?: DropTarget;
   children: React.ReactNode;
 }) {
+  const { t } = useT();
   const head = () => (
     <div className="side-head">
         <button className="side-headbtn" aria-expanded={onOpen ? undefined : open} onClick={onOpen ?? onToggle}>
@@ -709,7 +758,7 @@ function SideGroup({
         <button
           className="side-disclose"
           aria-expanded={open}
-          aria-label={title}
+          aria-label={t(open ? 'nav.collapseGroup' : 'nav.expandGroup', { name: title })}
           onClick={onToggle}
         >
           <Icon name={open ? 'caret-up' : 'caret'} size="sm" />

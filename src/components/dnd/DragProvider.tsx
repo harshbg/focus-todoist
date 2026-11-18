@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useDataSnapshot } from '@/hooks/useDataSnapshot';
+import { confirmUndatedMove } from '@/domain/confirmUndatedMove';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   DndContext, DragOverlay, PointerSensor, pointerWithin, useSensor, useSensors,
   type CollisionDetection, type DragEndEvent, type DragMoveEvent, type DragStartEvent,
@@ -26,7 +28,6 @@ import { Icon } from '@/components/Icon';
 import {
   type RowList, TASK_DROP_EVENT, TASK_PLACE_EVENT, type TaskDropRequest, type TaskPlaceRequest,
 } from './RowList';
-import { usePhoneBehaviour } from '@/hooks/useTouchLayout';
 import { PRESS_HOLD_EVENT, projectRowAttr } from './ProjectRowSortable';
 import { byChildOrder, bySectionOrder, keyBetween, keysInOrder } from '@/domain/orderKey';
 
@@ -228,7 +229,7 @@ const taskIdOf = (activeId: string): string =>
  */
 export function DragProvider({ children }: { children: ReactNode }) {
   const { t, locale } = useT();
-  const snapshot = useStore((s) => s.snapshot);
+  const snapshot = useDataSnapshot();
   const dateFormat = useStore((s) => s.prefs.dateFormat);
   const apply = useStore((s) => s.apply);
   const toast = useStore((s) => s.toast);
@@ -269,14 +270,27 @@ export function DragProvider({ children }: { children: ReactNode }) {
    * already uses to mean "this one" — and letting go of it without moving is
    * how the project's menu opens.
    */
-  const phone = usePhoneBehaviour();
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: phone
+  /* Which kind of pointer pressed last decides the rule, not the width of the
+     window: a narrow desktop window still has a mouse, which pulls at once,
+     and a finger always has to hold. The options are read when a press
+     starts, so the getter answers for that press (#360). */
+  const lastPointer = useRef<string>('mouse');
+  useEffect(() => {
+    const remember = (event: PointerEvent) => { lastPointer.current = event.pointerType || 'mouse'; };
+    window.addEventListener('pointerdown', remember, true);
+    return () => window.removeEventListener('pointerdown', remember, true);
+  }, []);
+  /* Memoised: a new options object makes new listeners for every row, and a
+     row that is handed new listeners cannot be left alone when a sync brings
+     nothing for it (#364). */
+  const pointerOptions = useMemo(() => ({
+    get activationConstraint() {
+      return lastPointer.current === 'touch'
         ? { delay: HOLD_MS, tolerance: HOLD_SLOP_PX }
-        : { distance: 6 },
-    }),
-  );
+        : { distance: 6 };
+    },
+  }), []);
+  const sensors = useSensors(useSensor(PointerSensor, pointerOptions));
 
   /**
    * What the drop did, in the fewest words that still tell it from the others.
@@ -297,6 +311,8 @@ export function DragProvider({ children }: { children: ReactNode }) {
         return t('drop.quick');
       case 'anytime':
         return t('drop.anytime');
+      case 'month':
+        return t('drop.month');
       case 'someday':
         return t('drop.someday');
       case 'project':
@@ -323,6 +339,7 @@ export function DragProvider({ children }: { children: ReactNode }) {
       case 'day': return formatDayOrName(target.date, locale, dateFormat);
       case 'quick': return t('group.quick');
       case 'anytime': return t('group.anytime');
+      case 'month': return t('nav.month');
       case 'someday': return t('nav.someday');
       case 'step': return t(`step.${target.step}`);
       case 'label': return `@${target.label}`;
@@ -432,7 +449,10 @@ export function DragProvider({ children }: { children: ReactNode }) {
        pointer may well be over nothing by then, so this comes first. */
     if (activeId.startsWith(SUBTASK_DRAG_PREFIX) && pulledOut) {
       const sub = snapshot.items[taskIdOf(activeId)];
-      if (sub?.parent_id && !(event.over && decodeRowTarget(String(event.over.id)))) {
+      /* A subtask dragged to the sidebar is going to a place, not out of its parent:
+         the pointer passes to the left of the list on the way (#This month). */
+      const over = event.over ? String(event.over.id) : null;
+      if (sub?.parent_id && !(over && (decodeRowTarget(over) || decodeTarget(over)))) {
         /* A selection pulled out goes out whole, as it goes in (#166): the
            picked subtasks, each from its own parent, in one step of undo. */
         const group = carried.length > 1 && carried.includes(sub.id) ? carried : [sub.id];
@@ -746,6 +766,7 @@ export function DragProvider({ children }: { children: ReactNode }) {
    * in an empty section (TASK_DROP_EVENT).
    */
   async function dropOnto(item: Item, target: DropTarget) {
+    if (!await confirmUndatedMove([item], target, useStore.getState().prefs.locale)) return;
     const mutation = dropMutation(item, target);
     if (!mutation) return;
 
@@ -821,6 +842,7 @@ export function DragProvider({ children }: { children: ReactNode }) {
     );
     const after = Object.fromEntries(ids.map((id, index) => [id, index + 1]));
 
+    if (!await confirmUndatedMove(block, list.target, useStore.getState().prefs.locale)) return;
     const changes = block.map((it) => ({
       it,
       mutation: list.target ? dropMutation(it, list.target) : null,
@@ -956,6 +978,7 @@ export function DragProvider({ children }: { children: ReactNode }) {
     );
     const after = Object.fromEntries(ids.map((id, index) => [id, index + 1]));
 
+    if (!await confirmUndatedMove([item], list.target, useStore.getState().prefs.locale)) return;
     const mutation = list.target ? dropMutation(item, list.target) : null;
     const was = {
       due: item.due, labels: item.labels,

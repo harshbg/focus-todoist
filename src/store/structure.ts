@@ -1,6 +1,7 @@
 /** Projects, sections and labels: creating, ordering, nesting, archiving, deleting. */
 import { labelRenameError, cleanLabelName, renamedLabelSnapshot } from '@/domain/renameLabel';
-import { command, type Command, moveItem, newUuid } from '@/api/commands';
+import { command, type Command, moveItem, newUuid, updateItem } from '@/api/commands';
+import { patchItem } from './helpers';
 import type { Snapshot } from '@/domain/types';
 import { translate } from '@/i18n';
 import { patchParent } from '@/domain/order';
@@ -54,6 +55,24 @@ export const createStructureSlice: Slice<StructureSlice> = (_set, get) => ({
         },
       }),
     );
+  },
+  async createLabelOn(taskId, name) {
+    const clean = name.trim().replace(/\s+/g, '-');
+    const task = get().snapshot.items[taskId];
+    if (!clean || !task) return null;
+    const known = Object.values(get().snapshot.labels).find((label) => !label.is_deleted && label.name.toLowerCase() === clean.toLowerCase());
+    const labels = [...new Set([...task.labels, known?.name ?? clean])];
+    const tempId = newUuid();
+    const commands: Command[] = [
+      ...(known ? [] : [{ type: 'label_add', uuid: newUuid(), temp_id: tempId, args: { name: clean, color: 'charcoal' } }]),
+      updateItem(taskId, { labels }),
+    ];
+    /* One request: the tag is made and put on the task together, and both show at once. */
+    await get().apply(commands, (snapshot) => patchItem(known ? snapshot : {
+      ...snapshot,
+      labels: { ...snapshot.labels, [tempId]: { id: tempId, name: clean, color: 'charcoal', item_order: Object.keys(snapshot.labels).length + 1, is_favorite: false, is_deleted: false } },
+    }, taskId, { labels }));
+    return known?.name ?? clean;
   },
   async renameLabel(id, raw) {
     const name = cleanLabelName(raw);
@@ -395,7 +414,14 @@ export const createStructureSlice: Slice<StructureSlice> = (_set, get) => ({
     const project = snapshot.projects[id];
     if (!project) return;
 
-    await get().apply([command('project_delete', { id })], (current) => {
+    /* In a workspace Todoist refuses to delete a project that is not archived
+       ("Only archived projects can be deleted", reported as a bare "Forbidden"),
+       so the two go out together; the person was told so in the confirmation. */
+    const commands = [
+      ...(project.workspace_id && !project.is_archived ? [command('project_archive', { id })] : []),
+      command('project_delete', { id }),
+    ];
+    await get().apply(commands, (current) => {
       const projects = { ...current.projects };
       const sections = { ...current.sections };
       const items = { ...current.items };

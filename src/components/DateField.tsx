@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useDismissiblePopover } from '@/hooks/useDismissiblePopover';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { differenceInCalendarDays, endOfMonth, parseISO } from 'date-fns';
 import { toneOfDay } from '@/domain/dates';
@@ -53,6 +54,8 @@ interface DateFieldProps {
   showRecurrenceClear?: boolean;
   /** The task's duration, offered on its own line at the picker's foot. */
   duration?: DurationControl;
+  /** Skips the occurrence the date is on, with the day it lands on said quietly (#352). */
+  skip?: { onSkip: () => void; hint?: string; label: string; title?: string };
 }
 
 /**
@@ -67,7 +70,7 @@ interface DateFieldProps {
 export function DateField({
   value, onChange, label, placeholder, min, max, clearable = true, shortcuts,
   variant = 'field', icon = 'calendar', withTime = false,
-  recurrence = null, onRecurrence, onClearRecurrence, showRecurrenceClear = true, duration,
+  recurrence = null, onRecurrence, onClearRecurrence, showRecurrenceClear = true, duration, skip,
 }: DateFieldProps) {
   const chip = variant === 'chip';
   const { t, locale } = useT();
@@ -145,30 +148,7 @@ export function DateField({
     };
   }, [open, chip]);
 
-  useEffect(() => {
-    if (!open) return;
-    const dismiss = (event: MouseEvent) => {
-      if (panelRef.current?.contains(event.target as Node)) return;
-      if (buttonRef.current?.contains(event.target as Node)) return;
-      /* The picker's own dialog (Repeat, Custom…) is drawn over everything
-         and belongs to it. */
-      if ((event.target as Element).closest?.('[data-picker-layer], .popover.listbox')) return;
-      setOpen(false);
-    };
-    /* The picker answers Escape itself when the focus is inside it; this is
-       for when it is not — opened with a click, the focus left elsewhere. */
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || event.defaultPrevented) return;
-      event.stopPropagation();
-      setOpen(false);
-    };
-    document.addEventListener('mousedown', dismiss);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', dismiss);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+  useDismissiblePopover(open, buttonRef, panelRef, () => setOpen(false));
 
   const panel = open && (
     <div
@@ -188,7 +168,13 @@ export function DateField({
         label={label}
         min={min}
         max={max}
-        shortcuts={shortcuts}
+        /* A quick choice that sets the field itself, like "Today" in the
+           composer, never goes through onPick, so the panel would stay open
+           behind it. A deadline closed because it has no choices of its own. */
+        shortcuts={shortcuts?.map((choice) => ({
+          ...choice,
+          onSelect: () => { choice.onSelect(); close(true); },
+        }))}
         withTime={withTime}
         onPick={(iso, how) => { onChange(iso, how); close(true); }}
         recurrence={recurrence}
@@ -198,14 +184,29 @@ export function DateField({
         /* Leaving from inside the panel hands the focus back to the field it
            opened from, rather than to the page once the panel is gone. */
         onEscape={() => close()}
-        footer={value && clearable ? (
-          <button
-            type="button"
-            className="opt"
-            onClick={() => { onChange(''); close(true); }}
-          >
-            <span><Icon name="close" size="sm" /> {t('date.clear')}</span>
-          </button>
+        footer={(skip || (value && clearable)) ? (
+          <>
+            {skip && (
+              <button
+                type="button"
+                className="opt"
+                title={skip.title}
+                onClick={() => { skip.onSkip(); close(true); }}
+              >
+                <span><Icon name="repeat" size="sm" /> {skip.label}</span>
+                {skip.hint && <small>{skip.hint}</small>}
+              </button>
+            )}
+            {value && clearable && (
+              <button
+                type="button"
+                className="opt"
+                onClick={() => { onChange(''); close(true); }}
+              >
+                <span><Icon name="close" size="sm" /> {t('date.clear')}</span>
+              </button>
+            )}
+          </>
         ) : undefined}
       />
     </div>

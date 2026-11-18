@@ -1,5 +1,5 @@
 /** What more than one slice of the store needs: pure helpers, and the module state they share. */
-import { addDays, addWeeks, nextDay, type Day } from 'date-fns';
+import { addDays, addWeeks, nextDay, startOfDay, type Day } from 'date-fns';
 import type { Command } from '@/api/commands';
 import * as idb from '@/db/idb';
 import type { QueuedCommand } from '@/db/idb';
@@ -31,7 +31,10 @@ export function advanceDemoRecurrence(snapshot: Snapshot, id: string): Snapshot 
   const named = weekdays.findIndex((words) => new RegExp(`${opener}(?:${words})\\b`).test(rule));
 
   let next: Date;
-  if (/\b(?:every day|daily|tous les jours|chaque jour|quotidien(?:ne)?)\b/.test(rule)) {
+  if (/\b(?:every|tous les|toutes les)!/.test(rule)) {
+    // "every! week": counted from the day it is ticked, not from the date it stood on.
+    next = addDays(startOfDay(new Date()), 7);
+  } else if (/\b(?:every day|daily|tous les jours|chaque jour|quotidien(?:ne)?)\b/.test(rule)) {
     next = addDays(current, 1);
   } else if (named >= 0) {
     // "every Monday": the next Monday after the date it stands on.
@@ -337,11 +340,16 @@ export function explainFailure(error: string, locale: Locale): string {
  * nothing or one that did everything.
  */
 export function explainFailures(
-  failures: Array<{ error: string }>,
+  failures: Array<{ error: string; errorTag?: string; commandType?: string }>,
   total: number,
   locale: Locale,
 ): string {
-  const reason = explainFailure(failures[0].error, locale);
+  const failure = failures[0];
+  const reason = failure.errorTag === 'INVALID_DATE' && failure.commandType === 'item_close'
+    ? (locale === 'fr'
+      ? 'Todoist ne peut pas interpréter la répétition de cette tâche. Ouvrez-la dans Todoist et vérifiez sa règle de répétition avant de réessayer. La tâche n’a pas été terminée.'
+      : 'Todoist could not read this task’s repeat rule. Open the task in Todoist and check its repeat rule before trying again. The task was not completed.')
+    : explainFailure(failure.error, locale);
   const saved = total - failures.length;
   if (saved <= 0) return reason;
   return locale === 'fr'
@@ -452,4 +460,26 @@ export function patchItem(snapshot: Snapshot, id: string, args: Record<string, u
   const item = snapshot.items[id];
   if (!item) return snapshot;
   return { ...snapshot, items: { ...snapshot.items, [id]: { ...item, ...args } as Item } };
+}
+
+/** Todoist resets at most this many subtasks of a recurring task. */
+export const RESET_SUBTASKS_LIMIT = 30;
+
+/**
+ * The ticked subtasks of these recurring tasks that Todoist unticks when the
+ * series moves on and "Reset sub-tasks" is on. As Todoist's help describes it:
+ * direct subtasks only (deeper levels are left as they are), at most 30 per
+ * task, taken in the task's own order.
+ */
+export function subtasksToReset(ids: string[], items: Record<string, Item>): string[] {
+  const roots = new Set(ids);
+  const found: string[] = [];
+  for (const id of roots) {
+    const ticked = Object.values(items)
+      .filter((entry) => entry.parent_id === id && entry.checked && !entry.is_deleted && !roots.has(entry.id))
+      .sort((a, b) => a.child_order - b.child_order)
+      .slice(0, RESET_SUBTASKS_LIMIT);
+    found.push(...ticked.map((entry) => entry.id));
+  }
+  return found;
 }

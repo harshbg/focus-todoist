@@ -8,7 +8,7 @@ import { fetchProjectCounts, fetchWorkspaceArchive, fetchWorkspaceCollection, up
 import { fetchCompleted } from '@/api/completed';
 import { elapsed, weeklyCompletions, weeksStart } from '@/domain/workspaceStats';
 import { WorkspaceAvatar } from '@/components/WorkspaceFilter';
-import { ProjectIcon } from '@/components/ProjectIconPicker';
+import { ProjectIcon } from '@/components/ProjectIcon';
 import { readProjectIcon } from '@/domain/projectIcons';
 import { loadPrefs, savePrefs } from '@/db/idb';
 import type { TranslationKey } from '@/i18n';
@@ -16,6 +16,7 @@ import type { Project } from '@/domain/types';
 import { markerStyle } from '@/domain/colors';
 import { Icon } from '@/components/Icon';
 import { projectTree, type ProjectNode } from '@/store/selectors';
+import { intlDate } from '@/lib/intl';
 
 interface WorkspaceExtra { archive?: Project[]; members?: WorkspaceMember[]; projects?: Project[]; counts?: Record<string, number>; weeks?: Record<string, number[]> }
 export function WorkspaceView({ workspaceId }: { workspaceId: string }) {
@@ -93,10 +94,10 @@ export function WorkspaceView({ workspaceId }: { workspaceId: string }) {
   const projects = entries.filter(({ project }) => !project.is_folder).map(({ project }) => project);
   const demoArchive = projects[0] ? [{ ...projects[0], id: 'demo-archive', name: t('workspace.demoArchive'), is_archived: true, archived_date: subDays(new Date(), 200).toISOString() }] : [];
   const archive = demo ? [...Object.values(snapshot.projects).filter((p) => belongs(p) && p.is_archived), ...demoArchive] : extra.archive;
-  const members = (demo ? [{ user_id: 'demo-user', full_name: snapshot.user?.full_name ?? 'Sam', user_email: snapshot.user?.email ?? '', role: 'ADMIN' }, { user_id: 'demo-alex', full_name: 'Alex Martin', user_email: 'alex@example.com', role: 'MEMBER' }] : extra.members)?.filter((member) => !member.is_deleted);
+  const members = (demo ? [{ user_id: 'demo-user', full_name: snapshot.user?.full_name ?? 'Sam', user_email: snapshot.user?.email ?? '', role: 'ADMIN' }, ...Object.values(snapshot.collaborators).map((person) => ({ user_id: person.id, full_name: person.full_name, user_email: person.email, role: 'MEMBER', is_deleted: false }))] : extra.members)?.filter((member) => !member.is_deleted);
   const weeks = demo ? weeklyCompletions(buildDemoCompleted(locale), new Date()) : extra.weeks;
   const now = new Date();
-  const dateFormat = new Intl.DateTimeFormat(locale === 'fr' ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const dateFormat = intlDate(locale === 'fr' ? 'fr-FR' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   const rows = entries.map(({ project, depth, projectCount }) => {
     const items = Object.values(snapshot.items).filter((item) => item.project_id === project.id && !item.is_deleted);
     const active = snapshot.projects[project.id] ? items.filter((item) => !item.checked).length : undefined;

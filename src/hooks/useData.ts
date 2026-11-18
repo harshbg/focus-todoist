@@ -1,3 +1,4 @@
+import { useDataSnapshot } from '@/hooks/useDataSnapshot';
 import { assigneeItems, matchesAssignee } from '@/domain/assignees';
 import { markedWorkProjects } from '@/focus/scope';
 import { viewPrefs } from '@/store/prefs';
@@ -15,7 +16,7 @@ import { useMode } from '@/focus/mode-store';
 export function useData(viewKey?: string) {
   const prefs = useStore((s) => s.prefs);
   const storage = useStore((s) => s.prefs.estimateStorage);
-  const snapshot = useStore((s) => s.snapshot);
+  const snapshot = useDataSnapshot();
   const demo = useStore((s) => s.demo);
   const mode = useMode();
 

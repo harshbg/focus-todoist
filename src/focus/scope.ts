@@ -4,8 +4,12 @@ import { useStore, type AppState } from '@/store/store';
 import { scopeSnapshot } from './domain/mode';
 import { useMode } from './mode-store';
 
-/** The demo's Website project, which plays the part of a Work project there. */
-const DEMO_WORK_PROJECT = 'site';
+/**
+ * The demo projects that play the part of Work there: the Robin Studio
+ * workspace's projects (the demo since 2.29), and the older demo's Website,
+ * which the e2e journeys still load.
+ */
+const DEMO_WORK_PROJECTS = ['studio', 'team', 'clients', 'atelier', 'aurel', 'bloom', 'site'];
 const NO_EXTRA: readonly string[] = [];
 
 /** The e2e journeys predate Work mode and expect every demo task in one list; they switch this off. */
@@ -15,12 +19,12 @@ const demoWorkOff = (() => {
 
 /**
  * The projects marked as Work. The demo has no project named Work, so its
- * Website project counts as one there — only for the demo, never written
- * into the account's preferences.
+ * work projects count as such there — only for the demo, never written into
+ * the account's preferences.
  */
 export function markedWorkProjects(state: Pick<AppState, 'demo' | 'prefs'>): readonly string[] {
   const marked = state.prefs.focus.workProjectIds;
-  return state.demo && !demoWorkOff ? [...marked, DEMO_WORK_PROJECT] : marked.length ? marked : NO_EXTRA;
+  return state.demo && !demoWorkOff ? [...marked, ...DEMO_WORK_PROJECTS] : marked.length ? marked : NO_EXTRA;
 }
 
 /** markedWorkProjects for components, stable between renders. */

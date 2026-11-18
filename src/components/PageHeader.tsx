@@ -66,7 +66,6 @@ export function PageHeader({
 
       {!hideMetrics && <div className="metrics">
         <span className="metric">
-          <Icon name="tasks" size="sm" />
           <b>{load.taskCount}</b> {t('metrics.taskWord', { count: load.taskCount })}
         </span>
 
@@ -85,10 +84,9 @@ export function PageHeader({
               title={durationLabel}
               data-tour="metrics"
             >
-              <Icon name="clock" size="sm" />
-              {load.estimatedMinutes > 0
+              <span>{load.estimatedMinutes > 0
                 ? <><b>{formatDuration(load.estimatedMinutes, locale)}</b> {t('metrics.estimatedWord')}</>
-                : t('metrics.noEstimates')}
+                : t('metrics.noEstimates')}</span>
             </button>
           </>
         )}

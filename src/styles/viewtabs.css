@@ -94,8 +94,9 @@
 .colrow{display:flex;align-items:center;gap:6px;min-height:38px;padding:0 4px;border-radius:var(--r-sm);background:var(--surface)}
 .colrow:hover{background:var(--hover)}
 .colrow.dragging{position:relative;z-index:2;box-shadow:var(--sh-md);background:var(--surface)}
-.colgrip{flex:none;width:24px;height:28px;display:grid;place-items:center;color:var(--faint);border-radius:6px;cursor:grab;touch-action:none}
-.colgrip:hover{color:var(--text)}
+.colicon{flex:none;color:var(--muted)}
+.colgrip{flex:none;width:24px;height:28px;display:grid;place-items:center;color:var(--faint);opacity:.45;border-radius:6px;cursor:grab;touch-action:none}
+.colgrip:hover,.colgrip:focus-visible{color:var(--text);opacity:1}
 .colgrip:focus-visible{outline:2px solid var(--accent)}
 span.colgrip{cursor:default}
 .collabel{flex:1;min-width:0;font-size:var(--fs-13);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -107,3 +108,26 @@ span.colgrip{cursor:default}
 }
 /* Pills: the same room on both sides, and nothing added when one is in front */
 .vtab-main{padding:0 12px}
+
+/* The columns list opens to the side of Display. */
+.columns-caret{transform:rotate(-90deg)}
+.columnsrow .fselect-face[aria-expanded="true"] .columns-caret{transform:rotate(0)}
+
+
+/* Shared Display fields: labels and switches sit on the same rhythm. */
+.dfields h5,.displaypanel > h5 { text-transform:none; letter-spacing:0; font-size:var(--fs-12); }
+.dfields .display-toggles { padding-top:0; margin-top:var(--s2); }
+.dfields .panelrow > span { gap:10px; }
+.dfields .panelrow > span > .ic { width:16px; height:16px; flex:none; color:var(--muted); }
+.dfields .fselect-face { border-radius:12px; }
+.dfields .dfield-stack > .display-fullwidth { padding-block:0; }
+.calendar-display-settings { display:flex; flex-direction:column; gap:var(--s2); }
+.calendar-display-settings .display-toggles { margin-top:0; }
+
+.dfields .display-toggles .panelrow > span, .dfields .dfield-stack > .panelrow > span { padding-left:10px; }
+
+/* Keep the mode selector aligned with the fields and use one rhythm for table controls. */
+.dfields .display-modes { margin-left:0; margin-right:0; width:100%; box-sizing:border-box; }
+.dfields .dfield-stack > .columnsrow + .fselect { margin-top:0; }
+.dfields .dfield-stack > .panelrow { margin-top:0; }
+.dfields > .display-fullwidth > span { padding-left:10px; }
