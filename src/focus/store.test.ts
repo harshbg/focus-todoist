@@ -3,7 +3,9 @@ import { emptySnapshot, type Snapshot } from '@/domain/types';
 import { useStore } from '@/store/store';
 import { entryKey } from './domain/log';
 import { readFocusLog } from './domain/logStore';
-import { useFocusStore } from './store';
+import { signalContent, latestSignal } from './domain/signal';
+import { startBlock } from './domain/timer';
+import { followSignal, useFocusStore } from './store';
 
 const originalApply = useStore.getState().apply;
 const originalRefresh = useStore.getState().refresh;
@@ -102,5 +104,38 @@ describe('focus store', () => {
     vi.advanceTimersByTime(4 * 60_000);
     expect(await focus.finish()).toBeNull();
     expect(apply).not.toHaveBeenCalled();
+  });
+
+  it('shares a block through the signal comment and follows one started on another device', async () => {
+    const inbox = {
+      id: 'inbox', name: 'Inbox', color: 'charcoal', parent_id: null,
+      child_order: 1, is_archived: false, is_deleted: false, is_favorite: false, inbox_project: true,
+    };
+    const snapshot: Snapshot = { ...emptySnapshot(), projects: { inbox }, user: { id: 'u', inbox_project_id: 'inbox' } as Snapshot['user'] };
+    const apply = vi.fn(async (_commands, optimistic) => {
+      useStore.setState({ snapshot: optimistic(useStore.getState().snapshot) });
+      return {};
+    });
+    useStore.setState({ snapshot, apply, ready: true, connected: true });
+
+    // Started here: the signal says so, from this device.
+    useFocusStore.getState().start({ mode: 'focus', focusMode: 'work', taskId: 't-1', title: 'Write', lane: null, plannedMin: 30 });
+    const mine = latestSignal(useStore.getState().snapshot);
+    expect(mine?.active?.taskId).toBe('t-1');
+    useFocusStore.getState().discard();
+    expect(latestSignal(useStore.getState().snapshot)?.active).toBeNull();
+
+    // Another device starts a block later: this one follows it.
+    const remote = startBlock({ mode: 'focus', focusMode: 'personal', taskId: 't-2', title: 'Read', lane: 'Reading', plannedMin: 60 }, Date.now());
+    const note = Object.values(useStore.getState().snapshot.notes)[0];
+    useStore.setState({ snapshot: { ...useStore.getState().snapshot, notes: { [note.id]: { ...note, content: signalContent({ v: 1, updatedAt: Date.now() + 1000, device: 'phone', active: remote }) } } } });
+    followSignal();
+    expect(useFocusStore.getState().active).toEqual(remote);
+
+    // And stops when the other device stops it.
+    useStore.setState({ snapshot: { ...useStore.getState().snapshot, notes: { [note.id]: { ...note, content: signalContent({ v: 1, updatedAt: Date.now() + 2000, device: 'phone', active: null }) } } } });
+    followSignal();
+    expect(useFocusStore.getState().active).toBeNull();
+    useStore.setState({ ready: false, connected: false });
   });
 });

@@ -4,6 +4,7 @@ import { useStore } from '@/store/store';
 import { entryKey } from './domain/log';
 import { planLogWrite, readFocusLog, removeEntry, upsertEntry } from './domain/logStore';
 import { playChime, unlockChime } from './chime';
+import { latestSignal, planSignalWrite } from './domain/signal';
 import { blockEntry, isComplete, pauseBlock, readActiveBlock, resumeBlock, startBlock } from './domain/timer';
 import type { ActiveBlock } from './domain/timer';
 import type { FocusEntry, FocusPreferences, FocusRating } from './domain/types';
@@ -89,6 +90,63 @@ function publishActive(active: ActiveBlock | null): void {
   }
 }
 
+/** A random id for this browser, so its own signal is told apart from another device's. */
+const DEVICE_KEY = 'tde.focus.device';
+/** The `updatedAt` of the newest signal this browser wrote or followed. */
+const SIGNAL_AT_KEY = 'tde.focus.signalAt';
+
+function readStored(key: string): string | null {
+  try { return window.localStorage.getItem(key); } catch { return null; }
+}
+function writeStored(key: string, value: string): void {
+  try { window.localStorage.setItem(key, value); } catch { /* Private windows: kept in memory below. */ }
+}
+
+const deviceId = typeof window === 'undefined' ? 'server' : readStored(DEVICE_KEY) ?? (() => {
+  const id = Math.random().toString(36).slice(2, 12);
+  writeStored(DEVICE_KEY, id);
+  return id;
+})();
+let signalAt = Number(typeof window === 'undefined' ? 0 : readStored(SIGNAL_AT_KEY) ?? 0) || 0;
+
+function noteSignalAt(at: number): void {
+  signalAt = at;
+  writeStored(SIGNAL_AT_KEY, String(at));
+}
+
+/**
+ * A change made here: shared with this browser's other tabs at once, and with
+ * other devices through the signal comment (docs/focus/SIGNAL.md), which they
+ * pick up on their next sync.
+ */
+function shareActive(active: ActiveBlock | null): void {
+  publishActive(active);
+  const now = Date.now();
+  noteSignalAt(now);
+  const app = useStore.getState();
+  if (!app.ready || !app.connected) return;
+  const plan = planSignalWrite(app.snapshot, { v: 1, updatedAt: now, device: deviceId, active }, new Date(now));
+  if (plan) void app.apply(plan.commands, plan.optimistic);
+}
+
+/**
+ * A change made on another device: followed here when its signal is newer
+ * than anything this browser did or saw. Only this tab's copy changes; the
+ * device that made the change already wrote the log if there was one.
+ */
+export function followSignal(): void {
+  const app = useStore.getState();
+  if (!app.ready || !app.connected) return;
+  const signal = latestSignal(app.snapshot);
+  if (!signal || signal.updatedAt <= signalAt) return;
+  noteSignalAt(signal.updatedAt);
+  if (signal.device === deviceId) return;
+  const local = useFocusStore.getState().active;
+  if (JSON.stringify(local) === JSON.stringify(signal.active)) return;
+  useFocusStore.setState(signal.active ? { active: signal.active, justLogged: null } : { active: null });
+  publishActive(signal.active);
+}
+
 /**
  * The log as Todoist holds it now. A tab in the background stops polling, and
  * a block often ends in one, so it reads first: writing from a stale copy would
@@ -114,7 +172,7 @@ export const useFocusStore = create<FocusStore>()((set, get) => ({
     const active = startBlock(input, Date.now());
     displayGeneration += 1;
     set({ active, justLogged: null });
-    publishActive(active);
+    shareActive(active);
   },
   pause() {
     const current = get().active;
@@ -122,7 +180,7 @@ export const useFocusStore = create<FocusStore>()((set, get) => ({
     const active = pauseBlock(current, Date.now());
     if (active === current) return;
     set({ active });
-    publishActive(active);
+    shareActive(active);
   },
   resume() {
     const current = get().active;
@@ -130,7 +188,7 @@ export const useFocusStore = create<FocusStore>()((set, get) => ({
     const active = resumeBlock(current, Date.now());
     if (active === current) return;
     set({ active });
-    publishActive(active);
+    shareActive(active);
   },
   async finish() {
     const current = get().active;
@@ -139,7 +197,7 @@ export const useFocusStore = create<FocusStore>()((set, get) => ({
     const entry = blockEntry(current, now);
     const generation = displayGeneration;
     set({ active: null, lastPlannedMin: current.plannedMin });
-    publishActive(null);
+    shareActive(null);
     // A block that ran its full length rings; one stopped early does not.
     if (isComplete(current, now) && useStore.getState().prefs.focus.sound) playChime();
     if (!entry) return null;
@@ -151,7 +209,7 @@ export const useFocusStore = create<FocusStore>()((set, get) => ({
   discard() {
     if (!get().active) return;
     set({ active: null });
-    publishActive(null);
+    shareActive(null);
   },
   async rate(rating) {
     const current = get().justLogged;
@@ -223,7 +281,8 @@ if (typeof window !== 'undefined') {
       // The storage event still shares the timer when a channel cannot listen.
     }
   }
-  useStore.subscribe(finishExpired);
+  useStore.subscribe(() => { followSignal(); finishExpired(); });
+  followSignal();
   finishExpired();
 }
 
