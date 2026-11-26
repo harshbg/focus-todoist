@@ -6,6 +6,7 @@ import { plainTitle, renderTitle } from '@/domain/markdown';
 import { useData } from '@/hooks/useData';
 import { useT } from '@/hooks/useT';
 import { useStore } from '@/store/store';
+import { EndBlockButtons } from './EndBlock';
 import { FocusScene } from '../pixel/FocusScene';
 import { QuestPips } from '../pixel/QuestPips';
 import { shortDuration } from '../domain/format';
@@ -158,7 +159,7 @@ export function SidecarPage() {
       {active.pausedAt === null
         ? <button className="fx-sc-btn fx-sc-btn--go" onClick={pause}>{t('focus.pause')}</button>
         : <button className="fx-sc-btn fx-sc-btn--go" onClick={resume}>{t('focus.resume')}</button>}
-      <button className="fx-sc-link" onClick={() => void stop()}>{t('focus.stop')}</button>
+      <EndBlockButtons active={active} now={now} saveClass="fx-sc-btn" discardClass="fx-sc-link" />
     </div>}
 
     {!active && justLogged && <section className="fx-sc-card fx-sc-card--done">

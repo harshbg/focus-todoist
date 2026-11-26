@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   continueLengths,
   blockEntry, elapsedMs, formatClock, isComplete, pauseBlock, readActiveBlock,
-  remainingMs, resumeBlock, startBlock,
+  remainingMs, resumeBlock, savableMinutes, startBlock,
 } from './timer';
 
 const minute = 60_000;
@@ -67,6 +67,15 @@ describe('logging a finished block', () => {
     });
     expect(blockEntry(block, startedAt + 5 * minute + 30_000)?.minutes).toBe(6);
     expect(blockEntry(block, startedAt + 40 * minute)?.minutes).toBe(30);
+  });
+
+  it('saves the minutes worked so far when a block ends early, pauses left out', () => {
+    const block = { ...startBlock(input, startedAt), plannedMin: 60 };
+    expect(savableMinutes(block, startedAt + 4 * minute)).toBeNull();
+    expect(savableMinutes(block, startedAt + 18 * minute)).toBe(18);
+    const paused = pauseBlock(block, startedAt + 18 * minute);
+    expect(savableMinutes(paused, startedAt + 40 * minute)).toBe(18);
+    expect(savableMinutes({ ...block, mode: 'unwind' }, startedAt + 18 * minute)).toBeNull();
   });
 });
 

@@ -20,7 +20,7 @@ import { QuestPips } from '../pixel/QuestPips';
 import { entryKey } from '../domain/log';
 import { todayProgress } from '../domain/metrics';
 import { focusQueue } from '../domain/queue';
-import { continueLengths, elapsedMs, formatClock, MIN_LOGGED_MINUTES, remainingMs } from '../domain/timer';
+import { continueLengths, elapsedMs, formatClock, remainingMs } from '../domain/timer';
 import type { FocusEntry, FocusRating } from '../domain/types';
 import { newTaskPlacement, type Mode } from '../domain/mode';
 import { mergeLabels } from '../domain/labels';
@@ -31,6 +31,7 @@ import { settingsFor } from '../domain/settings';
 import { TaskSearch } from './TaskSearch';
 import { openSidecar } from './Sidecar';
 import { GuidanceNudges, ReminderSettings } from './Guidance';
+import { EndBlockButtons } from './EndBlock';
 import './focus.css';
 import './focusPage.css';
 
@@ -149,7 +150,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   const focusMode = useMode();
   const logs = useFocusLog();
   const now = useFocusNow();
-  const { active, justLogged, lastPlannedMin, start, pause, resume, finish, discard, rate, dismiss, logManual, editEntry, deleteEntry } = useFocusStore();
+  const { active, justLogged, lastPlannedMin, start, pause, resume, rate, dismiss, logManual, editEntry, deleteEntry } = useFocusStore();
   const snapshot = useStore((state) => state.snapshot);
   const createTaskId = useStore((state) => state.createTaskId);
   const showQuickGroup = useStore((state) => state.prefs.showQuickGroup);
@@ -210,13 +211,6 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
     } finally { setBusy(false); }
   };
   const startBreak = () => start({ mode: 'unwind', focusMode, taskId: null, title: t('focus.unwind'), lane: null, plannedMin: prefs.breakMin });
-  const stop = async () => {
-    if (!active) return;
-    if (active.mode === 'focus' && elapsedMs(active, Date.now()) < MIN_LOGGED_MINUTES * 60_000) {
-      if (await confirm({ title: t('focus.discardPrompt'), destructive: true, confirmLabel: t('focus.discard') })) discard();
-    } else void finish();
-  };
-
   const title = (text: string, id: string | null, className: string) => (taskExists(id)
     ? <button type="button" className={className} onClick={() => onOpen(id!)} dangerouslySetInnerHTML={{ __html: renderTitle(text) }} />
     : <span className={className} dangerouslySetInnerHTML={{ __html: renderTitle(text) }} />);
@@ -233,7 +227,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
         {active.pausedAt === null
           ? <button type="button" className="btn lg" onClick={pause}>{t('focus.pause')}</button>
           : <button type="button" className="btn primary lg" onClick={resume}>{t('focus.resume')}</button>}
-        <button type="button" className="btn quiet lg" onClick={() => void stop()}>{t('focus.stop')}</button>
+        <EndBlockButtons active={active} now={now} saveClass="btn lg" discardClass="btn quiet lg" />
       </div>
     </div>;
   } else if (justLogged) {

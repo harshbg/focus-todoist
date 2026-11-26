@@ -83,6 +83,11 @@ export function blockEntry(block: ActiveBlock, now: number): FocusEntry | null {
   };
 }
 
+/** The minutes "Save & end" would log now, or null while the block is too short to keep (or a break). */
+export function savableMinutes(block: ActiveBlock, now: number): number | null {
+  return blockEntry(block, now)?.minutes ?? null;
+}
+
 /**
  * The clock face: `mm:ss` under an hour, `h:mm:ss` from an hour. Seconds
  * round up, so the face reads 00:01 until the very end and 00:00 only when done.
