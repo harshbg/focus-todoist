@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { create } from 'zustand';
+import { request } from '@/api/client';
+import type { Note } from '@/domain/types';
 import { useStore } from '@/store/store';
+import { mergeFocusComments, planTidy } from './domain/inboxComments';
+import type { LogWrite } from './domain/logStore';
 import { entryKey } from './domain/log';
 import { planLogWrite, readFocusLog, removeEntry, upsertEntry } from './domain/logStore';
 import { playChime, unlockChime } from './chime';
@@ -123,10 +127,14 @@ function shareActive(active: ActiveBlock | null): void {
   publishActive(active);
   const now = Date.now();
   noteSignalAt(now);
-  const app = useStore.getState();
-  if (!app.ready || !app.connected) return;
-  const plan = planSignalWrite(app.snapshot, { v: 1, updatedAt: now, device: deviceId, active }, new Date(now));
-  if (plan) void app.apply(plan.commands, plan.optimistic);
+  void (async () => {
+    // Read the signal comment first, or a second one would be added beside it.
+    await loadFocusComments();
+    const app = useStore.getState();
+    if (!app.ready || !app.connected) return;
+    const plan = planSignalWrite(app.snapshot, { v: 1, updatedAt: now, device: deviceId, active }, new Date(now));
+    if (plan) await applyFocusWrite(plan);
+  })();
 }
 
 /**
@@ -154,14 +162,65 @@ export function followSignal(): void {
  */
 async function freshEntries(): Promise<FocusEntry[]> {
   await useStore.getState().refresh();
+  await loadFocusComments();
   return readFocusLog(useStore.getState().snapshot);
 }
 
 async function writeLog(after: FocusEntry[]): Promise<void> {
-  const app = useStore.getState();
-  const plan = planLogWrite(app.snapshot, after, new Date());
-  if (plan) await app.apply(plan.commands, plan.optimistic);
+  const plan = planLogWrite(useStore.getState().snapshot, after, new Date());
+  if (plan) await applyFocusWrite(plan);
 }
+
+/**
+ * Bumped around every focus write: a read of the comments that overlaps one
+ * may hold the comment as it was, and must not put that back on the screen.
+ */
+let writeGeneration = 0;
+
+async function applyFocusWrite(write: LogWrite): Promise<void> {
+  writeGeneration += 1;
+  try {
+    await useStore.getState().apply(write.commands, write.optimistic);
+  } finally {
+    writeGeneration += 1;
+  }
+}
+
+let loading: Promise<void> | null = null;
+let loadedAt = 0;
+
+/**
+ * The focus log and signal as Todoist holds them now. Todoist's sync leaves
+ * out comments on the Inbox (it shares them only for shared projects), so
+ * they are read here, as the settings comment is; without this a device sees
+ * only the comments it wrote itself, and writes a new comment each time.
+ * Whatever pile an older version left is tidied once it is read.
+ */
+export function loadFocusComments(): Promise<void> {
+  loading ??= (async () => {
+    const app = useStore.getState();
+    const inbox = app.snapshot.user?.inbox_project_id;
+    if (!app.ready || !app.connected || app.demo || !inbox) return;
+    const generation = writeGeneration;
+    const found: Note[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await request<{ results: Note[]; next_cursor?: string | null }>(
+        '/comments', { query: { project_id: inbox, limit: 100, cursor } },
+      );
+      found.push(...page.results);
+      cursor = page.next_cursor ?? undefined;
+    } while (cursor);
+    if (generation !== writeGeneration) return;
+    loadedAt = Date.now();
+    useStore.setState((state) => ({ snapshot: mergeFocusComments(state.snapshot, found) }));
+    for (const write of planTidy(useStore.getState().snapshot, new Date())) await applyFocusWrite(write);
+  })().catch(() => undefined).finally(() => { loading = null; });
+  return loading;
+}
+
+/** How often the comments are read again while the app syncs: about every other poll. */
+const RELOAD_AFTER_MS = 60_000;
 
 export const useFocusStore = create<FocusStore>()((set, get) => ({
   active: typeof window === 'undefined' ? null : storedActive(),
@@ -281,7 +340,15 @@ if (typeof window !== 'undefined') {
       // The storage event still shares the timer when a channel cannot listen.
     }
   }
-  useStore.subscribe(() => { followSignal(); finishExpired(); });
+  useStore.subscribe((state, previous) => {
+    // A sync just ended (or the account just arrived): read the focus comments it left out.
+    const synced = previous.syncState === 'syncing' && state.syncState !== 'syncing';
+    const arrived = state.ready && state.connected && !(previous.ready && previous.connected);
+    if (arrived || (synced && Date.now() - loadedAt > RELOAD_AFTER_MS)) void loadFocusComments();
+    followSignal();
+    finishExpired();
+  });
+  void loadFocusComments();
   followSignal();
   finishExpired();
 }

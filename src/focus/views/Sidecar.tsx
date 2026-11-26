@@ -39,7 +39,6 @@ export function SidecarPage() {
   const logs = useFocusLog();
   const now = useFocusNow();
   const updateTask = useStore((state) => state.updateTask);
-  const syncing = useStore((state) => state.syncState === 'syncing');
   const confirm = useConfirm();
   const { active, justLogged, lastPlannedMin, start, pause, resume, finish, discard, rate, dismiss } = useFocusStore();
   const nextLengths = continueLengths(prefs.blockLengths, lastPlannedMin);
@@ -198,10 +197,6 @@ export function SidecarPage() {
     </section>}
 
     {!active && <>
-      {/* A block started on another device arrives with the next sync; this asks Todoist now. */}
-      <button className="fx-sc-link fx-sc-check" disabled={syncing} onClick={() => void useStore.getState().refresh()}>
-        ↻ {syncing ? t('focus.checkingDevices') : t('focus.checkDevices')}
-      </button>
       <div className="fx-sc-quest">
         <div><p className="fx-sc-kicker">{t('focus.dailyQuest')}</p><p className="fx-sc-type">{quest.minutesLabel}</p></div>
         <QuestPips

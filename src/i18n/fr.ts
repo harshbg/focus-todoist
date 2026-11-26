@@ -114,8 +114,6 @@ export const fr: Record<TranslationKey, string> = {
   'focus.startFocusOn': "Lancer la concentration",
   'focus.startFocusBusy': "Un bloc de concentration est déjà en cours",
   'focus.startFocusHow': "Pendant combien de temps ?",
-  'focus.checkDevices': "Vérifier les autres appareils",
-  'focus.checkingDevices': "Vérification…",
   'focus.planCalendarNoTime': 'Donnez une heure à la tâche pour l’ajouter à votre agenda',
   'focus.color': 'Couleur',
   'focus.colorNone': 'Aucune',

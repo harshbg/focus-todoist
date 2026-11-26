@@ -112,8 +112,6 @@ export const en = {
   'focus.startFocusOn': "Start focus",
   'focus.startFocusBusy': "A focus block is already running",
   'focus.startFocusHow': "Focus for how long?",
-  'focus.checkDevices': "Check other devices",
-  'focus.checkingDevices': "Checking…",
   'focus.planCalendarNoTime': 'Give the task a time to add it to your calendar',
   'focus.color': 'Colour',
   'focus.colorNone': 'None',

@@ -1458,4 +1458,3 @@
 .fx-startmenu .btn { justify-content: center; }
 /* Above the task panel (.overlay is 80); .popover alone would leave it at 60, behind the panel. */
 .popover.fx-startmenu { z-index: 5000; }
-.focus-theme .fx-sc-check { align-self: center; margin-top: -6px; }
