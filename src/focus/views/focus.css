@@ -1169,9 +1169,10 @@
   max-width: 100%; box-sizing: border-box;
 }
 /* The scene takes the height the window has left, so the page fits without
-   scrolling; it never drops below a readable height, nor grows taller than wide. */
+   scrolling and a tall window gets a tall scene; it never drops below a
+   readable height, nor grows much taller than wide. */
 .focus-theme.fx-sc .px-scene { border: 5px solid var(--fx-frame-color, var(--fx-navy)); box-shadow: var(--fx-drop); box-sizing: border-box;
-  flex: 1 1 0; min-height: clamp(200px, 24vw, 360px); max-height: min(560px, 45vw); position: relative; }
+  flex: 1 1 0; min-height: clamp(200px, 24vw, 360px); position: relative; }
 .focus-theme.fx-sc .px-scene > svg { position: absolute; inset: 0; }
 .focus-theme.fx-sc .px-quest { gap: 6px; }
 .focus-theme.fx-sc .px-quest-label {

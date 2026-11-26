@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { CLOUD, PALETTE } from './sprites';
 import { bricksLaid, pyramidBricks } from './layout';
 import { PixelSprite } from './PixelSprite';
@@ -109,6 +109,9 @@ function GrowingTree({ x, groundY, cell, progress }: { x: number; groundY: numbe
   </g>;
 }
 
+/** The sky's faint grid, in scene units: one cell a little smaller than half a tree leaf. */
+const SKY_GRID = 2.5;
+
 /** Fireworks run for this long after a block completes, then the sky goes quiet. */
 const CELEBRATION_MS = 5000;
 
@@ -123,6 +126,7 @@ export function FocusScene({
   fill = false,
 }: FocusSceneProps) {
   const isWide = variant === 'wide';
+  const gridId = `px-sky-grid-${useId().replace(/:/g, '')}`;
   const panel = useRef<HTMLDivElement>(null);
   const [aspect, setAspect] = useState(3.5);
   useEffect(() => {
@@ -143,7 +147,8 @@ export function FocusScene({
     return () => window.clearTimeout(timer);
   }, [celebrating]);
   // Wide: 280×80 (3.5:1), Card: 192×120 (1.6:1)
-  const height = fill ? 120 : isWide ? 80 : 120;
+  // A filled scene matches its box: wider boxes widen the sky, taller ones raise it, so it never letterboxes.
+  const height = fill ? Math.max(120, Math.round(192 / aspect)) : isWide ? 80 : 120;
   const width = fill ? Math.max(192, Math.round(height * aspect)) : isWide ? 280 : 192;
   const groundHeight = 12;
   const groundY = height - groundHeight;
@@ -155,7 +160,8 @@ export function FocusScene({
   const pyramidUnitsW = PYRAMID_ROWS * BRICK_W;
   const pyramidUnitsH = PYRAMID_ROWS * BRICK_H;
   // One scale for both axes keeps the bricks square-cornered, as in the classic pyramid.
-  const scale = (skyHeight * (fill ? 0.58 : 0.66)) / pyramidUnitsH;
+  // In a tall scene the width limits it instead, so the pyramid leaves room for the trees.
+  const scale = Math.min((skyHeight * (fill ? 0.58 : 0.66)) / pyramidUnitsH, fill ? (width * 0.5) / pyramidUnitsW : Infinity);
   const scaleX = scale;
   const scaleY = scale;
 
@@ -166,8 +172,8 @@ export function FocusScene({
 
   // Trees: tiered pines that grow with the block, centred in the space beside the pyramid.
   const treeCell = fill
-    ? (skyHeight * 0.4) / TREE_TOTAL_ROWS
-    : Math.min((pyramidLeft - 4) / 11.5, (skyHeight * 0.5) / TREE_TOTAL_ROWS);
+    ? Math.min((skyHeight * 0.4) / TREE_TOTAL_ROWS, (width * 0.2) / 11)
+    :Math.min((pyramidLeft - 4) / 11.5, (skyHeight * 0.5) / TREE_TOTAL_ROWS);
   // A filled scene keeps its trees near the edges, however wide the sky.
   const treeInset = fill ? treeCell * 6 + 4 : pyramidLeft / 2;
   const leftTreeX = treeInset;
@@ -203,8 +209,14 @@ export function FocusScene({
         viewBox={`0 0 ${width} ${height}`}
         style={fill ? { width: '100%', height: '100%', display: 'block' } : { width: '100%', height: 'auto', display: 'block' }}
       >
-        {/* Sky */}
+        {/* Sky, with the faint pixel grid of the prototype's sky */}
         <rect width={width} height={height} fill="var(--px-sky)" />
+        <defs>
+          <pattern id={gridId} width={SKY_GRID} height={SKY_GRID} patternUnits="userSpaceOnUse">
+            <path d={`M ${SKY_GRID} 0 H 0 V ${SKY_GRID}`} fill="none" stroke="var(--px-sky-grid, rgba(255,255,255,.22))" strokeWidth={0.12} />
+          </pattern>
+        </defs>
+        <rect width={width} height={groundY} fill={`url(#${gridId})`} />
 
         {/* Clouds */}
         <PixelSprite sprite={CLOUD} palette={PALETTE} x={cloud1.x} y={cloud1.y} />
