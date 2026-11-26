@@ -53,7 +53,7 @@
     width:18px;height:18px;border-radius:6px;display:grid;place-items:center;flex:none;
     background:rgba(255,255,255,.95);color:var(--accent);
   }
-  .signin-check .ic{width:12px;height:12px;stroke-width:3}
+  .signin-check .ic{width:12px;height:12px;stroke-width:2.5}
   .signin-mock{
     margin-top:auto;height:min(560px,calc(100dvh - 300px));border-radius:20px 20px 0 0;overflow:hidden;
     box-shadow:0 -10px 40px rgba(0,0,0,.25);margin-bottom:-2px;
@@ -669,7 +669,8 @@ html.dragging-row .task,html.dragging-row .subtaskrow{transition:margin .16s eas
 /* Sidebar: no dot before the sync line; a plain white search field with ⌘K as text. */
 .sidebar .syncdot{display:none}
 .sidebar .searchbtn{background:var(--surface);border:1px solid var(--border);color:var(--muted)}
-.sidebar .searchbtn kbd{border:0;background:transparent;padding:0;font:inherit;font-size:11px;color:var(--faint)}
+.sidebar .searchbtn kbd{border:0;background:transparent;padding:0;font:inherit;font-size:11px;color:var(--faint);opacity:.65;transition:opacity .15s}
+.sidebar .searchbtn:is(:hover,:focus-visible) kbd{opacity:1}
 
 /* The profile menu hangs below the profile, narrower, like the reference. */
 .sidebar .side-top .menu{top:calc(100% - 2px);left:4px;width:max-content;min-width:198px;max-width:240px}
@@ -1225,7 +1226,7 @@ img.notifav{display:block;width:34px;height:34px;object-fit:cover}
 }
 .comment-file small{color:var(--faint)}
 /* Todoist's solid mark is heavier than the line icons around it: a softer grey keeps the menu even. */
-.menu-mark{color:var(--muted)}
+.menu-mark{color:#8f8f8f;width:14px;height:14px;border-radius:28%}
 .comment-edit{display:grid;gap:8px;margin-top:4px}
 .comment-edit .comment-field{border-radius:14px}
 .comment-edit .comment-field:focus{outline:none;border-color:color-mix(in srgb,var(--text) 30%,var(--border-strong));box-shadow:none}
@@ -2117,7 +2118,7 @@ html{-webkit-tap-highlight-color:transparent}
   .signin-checks{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:14px}
   .signin-checks li{display:flex;gap:10px;align-items:center}
   .signin-check{width:18px;height:18px;border-radius:6px;display:grid;place-items:center;flex:none;background:rgba(255,255,255,.95);color:var(--accent)}
-  .signin-check .ic{width:12px;height:12px;stroke-width:3}
+  .signin-check .ic{width:12px;height:12px;stroke-width:2.5}
   .signin-mock{margin-top:8px;height:230px;border-radius:16px 16px 0 0;overflow:hidden;box-shadow:0 -10px 40px rgba(0,0,0,.25)}
   .signin-mock .polish-preview{border:0;border-radius:0}
 }
@@ -2430,3 +2431,13 @@ html[data-navigation="pointer"] .task:focus-visible::after{content:none}
 .quadrant .parentchip:hover,.quadrant .parentchip:focus-visible{background:var(--btn-soft-hover);color:var(--text)}
 .quadrant .parentchip .ic{flex:none;width:12px;height:12px}
 .quadrant .parentchip-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.ptitle-icons .iconpickergrid { height: 124px; padding-bottom: 0; mask-image: none; -webkit-mask-image: none; }
+.project-picker-color-label { display: block; margin: 12px 0 8px; }
+
+.ptitle-icons .swatches { display:grid; grid-template-columns:repeat(10, 22px); justify-content:space-between; gap:9px 0; overflow:visible; padding:5px 3px; margin:0; }
+.ptitle-icons .swatch { width:22px; }
+.ptitle-icons .swatch .ic { width:11px; height:11px; }
+.deadline-pro-notice { padding:14px; max-width:260px; font-size:var(--fs-13); }
+.deadline-pro-notice p { margin:0; }
+.deadline-pro-notice a { color:var(--accent); text-decoration:underline; text-underline-offset:2px; }

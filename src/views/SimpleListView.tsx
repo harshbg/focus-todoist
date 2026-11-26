@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/EmptyState';
 import { stepLabel, type Step } from '@/domain/steps';
 import { filterRoots } from '@/domain/filterSelection';
 import { pageClass } from '@/domain/pageLayout';
@@ -29,7 +30,7 @@ import { monthItems, somedayItems, splitDust } from '@/domain/views';
 import { summariseLoad } from '@/domain/load';
 import { useScopedItems } from '@/focus/scope';
 import type { TranslationKey } from '@/i18n';
-import { SYSTEM_LABELS, type Item } from '@/domain/types';
+import { type Item, monthLabel } from '@/domain/types';
 import type { DropTarget, RowOrder, TaskPlacement } from '@/domain/dnd';
 
 interface SimpleListViewProps {
@@ -197,7 +198,7 @@ function SimpleListBody({
       ? (inboxId ? { kind: 'project', projectId: inboxId } : undefined)
       : (labelName ? { kind: 'label', label: labelName } : undefined);
   const addition = kind === 'month'
-    ? { labels: [SYSTEM_LABELS.month] }
+    ? { labels: [monthLabel()] }
     : kind === 'someday' || kind === 'filter'
     ? {}
     : kind === 'inbox'
@@ -326,7 +327,9 @@ function SimpleListBody({
 
       {/* A query with commas is several lists, one under the other. Explicit
           grouping and board presentation still use their existing behaviour. */}
-      {current.mode === 'matrix' && !(kind === 'filter' && (filterResult.error || !filter)) ? (
+      {current.mode === 'list' && pool0.length === 0 && (kind !== 'filter' || (filter && !filterResult.error && !filterResult.loading && filterResult.parts !== null)) ? (
+        <EmptyState view={kind} onAdd={kind === 'filter' ? undefined : () => onAddTaskTo(addition)} />
+      ) : current.mode === 'matrix' && !(kind === 'filter' && (filterResult.error || !filter)) ? (
         <MatrixSurface items={scoped} childrenOf={childrenOf} sort={current.sort} showSubtasks={current.filters.showSubtasks} matrix={current.matrix} onOpen={onOpen} showProject />
       ) : current.mode === 'calendar' && !(kind === 'filter' && (filterResult.error || !filter)) ? (
         <CalendarSurface key={viewKey} viewKey={viewKey} items={pool0} childrenOf={childrenOf} onOpen={onOpen} onAddTaskTo={onAddTaskTo} />

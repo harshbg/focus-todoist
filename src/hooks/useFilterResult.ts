@@ -1,3 +1,4 @@
+import { isUncompletable } from '@/domain/types';
 import { useEffect, useMemo } from 'react';
 import { create } from 'zustand';
 import { ApiError } from '@/api/client';
@@ -104,15 +105,19 @@ function pump(): void {
 /** Asks Todoist again for a query, unless the answer held is already for these tasks. */
 function ensure(query: string, lang: string | undefined, signature: string, first = false): void {
   const key = keyOf(query, lang);
+  const owner = storageOwner;
+  const flightKey = `${owner}:${key}`;
   const held = useAnswers.getState().entries[key];
-  if (inFlight.has(key) || (held && held.signature === signature)) return;
-  inFlight.add(key);
+  if (!owner || inFlight.has(flightKey) || (held && held.signature === signature)) return;
+  inFlight.add(flightKey);
   useAnswers.setState((s) => ({ loading: { ...s.loading, [key]: true } }));
 
   const job = async () => {
     try {
+      if (storageOwner !== owner || useStore.getState().snapshot.user?.id !== owner) return;
       const parts = splitQuery(query);
       const lists = await Promise.all(parts.map((part) => fetchFilterIds(part, lang)));
+      if (storageOwner !== owner || useStore.getState().snapshot.user?.id !== owner) return;
       const entry: Entry = { parts: parts.map((part, index) => ({ query: part, ids: lists[index] })), error: null, signature };
       useAnswers.setState((s) => ({
         entries: { ...s.entries, [key]: entry },
@@ -120,6 +125,7 @@ function ensure(query: string, lang: string | undefined, signature: string, firs
       }));
       save();
     } catch (error) {
+      if (storageOwner !== owner || useStore.getState().snapshot.user?.id !== owner) return;
       if (error instanceof ApiError && error.isRefusal) {
         useAnswers.setState((s) => ({
           entries: { ...s.entries, [key]: { parts: null, error: error.detail, signature } },
@@ -130,8 +136,10 @@ function ensure(query: string, lang: string | undefined, signature: string, firs
         useAnswers.setState((s) => ({ stale: { ...s.stale, [key]: true } }));
       }
     } finally {
-      inFlight.delete(key);
-      useAnswers.setState((s) => ({ loading: { ...s.loading, [key]: false } }));
+      inFlight.delete(flightKey);
+      if (storageOwner === owner && useStore.getState().snapshot.user?.id === owner) {
+        useAnswers.setState((s) => ({ loading: { ...s.loading, [key]: false } }));
+      }
     }
   };
   /* The page in front goes ahead of the counts. */
@@ -211,7 +219,7 @@ function countOf(parts: FilterPart[] | null | undefined, snapshot: Snapshot): nu
   let count = 0;
   for (const id of ids) {
     const item = snapshot.items[id];
-    if (item && !item.checked && !item.is_deleted) count += 1;
+    if (item && !item.checked && !item.is_deleted && !isUncompletable(item)) count += 1;
   }
   return count;
 }

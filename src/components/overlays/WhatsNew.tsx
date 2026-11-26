@@ -1,7 +1,6 @@
 import './whatsnew.css';
-import { ChangelogPreview } from './ChangelogPreview';
 import { changelogVisual, type ChangelogVisual } from '@/domain/changelogVisuals';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Overlay } from './Overlay';
 import { Icon } from '../Icon';
 import { Select } from '../Select';
@@ -12,6 +11,9 @@ import {
 } from '@/domain/changelog';
 import { tourStops } from '@/domain/tour';
 import type { TranslationKey } from '@/i18n';
+
+/* The pictures are only drawn once the list is open: they stay out of the first screen's code. */
+const ChangelogPreview = lazy(() => import('./ChangelogPreview').then((module) => ({ default: module.ChangelogPreview })));
 
 /**
  * Which releases the dialog is showing: the ones not seen yet after an
@@ -127,7 +129,7 @@ export function WhatsNew({ scope, onClose, onShowMe, onSeeChangelog }: WhatsNewP
             {description && <span className="whatsnew-para" dangerouslySetInnerHTML={{ __html: renderTitle(description) }} />}
           </span>
         </div>
-        <ChangelogPreview kind={visual} />
+        {visual && <Suspense fallback={<div className="changelog-preview" aria-hidden="true" />}><ChangelogPreview kind={visual} /></Suspense>}
       </>
     );
   };

@@ -6,7 +6,7 @@ import { assignees } from '@/domain/sharing';
 import { useProjectPeople } from '@/hooks/useProjectPeople';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { toTodoistPriority } from '@/domain/types';
+import { isUncompletable, toggleUncompletableContent, toTodoistPriority } from '@/domain/types';
 import { Icon } from './Icon';
 import { useT } from '@/hooks/useT';
 import { useMenuKeys } from '@/hooks/useMenuKeys';
@@ -19,7 +19,7 @@ import { copyText, isTemporaryId, todoistTaskUrl } from '@/api/links';
 import { ROW_PRESS_EVENT, type RowMenu } from '@/domain/gestures';
 import { useStore } from '@/store/store';
 import { useConfirm } from './overlays/Confirm';
-import { effectiveEstimate } from '@/domain/estimates';
+import { canStoreDurations, effectiveEstimate } from '@/domain/estimates';
 import { DurationChooser } from './DurationField';
 import { DatePicker, taskShortcuts, type RecurrenceReading } from './DatePicker';
 import { nextOccurrence, nextOccurrenceLabel } from '@/domain/nextOccurrence';
@@ -174,6 +174,8 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep, contextOnly = fa
   const setRecurrence = useStore((s) => s.setRecurrence);
   const toast = useStore((s) => s.toast);
   const demo = useStore((s) => s.demo);
+  const user = useStore((s) => s.snapshot.user);
+  const deadlineLocked = !demo && !item.deadline && !canStoreDurations(user);
   const dateFormat = useStore((s) => s.prefs.dateFormat);
   const hour12 = useStore((s) => s.prefs.hour12);
   const [menu, setMenu] = useState<'none' | 'schedule' | 'more' | 'estimate' | 'move' | 'priority' | 'deadline'>('none');
@@ -520,9 +522,9 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep, contextOnly = fa
       </div>}
       {menu === 'deadline' && <div className={`popover rowmenu schedulemenu${phone ? ' asSheet' : placement.className}`} role="menu" ref={placement.ref}>
         {back}
-        <DatePicker value={item.deadline?.date ?? ''} label={t('detail.deadline')} onEscape={() => setMenu('none')} onPick={(date) => {
+        {deadlineLocked ? <div className="deadline-pro-notice"><p>{t('deadline.proRequired')} <a href="https://www.todoist.com/pricing" target="_blank" rel="noopener noreferrer">{t('deadline.learnMore')}</a></p></div> : <DatePicker value={item.deadline?.date ?? ''} label={t('detail.deadline')} onEscape={() => setMenu('none')} onPick={(date) => {
           setMenu('none'); void updateTask(item.id, { deadline: date ? { date: date.slice(0, 10), lang: locale } : null });
-        }} />
+        }} />}
       </div>}
 
       {menu === 'estimate' && estimateSheet}
@@ -745,6 +747,9 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep, contextOnly = fa
             <button className="opt" onClick={() => {
               setMenu('none'); void useStore.getState().duplicateTask(item.id).then(() => toast(t('task.duplicated')));
             }}><span><Icon name="copy" size="sm" />{t('task.duplicate')}</span></button>
+            <button className="opt" onClick={() => {
+              setMenu('none'); void updateTask(item.id, { content: toggleUncompletableContent(item) });
+            }}><span><Icon name="lock" size="sm" />{t(isUncompletable(item) ? 'task.makeCompletable' : 'task.makeUncompletable')}</span></button>
             <hr />
             <button
               className="opt danger"

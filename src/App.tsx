@@ -1,6 +1,4 @@
 import { useDataSnapshot } from '@/hooks/useDataSnapshot';
-import { useProjectCompletionCounts } from '@/hooks/useProjectCompletionCounts';
-import { isUncompletable } from '@/domain/types';
 import { openItems } from './store/selectors';
 import { useLabelRenames } from './hooks/useLabelRenames';
 import { EstimateConversion } from '@/components/overlays/EstimateConversion';
@@ -43,13 +41,14 @@ const SettingsView = lazy(() => import('./views/SettingsView').then((module) => 
 const EisenhowerView = lazy(() => import('./views/EisenhowerView').then((module) => ({ default: module.EisenhowerView })));
 import { ConnectView } from './views/ConnectView';
 import { EstimateStorageDialog } from './components/overlays/EstimateStorageDialog';
-import { Walkthrough } from './components/overlays/Walkthrough';
+const Walkthrough = lazy(() => import('./components/overlays/Walkthrough').then((module) => ({ default: module.Walkthrough })));
 import { PomodoroFocus } from './components/overlays/PomodoroFocus';
 import { PomodoroAsk } from './components/overlays/PomodoroAsk';
 import { usePomodoro } from './store/pomodoro';
 import { Tour } from './components/overlays/Tour';
 import { InstallPrompt } from './components/overlays/InstallPrompt';
-import { WhatsNew, type WhatsNewScope } from './components/overlays/WhatsNew';
+import type { WhatsNewScope } from './components/overlays/WhatsNew';
+const WhatsNew = lazy(() => import('./components/overlays/WhatsNew').then((module) => ({ default: module.WhatsNew })));
 import { compareVersions, hasChanges, parseChangelog, unseenReleases } from './domain/changelog';
 import { VERSION } from './app-info';
 import { hasOnboarded, shouldAskEstimateStorage } from './domain/onboarding';
@@ -65,8 +64,8 @@ import { labelRoots, rootItems } from './store/selectors';
 import { detectConflicts } from './domain/conflicts';
 import { placementForPage } from './domain/dnd';
 import { useParentEstimates } from './hooks/useParentEstimates';
-import { bucketOf, monthItems, somedayItems, upcomingItems, weekItems } from './domain/views';
-import { effectiveEstimate } from './domain/estimates';
+import { bucketOf, monthItems, somedayItems, weekItems } from './domain/views';
+import { unestimatedWorkload } from './domain/load';
 import type { Item } from './domain/types';
 import type { TranslationKey } from './i18n';
 import { useUpdateReady } from './lib/appUpdate';
@@ -438,7 +437,8 @@ export function App() {
       <PomodoroFocus />
       <MacUpdateCard enabled={!QUICK_ADD && ready && (connected || demo) && !tourOpen && !walkthroughOpen && !whatsNew} />
       <PomodoroAsk open={askPomodoro && !pomodoroAsked} onClose={() => setAskPomodoro(false)} />
-      <Walkthrough
+      {walkthroughOpen && <Suspense fallback={null}>
+        <Walkthrough
         open={walkthroughOpen}
         onDone={() => setWalkthrough(false)}
         onTour={() => {
@@ -449,6 +449,7 @@ export function App() {
           setTourOpen(true);
         }}
       />
+      </Suspense>}
       <Tour
         open={tourOpen}
         versions={tourVersions}
@@ -457,7 +458,8 @@ export function App() {
           setTourVersions(null);
         }}
       />
-      <WhatsNew
+      {whatsNew !== null && <Suspense fallback={null}>
+        <WhatsNew
         scope={whatsNew}
         onSeeChangelog={() => {
           setPrefs({ seenVersion: VERSION });
@@ -476,6 +478,7 @@ export function App() {
           window.setTimeout(() => setTourOpen(true), 100);
         }}
       />
+      </Suspense>}
 
       {/* Both lanes are always in the page, empty when there is nothing to
           say: a live region has to exist before its text is put in, or most
@@ -682,14 +685,6 @@ function AppShell({
 }: ShellProps) {
   const { t } = useT();
   const { snapshot, items, childrenOf } = useData(route.view === 'project' ? `project:${route.id}` : route.view === 'label' ? `label:${route.id}` : route.view === 'filter' ? `filter:${route.id}` : route.view);
-  const completedProjectCounts = useProjectCompletionCounts(snapshot);
-  const projectProgressCounts = useMemo(() => {
-    const open: Record<string, number> = {};
-    for (const item of openItems(snapshot)) {
-      if (!isUncompletable(item)) open[item.project_id] = (open[item.project_id] ?? 0) + 1;
-    }
-    return { open, completed: completedProjectCounts };
-  }, [snapshot, completedProjectCounts]);
   const conflictSettings = useStore((s) => s.prefs.conflicts);
   const demo = useStore((s) => s.demo);
   const updateReady = useUpdateReady();
@@ -738,7 +733,7 @@ function AppShell({
         };
       }
       case 'upcoming':
-        return { contextItems: upcomingItems(roots), contextLabel: t('nav.upcoming') };
+        return { contextItems: roots.filter((item) => ['overdue', 'today', 'upcoming'].includes(bucketOf(item))), contextLabel: t('nav.upcoming') };
       case 'review':
         return { contextItems: weekItems(roots), contextLabel: t('nav.review') };
       case 'month':
@@ -760,7 +755,7 @@ function AppShell({
   }, [route, roots, items, snapshot, t]);
 
   const unestimatedItems = useMemo(
-    () => contextItems.filter((i) => effectiveEstimate(i, childrenOf).minutes === null),
+    () => unestimatedWorkload(contextItems, childrenOf),
     [contextItems, childrenOf],
   );
   /* The estimate pass is for the page in front, unless something else names
@@ -875,8 +870,7 @@ function AppShell({
     onUnestimated: openUnestimated,
     onAddTaskTo: addTaskTo,
     onProjectSheet: setProjectSheet,
-    projectProgressCounts,
-  }), [openTask, openInsights, openUnestimated, addTaskTo, setProjectSheet, projectProgressCounts]);
+  }), [openTask, openInsights, openUnestimated, addTaskTo, setProjectSheet]);
 
   // Overlay state belongs to the shell; keep the unchanged page subtree intact.
   const pageContent = useMemo(() => (<Suspense fallback={<p role="status">{t('common.loading')}</p>}>
@@ -924,7 +918,6 @@ function AppShell({
     >
       <Sidebar
         route={route}
-        projectProgressCounts={projectProgressCounts}
         onAddTask={addTask}
         onSearch={() => setSearchOpen(true)}
         onIssues={() => setIssuesOpen(true)}
@@ -1057,8 +1050,7 @@ function AppShell({
           </div>
           <Sidebar
             route={route}
-            projectProgressCounts={projectProgressCounts}
-            variant="sheet"
+                variant="sheet"
             onAddTask={() => { setBrowseOpen(false); addTask(); }}
             onSearch={() => { setBrowseOpen(false); setSearchOpen(true); }}
             onIssues={() => { setBrowseOpen(false); setIssuesOpen(true); }}
@@ -1070,7 +1062,7 @@ function AppShell({
       <Unestimated
         open={unestimatedOpen}
         onClose={() => { setUnestimatedOpen(false); setUnestimatedFor(null); }}
-        items={unestimatedFor ?? unestimatedItems}
+        items={unestimatedFor ? unestimatedWorkload(unestimatedFor, childrenOf) : unestimatedItems}
         onOpen={openTask}
       />
       <BulkBar />

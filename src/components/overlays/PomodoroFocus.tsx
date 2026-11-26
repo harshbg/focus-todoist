@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ExternalLink, Pause, Play, Timer, X } from 'lucide-react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Cancel01Icon, LinkSquare02Icon, PauseIcon, PlayIcon, Timer01Icon } from '@hugeicons/core-free-icons';
 import { useT } from '@/hooks/useT';
 import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
@@ -7,7 +8,7 @@ import { usePomodoro } from '@/store/pomodoro';
 import { usePomodoroNow } from '@/hooks/usePomodoroClock';
 import { displayMsAt, formatClock } from '@/domain/pomodoro';
 import { colorValue } from '@/domain/colors';
-import { SYSTEM_LABELS, displayTaskContent, toDisplayPriority, weekLabel, type Item } from '@/domain/types';
+import { displayTaskContent, toDisplayPriority, weekLabel, type Item, monthLabel } from '@/domain/types';
 import { dueDate, formatRelativeDay } from '@/domain/dates';
 import { effectiveEstimate, formatDuration } from '@/domain/estimates';
 import { Icon } from '../Icon';
@@ -45,7 +46,7 @@ export function PomodoroFocus() {
   const controls = (
     <div className="pomo-fs-controls">
       <button type="button" className="btn primary" onClick={() => (done ? usePomodoro.getState().startNext() : usePomodoro.getState().togglePause())}>
-        {paused || done ? <Play size={15} /> : <Pause size={15} />}
+        {paused || done ? <HugeiconsIcon icon={PlayIcon} size={15} /> : <HugeiconsIcon icon={PauseIcon} size={15} />}
         {done ? t(nextKey) : paused ? t('pomodoro.resume') : t('pomodoro.pause')}
       </button>
       <button type="button" className="btn" onClick={() => usePomodoro.getState().end()}>{t('pomodoro.end')}</button>
@@ -62,9 +63,9 @@ export function PomodoroFocus() {
   return (
     <section className={`pomo-fs ${task ? 'linked' : 'free'}`} role="dialog" aria-modal="true" aria-label={t('pomodoro.focus')}>
       <header>
-        <span><Timer size={15} />{t('pomodoro.focus')}</span>
+        <span><HugeiconsIcon icon={Timer01Icon} size={15} />{t('pomodoro.focus')}</span>
         <button type="button" onClick={() => usePomodoro.getState().setFullscreen(false)}>
-          {t('pomodoro.back')}<X size={15} />
+          {t('pomodoro.back')}<HugeiconsIcon icon={Cancel01Icon} size={15} />
         </button>
       </header>
       {task
@@ -90,7 +91,7 @@ function TaskPanel({ item }: { item: Item }) {
   const has = (name: string) => item.labels.some((l) => l.toLowerCase() === name.toLowerCase());
   const when = due ? formatRelativeDay(due, locale)
     : has(weekLabel()) ? t('review.to.anytime')
-    : has(SYSTEM_LABELS.month) ? t('review.to.month') : null;
+    : has(monthLabel()) ? t('review.to.month') : null;
   const priority = toDisplayPriority(item.priority);
   /* The title is saved when the screen goes, too: ending the session closes it
      before the field has lost focus, and a rename must not be lost with it. */
@@ -128,18 +129,19 @@ function TaskPanel({ item }: { item: Item }) {
           <div className="pomo-fs-project" style={{ color: colorValue(project.color) }}><span>#</span>{project.name}</div>
         )}
         <button type="button" className="pomo-fs-open" onClick={() => { usePomodoro.getState().setFullscreen(false); window.dispatchEvent(new CustomEvent('pomodoro:open-task', { detail: item.id })); }}>
-          <ExternalLink size={13} />{t('pomodoro.openTask')}
+          <HugeiconsIcon icon={LinkSquare02Icon} size={13} />{t('pomodoro.openTask')}
         </button>
       </div>
       <div className="pomo-fs-titlerow">
         <button type="button" className={`check p${priority}`} role="checkbox" aria-checked={item.checked} aria-label={t('task.complete')} onClick={() => void toggleTask(item.id)} />
-        <input
+        <textarea
           className="pomo-fs-title"
+          rows={2}
           value={title}
           aria-label={t('detail.title')}
-          onChange={(event) => setTitle(event.target.value)}
+          onChange={(event) => setTitle(event.target.value.replace(/\n/g, ' '))}
           onBlur={commitTitle}
-          onKeyDown={(event) => { if (event.key === 'Enter') (event.target as HTMLInputElement).blur(); }}
+          onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); (event.target as HTMLTextAreaElement).blur(); } }}
         />
       </div>
       {(when || minutes !== null) && (

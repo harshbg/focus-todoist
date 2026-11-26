@@ -654,14 +654,14 @@ button.subprog[aria-expanded="false"]{background:var(--subtle)}
 .group.accent-dust .gheadblock{border-bottom-color:var(--dust)}
 
 /* A heavier tick reads better at this size. */
-.check .ic{stroke-width:2.6}
+.check .ic{stroke-width:2.2}
 
 /* The recurring marker takes the colour of the date it belongs to. */
 .repeatdot{
   width:18px;height:18px;display:inline-grid;place-items:center;
   border-radius:var(--r-full);flex:0 0 auto;
 }
-.repeatdot .ic{width:11px;height:11px;stroke-width:2}
+.repeatdot .ic{width:11px;height:11px;stroke-width:1.8}
 .repeatdot.today{color:var(--p3);background:rgba(36,111,224,.14)}
 .repeatdot.late{color:var(--late);background:rgba(209,69,59,.14)}
 .repeatdot.future{color:var(--muted);background:var(--subtle)}
@@ -1343,7 +1343,7 @@ button.subprog[aria-expanded="false"]{background:var(--subtle)}
   width:16px;height:16px;display:grid;place-items:center;
   border-radius:var(--r-sm);color:#fff;
 }
-.logtick .ic{width:11px;height:11px;stroke-width:3}
+.logtick .ic{width:11px;height:11px;stroke-width:2.5}
 .logtick.p1{background:var(--p1)}
 .logtick.p2{background:var(--p2)}
 .logtick.p3{background:var(--p3)}
@@ -1533,6 +1533,7 @@ button.subprog[aria-expanded="false"]{background:var(--subtle)}
   opacity:0;transition:opacity .12s ease-out;
 }
 .mode:hover .addsection:hover,
+.task-table .addsection:hover,
 .addsection:focus-visible,
 /* While a section is being dragged, every slot shows where it could land. */
 .addsection-slot.over .addsection{opacity:1}
@@ -2668,7 +2669,7 @@ button.subprog[aria-expanded="false"]{background:var(--subtle)}
   width:44px;height:44px;flex:0 0 auto;display:grid;place-items:center;
   border-radius:14px;color:var(--on-accent,#fff);background:var(--accent);
 }
-.wt-mark .ic{width:22px;height:22px;stroke-width:2}
+.wt-mark .ic{width:22px;height:22px;stroke-width:1.8}
 .wt-skip{
   flex:0 0 auto;padding:4px 8px;border-radius:var(--r-sm);
   color:var(--muted);font-size:var(--fs-12);font-weight:600;
@@ -3123,3 +3124,18 @@ html.desktop-app.quickadd body::before{display:none}
 :root:not([data-theme="dark"]) .descview.placeholder { color: #808080; }
 
 :root[data-background="colored"]:not([data-theme="dark"]) .sidebar :is(input, textarea)::placeholder { color: rgba(255,255,255,.62); }
+
+/* A team folder row: the chevron and the ⋯ share the right edge, so the ⋯ takes
+   the place of the chevron while the row is hovered, focused or its menu is open (#463). */
+.navrow:hover .folderitem .disclose,
+.navrow:focus-within .folderitem .disclose,
+.navrow.menuopen .folderitem .disclose{opacity:0}
+/* No hover and no long press on a team folder, so on a touch screen its ⋯ stays
+   in view, beside the chevron rather than over it. */
+@media (hover:none),(max-width:720px){
+  .navrow.folderrow .navmore{display:grid;opacity:1;pointer-events:auto}
+  .navrow.folderrow .navend{right:34px}
+  .navrow.folderrow:hover .folderitem .disclose,
+  .navrow.folderrow:focus-within .folderitem .disclose,
+  .navrow.folderrow.menuopen .folderitem .disclose{opacity:1}
+}

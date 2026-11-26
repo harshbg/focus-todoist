@@ -1,3 +1,4 @@
+import { isUncompletable } from '@/domain/types';
 import { useMemo, useRef, useState } from 'react';
 import { useDndMonitor } from '@dnd-kit/core';
 import { Icon } from '@/components/Icon';
@@ -113,7 +114,7 @@ export function LabelsView() {
               label={label}
               shift={shiftOf(index)}
               order={labels.map((l) => l.name)}
-              count={labelRoots(items, label.name, snapshot).length}
+              count={labelRoots(items, label.name, snapshot).filter((item) => !isUncompletable(item)).length}
               onEdit={() => setSheet({ mode: 'edit', labelId: label.id })}
             />
           ))}

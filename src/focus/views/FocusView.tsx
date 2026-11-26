@@ -2,7 +2,8 @@ import '@/focus/fonts';
 import { markedWorkProjects } from '@/focus/scope';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
-import { Bell, Check, ExternalLink, Play, Plus, X } from 'lucide-react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { PlayIcon } from '@hugeicons/core-free-icons';
 import { useConfirm } from '@/components/overlays/Confirm';
 import { Overlay } from '@/components/overlays/Overlay';
 import { Icon } from '@/components/Icon';
@@ -132,7 +133,7 @@ function RemindersButton() {
   }, [open]);
   return <div className="fv-popwrap" ref={box}>
     <button type="button" className="btn" aria-expanded={open} aria-label={t('focus.remindersTitle')} title={t('focus.remindersTitle')}
-      onClick={() => setOpen((value) => !value)}><Bell size={15} aria-hidden="true" className="ic" /></button>
+      onClick={() => setOpen((value) => !value)}><Icon name="bell" /></button>
     {open && <div className="fv-pop" role="dialog" aria-label={t('focus.remindersTitle')}><ReminderSettings /></div>}
   </div>;
 }
@@ -238,7 +239,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   } else if (justLogged) {
     bar = <div className="fv-bar fv-bar--done">
       <div className="fv-now">
-        <span className="fv-kicker fv-kicker--ok"><Check size={13} aria-hidden="true" /> {t('focus.blockLogged')} · {formatDuration(justLogged.minutes, locale)}</span>
+        <span className="fv-kicker fv-kicker--ok"><Icon name="check" size="sm" /> {t('focus.blockLogged')} · {formatDuration(justLogged.minutes, locale)}</span>
         {title(justLogged.title, justLogged.taskId, 'fv-now-title')}
       </div>
       <div className="fv-feel">
@@ -261,7 +262,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
         <TaskSearch items={items} value={query} selectedId={selectedId} placeholder={t('focus.whatNext')}
           onChange={(value) => { setQuery(value); setSelectedId(null); }} onSelect={choose}
           onCreate={() => void startChosen()} />
-        {selected && <button type="button" className="iconbtn fv-clear" aria-label={t('focus.clearTask')} title={t('focus.clearTask')} onClick={clearChoice}><X size={15} aria-hidden="true" /></button>}
+        {selected && <button type="button" className="iconbtn fv-clear" aria-label={t('focus.clearTask')} title={t('focus.clearTask')} onClick={clearChoice}><Icon name="close" /></button>}
       </div>
       <div className="fv-opts">
         <div className="chiprow" role="group" aria-label={t('focus.timeRequired')}>
@@ -275,7 +276,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
         <span className="fv-grow" />
         <button type="button" className="btn quiet" onClick={startBreak}>{t('focus.takeBreak', { minutes: prefs.breakMin })}</button>
         <button type="submit" className="btn primary lg" disabled={busy || (!selected && !query.trim())}>
-          <Play size={14} aria-hidden="true" className="ic" />{t('focus.start')}</button>
+          <HugeiconsIcon icon={PlayIcon} size={15} strokeWidth={1.8} className="ic" />{t('focus.start')}</button>
       </div>
     </form>;
   }
@@ -284,9 +285,9 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
     <div className="phead">
       <div className="phead-text"><h1 className="ptitle">{t('nav.focus')}</h1></div>
       <div className="pactions">
-        <button type="button" className="btn" aria-label={t('focus.logPast')} onClick={() => setManualOpen(true)}><Plus size={15} aria-hidden="true" className="ic" /><span className="fv-btn-label">{t('focus.logPast')}</span></button>
+        <button type="button" className="btn" aria-label={t('focus.logPast')} onClick={() => setManualOpen(true)}><Icon name="plus" /><span className="fv-btn-label">{t('focus.logPast')}</span></button>
         <RemindersButton />
-        <button type="button" className="btn" aria-label={t('focus.openSidecar')} onClick={openSidecar}><ExternalLink size={15} aria-hidden="true" className="ic" /><span className="fv-btn-label">{t('focus.openSidecar')}</span></button>
+        <button type="button" className="btn" aria-label={t('focus.openSidecar')} onClick={openSidecar}><Icon name="external" /><span className="fv-btn-label">{t('focus.openSidecar')}</span></button>
       </div>
     </div>
     <div className="metrics">
@@ -319,7 +320,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
           : <div className="fv-tasks">{queue.map((item) => <div key={item.id} className="taskwrap fv-taskwrap">
             <TaskRow item={item} childrenOf={childrenOf} onOpen={onOpen} />
             {pinned.includes(item.id) && <button type="button" className="iconbtn fv-unpin" aria-label={t('focus.removeQueue', { title: plainTitle(item.content) })}
-              title={t('focus.removeQueue', { title: plainTitle(item.content) })} onClick={() => saveQueue(pinned.filter((id) => id !== item.id))}><X size={14} aria-hidden="true" /></button>}
+              title={t('focus.removeQueue', { title: plainTitle(item.content) })} onClick={() => saveQueue(pinned.filter((id) => id !== item.id))}><Icon name="close" size="sm" /></button>}
           </div>)}</div>}
       </section>
 
@@ -340,7 +341,7 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
             <button type="button" className="iconbtn fv-log-del" aria-label={t('focus.deleteEntry', { title: plainTitle(entry.title) })}
               title={t('focus.deleteEntry', { title: plainTitle(entry.title) })} onClick={async () => {
                 if (await confirm({ title: t('focus.deletePrompt'), destructive: true })) void deleteEntry(entryKey(entry));
-              }}><X size={14} aria-hidden="true" /></button>
+              }}><Icon name="close" size="sm" /></button>
           </li>)}</ul>}
       </section>
     </div>

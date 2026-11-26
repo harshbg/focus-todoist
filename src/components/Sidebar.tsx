@@ -1,4 +1,5 @@
-import { ProjectProgress } from './ProjectProgress';
+import { isUncompletable } from '@/domain/types';
+import { useSafeDisconnect } from '@/hooks/useSafeDisconnect';
 import { readFolderState, writeFolderState } from '@/domain/folderState';
 import { matrixRoots, matrixSettings } from '@/domain/eisenhower';
 import { SidebarResize } from './SidebarResize';
@@ -11,6 +12,7 @@ import { FilterMark } from './FilterMark';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon, type IconName } from './Icon';
+import { TodoistMark } from './TodoistMark';
 import { WorkspaceAvatar } from './WorkspaceFilter';
 import { useT } from '@/hooks/useT';
 import { useData } from '@/hooks/useData';
@@ -32,6 +34,7 @@ import { Droppable } from './dnd/Droppable';
 import { ProjectDropRow, ProjectRowSortable } from './dnd/ProjectRowSortable';
 import { FEEDBACK_URL } from '@/app-info';
 import { ProjectMenu } from './ProjectMenu';
+import { FolderMenu } from './FolderMenu';
 import { DraggableTag } from './dnd/DraggableTag';
 import { dragClock } from './dnd/DragProvider';
 import type { ProjectSheetTarget } from './overlays/ProjectSheet';
@@ -42,7 +45,6 @@ import { useScopedSnapshot } from '@/focus/scope';
 
 interface SidebarProps {
   route: Route;
-  projectProgressCounts: { open: Record<string, number>; completed: Record<string, number> };
   onAddTask: () => void;
   onSearch: () => void;
   onIssues: () => void;
@@ -78,7 +80,7 @@ const GO_KEYS: Partial<Record<ViewId, string>> = {
 const HINT_DELAY_MS = 550;
 
 export function Sidebar({
-  route, projectProgressCounts, onAddTask, onSearch, onIssues, onProjectSheet, issuesCount, variant = 'rail',
+  route, onAddTask, onSearch, onIssues, onProjectSheet, issuesCount, variant = 'rail',
 }: SidebarProps) {
   /* The list scrolls under the Add task area, which grows with its contents
      (the sync line, a second row of buttons). The scroller keeps as much room
@@ -110,7 +112,7 @@ export function Sidebar({
   const sidebarNav = useStore((s) => s.prefs.sidebarNav);
   const showSearch = useStore((s) => s.prefs.sidebarSearch);
   const showCounts = useStore((s) => s.prefs.sidebarCounts);
-  const disconnect = useStore((s) => s.disconnect);
+  const disconnect = useSafeDisconnect();
   const demo = useStore((s) => s.demo);
   const draggingProjectId = useStore((s) => s.draggingProjectId);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -186,7 +188,7 @@ export function Sidebar({
       const dated = (group: GroupKey, layout: boolean) =>
         datedRoots(openItems(scoped), scoped, group, { subtasks: filters.showSubtasks, layout, quick: prefs.showQuickGroup });
       const list = key === 'upcoming' ? dated('none', false) : ['today', 'week'].includes(key) ? dated(viewPrefs(prefs, key).group, viewPrefs(prefs, key).group === 'none') : key === 'inbox' ? openItems(scoped) : rootItems(openItems(scoped));
-      return applyFilters(list, ['today', 'week', 'upcoming'].includes(key) ? { ...filters, includeScheduled: true } : filters, snapshot, makeChildrenOf(childIndex(scoped)));
+      return applyFilters(list, ['today', 'week', 'upcoming'].includes(key) ? { ...filters, includeScheduled: true } : filters, snapshot, makeChildrenOf(childIndex(scoped))).filter((item) => !isUncompletable(item));
     };
     return {
       inbox: inboxId ? scope('inbox').filter((i) => i.project_id === inboxId).length : 0,
@@ -201,7 +203,7 @@ export function Sidebar({
         const filters = viewPrefs(prefs, 'matrix').filters;
         const scoped = assigneeItems(snapshot, filters.assignees);
         const workspaceItems = filters.workspaces.length ? Object.fromEntries(Object.entries(scoped).filter(([, item]) => filters.workspaces.includes(snapshot.projects[item.project_id]?.workspace_id ?? 'personal'))) : scoped;
-        return matrixRoots(openItems({ ...snapshot, items: workspaceItems }), snapshot.projects, matrixSettings(prefs, snapshot.user?.start_day)).cards.length;
+        return matrixRoots(openItems({ ...snapshot, items: workspaceItems }), snapshot.projects, matrixSettings(prefs, snapshot.user?.start_day)).cards.filter((item) => !isUncompletable(item)).length;
       })(),
       month: monthItems(scope('month')).length,
       someday: somedayItems(scope('someday')).length,
@@ -358,12 +360,29 @@ export function Sidebar({
           {/* A folder takes a project dropped on it, which is the only thing a
               folder is for and was the one place in the sidebar you could not
               drag a project into. */}
-          {node.nativeFolder ? <div className="navrow">
+          {node.nativeFolder ? <div className={`navrow folderrow${rowMenu?.key === `folder-${project.id}` ? ' menuopen' : ''}`}>
             <button className="navitem folderitem" aria-expanded={isOpen}
               onClick={() => toggleFolder(project.id)}>
               <Icon name="project" /><span className="label">{project.name}</span>
               <Icon name={isOpen ? 'caret-up' : 'caret'} size="sm" className="disclose" />
             </button>
+            {/* A folder can be renamed, and deleted once it is empty (#463). */}
+            <span className="navend">
+              <button
+                className="navmore"
+                aria-label={t('folder.actions')}
+                title={t('folder.actions')}
+                aria-haspopup="menu"
+                aria-expanded={rowMenu?.key === `folder-${project.id}`}
+                onClick={(event) => setRowMenu(rowMenu?.key === `folder-${project.id}` ? null
+                  : { key: `folder-${project.id}`, anchor: event.currentTarget })}
+              >
+                <Icon name="more" size="sm" />
+              </button>
+            </span>
+            {rowMenu?.key === `folder-${project.id}` && (
+              <FolderMenu folderId={project.id} anchor={rowMenu.anchor} onClose={() => setRowMenu(null)} />
+            )}
           </div> : <ProjectDropRow projectId={project.id}>
             <button
               className="navitem folderitem"
@@ -427,8 +446,7 @@ export function Sidebar({
                   <span className="hash" style={markerStyle(project.color)}>
                     {customIcon
                       ? <ProjectIcon iconId={customIcon} size="sm" style={{ color: 'inherit' }} />
-                      : <ProjectProgress open={projectProgressCounts.open[project.id] ?? 0} completed={projectProgressCounts.completed[project.id]}
-                          label={projectProgressCounts.completed[project.id] === undefined ? t('project.progressUnknown') : (projectProgressCounts.open[project.id] ?? 0) + projectProgressCounts.completed[project.id] === 0 ? t('project.progressEmpty') : t('project.progressCompletedAll', { done: projectProgressCounts.completed[project.id], total: (projectProgressCounts.open[project.id] ?? 0) + projectProgressCounts.completed[project.id] })} />}
+                      : '#'}
 
                   </span>
               }
@@ -524,7 +542,10 @@ export function Sidebar({
               : initials}
           </span>
           <span className="identity">
-            <strong>{firstName(user?.full_name)}</strong>
+            <span className="idname">
+              <strong>{firstName(user?.full_name)}</strong>
+              <Icon name="caret" size="sm" />
+            </span>
             {karma ? (
               <span className="karma" title={t('karma.progress', {
                 remaining: karma.remaining ?? 0,
@@ -539,7 +560,6 @@ export function Sidebar({
               <small>{user?.email ?? ''}</small>
             )}
           </span>
-          <Icon name="caret" size="sm" />
         </button>
 
         {/* Notifications and conflicts, one door. The dot says there is
@@ -576,12 +596,12 @@ export function Sidebar({
               {t('nav.whatsNew')}
             </button>
             <button onClick={() => { setMenuOpen(false); window.open(FEEDBACK_URL, '_blank', 'noopener,noreferrer'); }}>
-              <Icon name="comment" />
+              <Icon name="bug" />
               {t('nav.feedback')}
             </button>
             <hr />
             <button onClick={() => window.open('https://app.todoist.com', '_blank', 'noopener')}>
-              <Icon name="external" />
+              <TodoistMark className="ic ic-sm menu-mark" />
               {t('nav.openTodoist')}
             </button>
             <button className="danger" onClick={() => { setMenuOpen(false); void disconnect(); }}>
@@ -623,7 +643,7 @@ export function Sidebar({
             {favourites.projects.map((p) =>
               projectNode({ project: p, children: [] }, 'fav-'))}
             {favourites.labels.map((l) =>
-              tagItem(l.name, l.color, labelRoots(items, l.name, snapshot).length))}
+              tagItem(l.name, l.color, labelRoots(items, l.name, snapshot).filter((item) => !isUncompletable(item)).length))}
             {/* The count is Todoist's answer to the query, asked again when
                 the tasks change; it shows once Todoist has answered. */}
             {favourites.filters.map((f) => (

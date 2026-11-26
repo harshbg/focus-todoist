@@ -1,5 +1,5 @@
 import { useDataSnapshot } from '@/hooks/useDataSnapshot';
-import { useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import {
   DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent,
 } from '@dnd-kit/core';
@@ -8,19 +8,22 @@ import { CSS } from '@dnd-kit/utilities';
 import { Icon } from './Icon';
 import { TableHeaderMenu } from './TableHeaderMenu';
 import { TaskGroup } from './TaskGroup';
+import { AddSectionLine } from './AddSectionLine';
 import { TableContext } from './TableContext';
 import { useStore } from '@/store/store';
 import { useT } from '@/hooks/useT';
 import { sortItems } from '@/store/selectors';
 import { viewPrefs } from '@/store/prefs';
 import { clampColumnWidth, columnMinWidth, columnWidth, dropTableColumn, tableColumnIcon, tableColumns, tableColumnLabel, tableColumnSort } from '@/domain/table';
-import { effectiveEstimate, formatDuration } from '@/domain/estimates';
-import { insideOthers } from '@/domain/load';
+import { formatDuration } from '@/domain/estimates';
+import { summariseLoad } from '@/domain/load';
 import type { Item, TableColumn, ViewPrefs } from '@/domain/types';
 import type { TaskGroupProps } from './TaskGroup';
 
-export function TableSurface({ groups, viewKey, childrenOf, onOpen }: {
+export function TableSurface({ groups, viewKey, childrenOf, onOpen, onAddSection }: {
   groups: Array<TaskGroupProps>; viewKey: string; childrenOf: (id: string) => Item[]; onOpen: (id: string) => void;
+  /** A project's table: the first group is the tasks in no section, the others are its sections; the seam between two sections can make a new one. */
+  onAddSection?: (index: number) => void;
 }) {
   const { t, locale } = useT();
   const prefs = useStore((s) => s.prefs);
@@ -85,8 +88,8 @@ export function TableSurface({ groups, viewKey, childrenOf, onOpen }: {
     return () => { window.removeEventListener('resize', measure); box.removeEventListener('scroll', slid); observer.disconnect(); };
   }, []);
   const all = [...new Map(groups.flatMap((group) => group.items).map((item) => [item.id, item])).values()];
-  const inside = insideOthers(all, childrenOf);
-  const total = all.reduce((sum, item) => sum + (inside.has(item.id) ? 0 : effectiveEstimate(item, childrenOf).minutes ?? 0), 0);
+  const summary = summariseLoad(all, childrenOf, null);
+  const total = summary.estimatedMinutes;
   return <TableContext.Provider value={{ columns, coloration: current.tableColoration ?? 'none', freeze }}>
     <div ref={scrollRef} className="table-scroll fullwidth"
       style={room ? { maxHeight: room } : undefined}>
@@ -111,10 +114,14 @@ export function TableSurface({ groups, viewKey, childrenOf, onOpen }: {
         {groups.map((group, index) => {
           const groupChildren = group.childrenOf ?? childrenOf;
           const sorted = sortItems(group.items, current.sort, groupChildren, group.reorderable || 'project', snapshot);
-          return <TaskGroup key={`${group.sectionId ?? group.title ?? ''}-${index}`} {...group} viewKey={viewKey}
-            items={current.tableDescending ? sorted.reverse() : sorted} childrenOf={groupChildren} onOpen={onOpen} keepWhenEmpty />;
+          return <Fragment key={`${group.sectionId ?? group.title ?? ''}-${index}`}>
+            {onAddSection && index > 0 && <AddSectionLine label={t('section.add')} slotId={String(index - 1)} onAdd={() => onAddSection(index - 1)} />}
+            <TaskGroup {...group} viewKey={viewKey}
+              items={current.tableDescending ? sorted.reverse() : sorted} childrenOf={groupChildren} onOpen={onOpen} keepWhenEmpty />
+          </Fragment>;
         })}
-        <footer className="table-footer"><span>{t('metrics.tasks', { count: all.length })} · {formatDuration(total, locale)}</span></footer>
+        {onAddSection && <AddSectionLine label={t('section.add')} slotId={String(groups.length - 1)} onAdd={() => onAddSection(groups.length - 1)} />}
+        <footer className="table-footer"><span>{t('metrics.tasks', { count: summary.taskCount })} · {formatDuration(total, locale)}</span></footer>
       </div>
     </div>
   </TableContext.Provider>;

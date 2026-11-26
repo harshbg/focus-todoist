@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Play } from 'lucide-react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { PlayIcon } from '@hugeicons/core-free-icons';
 import { formatDuration } from '@/domain/estimates';
 import { plainTitle } from '@/domain/markdown';
 import type { Item } from '@/domain/types';
@@ -74,7 +75,7 @@ export function StartFocus({ task, variant }: { task: Item; variant: 'panel' | '
         setAnchor((open) => (open ? null : button.current?.getBoundingClientRect() ?? null));
       }}
     >
-      <Play size={variant === 'row' ? 14 : 15} aria-hidden="true" className="ic" />
+      <HugeiconsIcon icon={PlayIcon} size={variant === 'row' ? 15 : 16} strokeWidth={1.7} className="ic" />
       {variant === 'panel' && <span>{t('focus.startFocusOn')}</span>}
     </button>
     {anchor && createPortal(

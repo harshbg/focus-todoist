@@ -42,6 +42,52 @@ translation lives in CHANGELOG.fr.md.
 - Only what a person using the app can see or do. No technical work, no
   intermediate states of the same release.
 
+## 2.37.0
+
+🎨 **Add a section from a table.** In a project’s table, point between two sections and click Add a section to create one right there.
+
+🎨 **Project icon refinements.** An icon can now be found with several words, in English and in French: try health, run or linkedin in the icon picker. New icons join it, such as a trophy, a bike, a running shoe and a dumbbell.
+
+🎨 **Design refinements.** The ⌘K hint in the search is calmer until you point at it. In the account menu, Open Todoist shows a cleaner Todoist logo and the bug or idea link has a bug icon.
+
+🐛 **Start dates in a table offer every choice.** The start date of a task in a table now lists this week, this month and someday, like everywhere else, and shows the period you picked.
+
+## 2.36.0
+
+🎨 **Uncompletable tasks are easier to use.** A new task-menu button switches a task between completable and uncompletable. Uncompletable tasks have a clearer appearance and no longer count towards workload or progress.
+
+🎨 **Date recognition improvements.** In a task title, use short weekdays and phrases such as “next weekend” or “next month”. Dates are read in the app’s language.
+
+🎨 **Upcoming view refinements.** See overdue tasks and today before the days ahead, including empty days, weeks and months. Show more periods to plan further, and return to today from the board.
+
+🐛 **Create sections in an empty project.** The project shows its creation controls again. Its ⋯ menu can also add a section.
+
+## 2.35.0
+
+🆕 **Choose your own tag for “Anytime this month”.** In Settings, next to the tag for “Anytime this week”, pick a shorter name such as month or mth, so you can type it faster when you add a task.
+
+🆕 **Rename a folder and file projects in it.** In a team workspace, the ⋯ menu of a folder lets you rename it, or delete it once it is empty. When you add or edit a project, the Parent field now lists the workspace’s folders, so a project can go straight into one.
+
+🎨 **Icon refinements.** The plus is now a simple cross, the menu button on your phone shows the familiar three lines.
+
+🐛 **Tags with a slash are recognised.** Typing a tag such as @Status/Waiting in a task title now reads and creates the whole tag, instead of stopping at the slash.
+
+## 2.34.0
+
+🎨 **Icons got a new look.** Every icon has been replaced in a rounder, lighter style. You’re going to love them!
+
+## 2.33.0
+
+🐛 **Recurring tasks reset their subtasks.** When Reset sub-tasks is enabled in Todoist, completing a recurring task prepares its direct subtasks for the next occurrence.
+
+🎨 **Choose an icon and a colour.** Open a project’s icon from its title to choose its icon and colour together.
+
+🎨 **Simpler project icons.** The progress circle on projects is gone: it was causing sync bugs because Enhanced had to read all your completed tasks in the background to draw it. A project without its own icon shows a plain # again.
+
+🐛 **Know when a deadline needs Pro.** Free accounts now see why deadlines require a Todoist Pro or Business subscription before adding one.
+
+🐛 **Sync improvements and fixes.** Enhanced handles some interruptions and Todoist rate limits more reliably.
+
 ## 2.32.4
 
 🎨 **Set an estimate faster in Notifications.** A task without an estimate now offers a menu of the usual durations (15 min, 30 min, 1 h…) instead of an empty box. You can still type any other duration.
