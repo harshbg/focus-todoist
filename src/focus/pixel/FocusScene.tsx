@@ -11,7 +11,8 @@ export interface FocusSceneProps {
   progress: number;
   /** Pre-formatted, e.g. "24:13". */
   time: string;
-  quest: {
+  /** The daily quest in the corner; left out on a page that shows it elsewhere. */
+  quest?: {
     label: string;
     minutesLabel: string;
     pipFill: [number, number, number, number];
@@ -259,11 +260,11 @@ export function FocusScene({
       </svg>
 
       {/* Quest overlay (top left) */}
-      <div className="px-quest">
+      {quest && <div className="px-quest">
         <span className="px-quest-label">{quest.label}</span>
         <QuestPips fill={quest.pipFill ?? quest.pips?.map((p) => (p ? 1 : 0)) ?? [0, 0, 0, 0]} />
         <span className="px-quest-minutes">{quest.minutesLabel}</span>
-      </div>
+      </div>}
 
       {/* Timer overlay (top right) */}
       {!hideTimer && <div className="px-timer-box">

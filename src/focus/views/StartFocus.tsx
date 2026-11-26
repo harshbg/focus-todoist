@@ -54,7 +54,8 @@ export function StartFocus({ task, variant }: { task: Item; variant: 'panel' | '
       mode: 'focus', focusMode: mode, taskId: task.id, title: plainTitle(task.content), plannedMin: minutes,
       lane: lanes.find((name) => task.labels.some((label) => label.toLowerCase() === name.toLowerCase())) ?? null,
     });
-    window.location.hash = `#/sidecar?task=${encodeURIComponent(task.id)}&min=${minutes}`;
+    // On the Focus page the block shows right there; anywhere else the sidecar opens on it.
+    if (!window.location.hash.startsWith('#/focus')) window.location.hash = `#/sidecar?task=${encodeURIComponent(task.id)}&min=${minutes}`;
   };
 
   const label = running ? t('focus.startFocusBusy') : t('focus.startFocusOn');

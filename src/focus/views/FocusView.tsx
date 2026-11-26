@@ -1,8 +1,12 @@
 import '@/focus/fonts';
 import { markedWorkProjects } from '@/focus/scope';
-import { useEffect, useMemo, useState } from 'react';
-import { format } from 'date-fns';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { format, isToday, isYesterday, parseISO } from 'date-fns';
+import { Bell, Check, ExternalLink, Play, Plus, X } from 'lucide-react';
 import { useConfirm } from '@/components/overlays/Confirm';
+import { Overlay } from '@/components/overlays/Overlay';
+import { Icon } from '@/components/Icon';
+import { TaskRow } from '@/components/TaskRow';
 import { toApiDate } from '@/domain/dates';
 import { estimateOf, formatDuration } from '@/domain/estimates';
 import { plainTitle, renderTitle } from '@/domain/markdown';
@@ -25,11 +29,9 @@ import { entriesForMode } from '../domain/modeEntries';
 import { settingsFor } from '../domain/settings';
 import { TaskSearch } from './TaskSearch';
 import { openSidecar } from './Sidecar';
-import { PlanBlock } from './PlanBlock';
-import { GuidanceNudges } from './Guidance';
-import { shortDuration } from '../domain/format';
-import { taskColorStyle } from '@/focus/taskColors';
+import { GuidanceNudges, ReminderSettings } from './Guidance';
 import './focus.css';
+import './focusPage.css';
 
 const QUEUE_KEY = 'tde.focus.queue';
 
@@ -42,13 +44,21 @@ function readQueue(): string[] {
 
 function Rating({ value, onChange }: { value: FocusRating | null; onChange: (next: FocusRating | null) => void }) {
   const { t } = useT();
-  return <div className="fx-stars" aria-label={t('focus.rating')}>
+  return <div className="fv-stars" aria-label={t('focus.rating')}>
     {([1, 2, 3, 4, 5] as FocusRating[]).map((star) => (
-      <button key={star} type="button" className="fx-star" aria-pressed={star <= (value ?? 0)}
+      <button key={star} type="button" aria-pressed={star <= (value ?? 0)}
         aria-label={t('focus.rateStars', { count: star })}
         onClick={() => onChange(value === star ? null : star)}>★</button>
     ))}
   </div>;
+}
+
+/** When a logged block began, as briefly as reads clearly: `09:30`, `Yesterday`, `Mon 12`. */
+function whenLabel(start: string, locale: string, t: ReturnType<typeof useT>['t']): string {
+  const at = parseISO(start);
+  if (isToday(at)) return new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' }).format(at);
+  if (isYesterday(at)) return t('focus.yesterday');
+  return new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric' }).format(at);
 }
 
 interface ManualDialogProps {
@@ -59,6 +69,7 @@ interface ManualDialogProps {
   onSave: (entry: Omit<FocusEntry, 'source'>) => Promise<void>;
 }
 
+/** Log a block that happened away from the timer, in the app's own dialog. */
 function ManualDialog({ items, lanes, focusMode, onClose, onSave }: ManualDialogProps) {
   const { t } = useT();
   const [title, setTitle] = useState('');
@@ -68,41 +79,71 @@ function ManualDialog({ items, lanes, focusMode, onClose, onSave }: ManualDialog
   const [time, setTime] = useState(format(new Date(), 'HH:mm'));
   const [minutes, setMinutes] = useState(30);
   const [saving, setSaving] = useState(false);
-  return <div className="fx-dialog" role="dialog" aria-modal="true" aria-label={t('focus.logPast')}>
-    <form onSubmit={(event) => {
-      event.preventDefault();
-      if (!title.trim() || !date || !time || minutes < 1 || saving) return;
-      setSaving(true);
-      void onSave({ start: `${date}T${time}`, minutes: Math.round(minutes), taskId, title: plainTitle(title.trim()), lane, rating: null, mode: focusMode })
-        .then(onClose).finally(() => setSaving(false));
-    }}>
-      <h2 className="fx-h2">{t('focus.logPast')}</h2>
-      <label className="fx-label" htmlFor="fx-manual-task">{t('focus.task')}</label>
-      <TaskSearch items={items} value={title} selectedId={taskId} placeholder={t('focus.taskPlaceholder')}
-        onChange={(value) => { setTitle(value); setTaskId(null); }}
-        onSelect={(item) => { setTitle(item.content); setTaskId(item.id); }} />
-      <div className="fx-form-row"><label className="fx-label">{t('focus.lane')}
-        <select value={lane ?? ''} onChange={(event) => setLane(event.target.value || null)}>
-          <option value="">{t('focus.noLane')}</option>
-          {lanes.map((name) => <option key={name} value={name}>{name}</option>)}
-        </select>
-      </label></div>
-      <div className="fx-form-row">
-        <label className="fx-label">{t('focus.date')}<input required type="date" value={date} max={toApiDate(new Date())} onChange={(event) => setDate(event.target.value)} /></label>
-        <label className="fx-label">{t('focus.startTime')}<input required type="time" value={time} onChange={(event) => setTime(event.target.value)} /></label>
-        <label className="fx-label">{t('focus.minutes')}<input required type="number" min="1" value={minutes} onChange={(event) => setMinutes(Number(event.target.value))} /></label>
+  const valid = Boolean(title.trim() && date && time && minutes >= 1);
+  const save = () => {
+    if (!valid || saving) return;
+    setSaving(true);
+    void onSave({ start: `${date}T${time}`, minutes: Math.round(minutes), taskId, title: plainTitle(title.trim()), lane, rating: null, mode: focusMode })
+      .then(onClose).finally(() => setSaving(false));
+  };
+  return <Overlay open onClose={onClose} label={t('focus.logPast')} size="sm">
+    <div className="sheet-head">
+      <h2>{t('focus.logPast')}</h2>
+      <button className="iconbtn" type="button" aria-label={t('common.close')} title={t('common.close')} onClick={onClose}><Icon name="close" /></button>
+    </div>
+    <div className="sheet-body fv-form">
+      <div className="formfield"><span className="fieldlabel">{t('focus.task')}</span>
+        <TaskSearch items={items} value={title} selectedId={taskId} placeholder={t('focus.taskPlaceholder')}
+          onChange={(value) => { setTitle(value); setTaskId(null); }}
+          onSelect={(item) => { setTitle(item.content); setTaskId(item.id); }} />
       </div>
-      <div className="fx-actions">
-        <button className="fx-btn fx-btn--primary" type="submit" disabled={saving || !title.trim()}>{t('common.save')}</button>
-        <button className="fx-btn fx-btn--ghost" type="button" onClick={onClose}>{t('common.cancel')}</button>
+      <div className="fv-form-row">
+        <label className="formfield"><span className="fieldlabel">{t('focus.date')}</span>
+          <input className="textfield" required type="date" value={date} max={toApiDate(new Date())} onChange={(event) => setDate(event.target.value)} /></label>
+        <label className="formfield"><span className="fieldlabel">{t('focus.startTime')}</span>
+          <input className="textfield" required type="time" value={time} onChange={(event) => setTime(event.target.value)} /></label>
+        <label className="formfield"><span className="fieldlabel">{t('focus.minutesLabel')}</span>
+          <input className="textfield" required type="number" min="1" value={minutes} onChange={(event) => setMinutes(Number(event.target.value))} /></label>
       </div>
-    </form>
+      {lanes.length > 0 && <div className="formfield"><span className="fieldlabel">{t('focus.lane')}</span>
+        <div className="chiprow">{lanes.map((name) => <button key={name} type="button" className="chip" aria-pressed={lane === name}
+          onClick={() => setLane(lane === name ? null : name)}>{name}</button>)}</div>
+      </div>}
+    </div>
+    <div className="sheet-foot">
+      <button type="button" className="btn quiet" onClick={onClose}>{t('common.cancel')}</button>
+      <button type="button" className="btn primary" disabled={!valid || saving} onClick={save}>{t('common.save')}</button>
+    </div>
+  </Overlay>;
+}
+
+/** The reminder switches, behind a bell on the title line: set once, rarely touched. */
+function RemindersButton() {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (event: PointerEvent) => { if (!box.current?.contains(event.target as Node)) setOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false); };
+    document.addEventListener('pointerdown', away);
+    document.addEventListener('keydown', escape);
+    return () => { document.removeEventListener('pointerdown', away); document.removeEventListener('keydown', escape); };
+  }, [open]);
+  return <div className="fv-popwrap" ref={box}>
+    <button type="button" className="btn" aria-expanded={open} aria-label={t('focus.remindersTitle')} title={t('focus.remindersTitle')}
+      onClick={() => setOpen((value) => !value)}><Bell size={15} aria-hidden="true" className="ic" /></button>
+    {open && <div className="fv-pop" role="dialog" aria-label={t('focus.remindersTitle')}><ReminderSettings /></div>}
   </div>;
 }
 
+/**
+ * The Focus page: today's numbers on the title line, the pixel scene with the
+ * one control that matters right now under it, then what's next and what's done.
+ */
 export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   const { t, locale } = useT();
-  const { items } = useData();
+  const { items, childrenOf } = useData();
   const prefs = useFocusPreferences();
   const focusMode = useMode();
   const logs = useFocusLog();
@@ -110,10 +151,8 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   const { active, justLogged, lastPlannedMin, start, pause, resume, finish, discard, rate, dismiss, logManual, editEntry, deleteEntry } = useFocusStore();
   const snapshot = useStore((state) => state.snapshot);
   const createTaskId = useStore((state) => state.createTaskId);
-  const updateTask = useStore((state) => state.updateTask);
   const showQuickGroup = useStore((state) => state.prefs.showQuickGroup);
   const confirm = useConfirm();
-  const [mode, setMode] = useState<'focus' | 'unwind'>('focus');
   const [length, setLength] = useState(prefs.blockLengths[0] ?? 30);
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -121,23 +160,20 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   const [pinned, setPinned] = useState(readQueue);
   const [manualOpen, setManualOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  // "Preview the fireworks" replays the celebration for a moment.
-  const [preview, setPreview] = useState(false);
-  useEffect(() => {
-    if (!preview) return;
-    const timer = window.setTimeout(() => setPreview(false), 5000);
-    return () => window.clearTimeout(timer);
-  }, [preview]);
+
   const modeEntries = useMemo(() => entriesForMode(logs, focusMode), [logs, focusMode]);
   const settings = useMemo(() => settingsFor(prefs, focusMode), [prefs, focusMode]);
   const progress = useMemo(() => todayProgress(modeEntries, settings, new Date(now)), [modeEntries, settings, now]);
+  const today = format(new Date(now), 'yyyy-MM-dd');
+  const blocksToday = modeEntries.filter((entry) => entry.start.startsWith(today)).length;
   const selected = items.find((item) => item.id === selectedId) ?? null;
   const queue = useMemo(() => focusQueue(items, pinned, new Date(now), showQuickGroup), [items, pinned, now, showQuickGroup]);
-  const recent = useMemo(() => [...modeEntries].sort((a, b) => b.start.localeCompare(a.start)).slice(0, 20), [modeEntries]);
-  const effectiveLane = lane && settings.lanes.some((name) => name.toLowerCase() === lane.toLowerCase()) ? lane : null;
-  const chosenLane = selected ? settings.lanes.find((name) => selected.labels.some((label) => label.toLowerCase() === name.toLowerCase())) ?? null : effectiveLane;
-  const remaining = active ? remainingMs(active, now) : (mode === 'unwind' ? prefs.breakMin : length) * 60_000;
+  const recent = useMemo(() => [...modeEntries].sort((a, b) => b.start.localeCompare(a.start)).slice(0, 12), [modeEntries]);
+  const laneOf = (item: Item) => settings.lanes.find((name) => item.labels.some((label) => label.toLowerCase() === name.toLowerCase())) ?? null;
+  const chosenLane = lane && settings.lanes.some((name) => name.toLowerCase() === lane.toLowerCase()) ? lane : null;
+  const remaining = active ? remainingMs(active, now) : justLogged ? 0 : length * 60_000;
   const elapsed = active ? elapsedMs(active, now) : 0;
+  const taskExists = (id: string | null) => Boolean(id && snapshot.items[id]);
 
   const saveQueue = (next: string[]) => {
     setPinned(next);
@@ -146,9 +182,10 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
   const choose = (item: Item) => {
     setSelectedId(item.id);
     setQuery(item.content);
-    setLane(settings.lanes.find((name) => item.labels.some((label) => label.toLowerCase() === name.toLowerCase())) ?? null);
+    setLane(laneOf(item));
     setLength(estimateOf(item) ?? prefs.blockLengths[0] ?? 30);
   };
+  const clearChoice = () => { setSelectedId(null); setQuery(''); setLane(null); };
   const create = async (): Promise<Item | null> => {
     if (!query.trim()) return null;
     const placement = newTaskPlacement(snapshot, focusMode, markedWorkProjects(useStore.getState()), null);
@@ -156,177 +193,157 @@ export function FocusView({ onOpen }: { onOpen: (id: string) => void }) {
       content: query.trim(),
       project_id: placement.projectId,
       estimateMinutes: length,
-      labels: mergeLabels(effectiveLane ? [effectiveLane] : [], placement.addLabels),
+      labels: mergeLabels(chosenLane ? [chosenLane] : [], placement.addLabels),
       due: { date: toApiDate(new Date()), string: toApiDate(new Date()), lang: 'en', timezone: null, is_recurring: false },
     });
-    const item = id ? useStore.getState().snapshot.items[id] : null;
-    if (item) choose(item);
-    return item ?? null;
+    return id ? useStore.getState().snapshot.items[id] ?? null : null;
   };
-  const resolveChosen = async (): Promise<Item | null> => selected ?? create();
-  const startFor = (item: Item | null, title = query.trim(), startMode: 'focus' | 'unwind' = mode, minutes = length) => {
-    if (active || (startMode === 'focus' && !item && !title)) return;
-    if (startMode === 'unwind') {
-      start({ mode: 'unwind', focusMode, taskId: null, title: t('focus.unwind'), lane: null, plannedMin: minutes });
-      return;
-    }
-    start({ mode: startMode, focusMode, taskId: item?.id ?? null, title: plainTitle(item?.content ?? title),
-      lane: item ? settings.lanes.find((name) => item.labels.some((label) => label.toLowerCase() === name.toLowerCase())) ?? null : effectiveLane,
-      plannedMin: minutes });
+  const startChosen = async () => {
+    if (busy || active || (!selected && !query.trim())) return;
+    setBusy(true);
+    try {
+      const item = selected ?? await create();
+      if (!item) return;
+      start({ mode: 'focus', focusMode, taskId: item.id, title: plainTitle(item.content), lane: laneOf(item) ?? chosenLane, plannedMin: length });
+      clearChoice();
+    } finally { setBusy(false); }
   };
+  const startBreak = () => start({ mode: 'unwind', focusMode, taskId: null, title: t('focus.unwind'), lane: null, plannedMin: prefs.breakMin });
   const stop = async () => {
     if (!active) return;
     if (active.mode === 'focus' && elapsedMs(active, Date.now()) < MIN_LOGGED_MINUTES * 60_000) {
       if (await confirm({ title: t('focus.discardPrompt'), destructive: true, confirmLabel: t('focus.discard') })) discard();
     } else void finish();
   };
-  const setEstimate = (minutes: number) => {
-    setLength(minutes);
-    if (selected) void updateTask(selected.id, { estimateMinutes: minutes });
-  };
-  const setLaneForTask = (next: string) => {
-    setLane(next);
-    if (!selected) return;
-    const labels = selected.labels.filter((label) => !settings.lanes.some((name) => name.toLowerCase() === label.toLowerCase()));
-    void updateTask(selected.id, { labels: [...labels, next] });
-  };
-  const addToQueue = async () => {
-    if (busy) return;
-    setBusy(true);
-    try {
-      const item = await resolveChosen();
-      if (item && !pinned.includes(item.id)) saveQueue([...pinned, item.id]);
-    } finally { setBusy(false); }
-  };
-  const startTask = async () => {
-    if (busy) return;
-    setBusy(true);
-    try { const item = await resolveChosen(); if (item) startFor(item, item.content, 'focus', length); }
-    finally { setBusy(false); }
-  };
 
-  return <div className="focus-theme fx-page">
-    <header className="fx-hero">
-      <div><h1 className="fx-hero-title">{t('focus.deepWork')}</h1>
-        <blockquote className="fx-quote">{t('focus.quote')}<cite className="fx-quote-cite">{t('focus.quoteCite')}</cite></blockquote>
+  const title = (text: string, id: string | null, className: string) => (taskExists(id)
+    ? <button type="button" className={className} onClick={() => onOpen(id!)} dangerouslySetInnerHTML={{ __html: renderTitle(text) }} />
+    : <span className={className} dangerouslySetInnerHTML={{ __html: renderTitle(text) }} />);
+
+  let bar;
+  if (active) {
+    bar = <div className="fv-bar fv-bar--run">
+      <div className="fv-now">
+        <span className="fv-kicker">{active.mode === 'unwind' ? t('focus.unwind') : [t('focus.focusingOn'), active.lane].filter(Boolean).join(' · ')}</span>
+        {title(active.title, active.taskId, 'fv-now-title')}
       </div>
-      <div className="fx-today fx-card">
-        <div className="fx-eyebrow">{t('focus.todayProgress')}</div>
-        <div><strong className="fx-today-minutes">{progress.minutes}</strong> <span className="fx-today-unit">{t('focus.minutes')}</span></div>
-        <div className="fx-bar"><span style={{ width: `${progress.share * 100}%` }} /></div>
-        <p className="fx-today-note">{progress.remaining === 0 ? t('focus.targetReached') : t('focus.remaining', { remaining: formatDuration(progress.remaining, locale), target: formatDuration(progress.target, locale) })}</p>
-        <div className="fx-quest">
-          <span>{t('focus.dailyQuest')}</span>
-          <QuestPips
-            fill={progress.pipFill}
-            size={16}
-            className="fx-pips"
-            ariaLabel={t('focus.questProgress', { count: progress.pips.filter(Boolean).length })}
-          />
-        </div>
+      <span className="fv-time" aria-live="off">{formatClock(remaining)}</span>
+      <div className="fv-ctl">
+        {active.pausedAt === null
+          ? <button type="button" className="btn lg" onClick={pause}>{t('focus.pause')}</button>
+          : <button type="button" className="btn primary lg" onClick={resume}>{t('focus.resume')}</button>}
+        <button type="button" className="btn quiet lg" onClick={() => void stop()}>{t('focus.stop')}</button>
       </div>
-    </header>
-
-    <GuidanceNudges items={items} entries={modeEntries} onReturn={(item, minutes) => startFor(item, item.content, 'focus', minutes)} />
-
-    <div className="fx-grid"><main className="fx-main">
-      <section className="fx-card fx-timer">
-        <div className="fx-seg">
-          <button aria-pressed={mode === 'focus'} disabled={Boolean(active)} onClick={() => setMode('focus')}>{t('focus.focus')}</button>
-          <button aria-pressed={mode === 'unwind'} disabled={Boolean(active)} onClick={() => setMode('unwind')}>{t('focus.unwind')}</button>
+    </div>;
+  } else if (justLogged) {
+    bar = <div className="fv-bar fv-bar--done">
+      <div className="fv-now">
+        <span className="fv-kicker fv-kicker--ok"><Check size={13} aria-hidden="true" /> {t('focus.blockLogged')} · {formatDuration(justLogged.minutes, locale)}</span>
+        {title(justLogged.title, justLogged.taskId, 'fv-now-title')}
+      </div>
+      <div className="fv-feel">
+        <span>{t('focus.howFelt')}</span>
+        <Rating value={justLogged.rating} onChange={(value) => void rate(value)} />
+      </div>
+      <div className="fv-ctl">
+        <span className="fv-ctl-label">{t('focus.continueSame')}</span>
+        {continueLengths(prefs.blockLengths, lastPlannedMin).map((minutes, index) => <button key={minutes} type="button"
+          className={index === 0 ? 'btn primary' : 'btn'}
+          onClick={() => start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: plainTitle(justLogged.title), lane: justLogged.lane, plannedMin: minutes })}>
+          {formatDuration(minutes, locale)}</button>)}
+        <button type="button" className="btn quiet" onClick={startBreak}>{t('focus.takeBreak', { minutes: prefs.breakMin })}</button>
+        <button type="button" className="btn quiet" onClick={() => { dismiss(); clearChoice(); }}>{t('focus.newTask')}</button>
+      </div>
+    </div>;
+  } else {
+    bar = <form className="fv-bar fv-bar--idle" onSubmit={(event) => { event.preventDefault(); void startChosen(); }}>
+      <div className="fv-pick">
+        <TaskSearch items={items} value={query} selectedId={selectedId} placeholder={t('focus.whatNext')}
+          onChange={(value) => { setQuery(value); setSelectedId(null); }} onSelect={choose}
+          onCreate={() => void startChosen()} />
+        {selected && <button type="button" className="iconbtn fv-clear" aria-label={t('focus.clearTask')} title={t('focus.clearTask')} onClick={clearChoice}><X size={15} aria-hidden="true" /></button>}
+      </div>
+      <div className="fv-opts">
+        <div className="chiprow" role="group" aria-label={t('focus.timeRequired')}>
+          {prefs.blockLengths.map((minutes) => <button key={minutes} type="button" className="chip" aria-pressed={length === minutes}
+            onClick={() => setLength(minutes)}>{formatDuration(minutes, locale)}</button>)}
         </div>
-        <p className="fx-eyebrow">{t('focus.eyebrow')}</p>
-        {!justLogged && <div className="fx-chips">{prefs.blockLengths.map((minutes) => <button key={minutes} className="fx-chip" aria-pressed={length === minutes} disabled={Boolean(active)} onClick={() => setLength(minutes)}>{formatDuration(minutes, locale)}</button>)}</div>}
-        <FocusScene progress={active ? elapsed / (active.plannedMin * 60_000) : justLogged || preview ? 1 : 0}
-          time={formatClock(remaining)} celebrating={Boolean(justLogged) || preview}
-          quest={{ label: t('focus.dailyQuest'), minutesLabel: t('focus.questMinutes', { minutes: shortDuration(progress.minutes), target: shortDuration(progress.target) }), pipFill: progress.pipFill, pips: progress.pips }}
+        {settings.lanes.length > 0 && !selected && <div className="chiprow" role="group" aria-label={t('focus.lane')}>
+          {settings.lanes.map((name) => <button key={name} type="button" className="chip" aria-pressed={chosenLane === name}
+            onClick={() => setLane(chosenLane === name ? null : name)}>{name}</button>)}
+        </div>}
+        <span className="fv-grow" />
+        <button type="button" className="btn quiet" onClick={startBreak}>{t('focus.takeBreak', { minutes: prefs.breakMin })}</button>
+        <button type="submit" className="btn primary lg" disabled={busy || (!selected && !query.trim())}>
+          <Play size={14} aria-hidden="true" className="ic" />{t('focus.start')}</button>
+      </div>
+    </form>;
+  }
+
+  return <div className="page fv" data-view="focus">
+    <div className="phead">
+      <div className="phead-text"><h1 className="ptitle">{t('nav.focus')}</h1></div>
+      <div className="pactions">
+        <button type="button" className="btn" aria-label={t('focus.logPast')} onClick={() => setManualOpen(true)}><Plus size={15} aria-hidden="true" className="ic" /><span className="fv-btn-label">{t('focus.logPast')}</span></button>
+        <RemindersButton />
+        <button type="button" className="btn" aria-label={t('focus.openSidecar')} onClick={openSidecar}><ExternalLink size={15} aria-hidden="true" className="ic" /><span className="fv-btn-label">{t('focus.openSidecar')}</span></button>
+      </div>
+    </div>
+    <div className="metrics">
+      <span className="metric"><b>{formatDuration(progress.minutes, locale)}</b> {t('focus.ofTargetToday', { target: formatDuration(progress.target, locale) })}</span>
+      <span className="sep">·</span>
+      <span className="metric"><b>{blocksToday}</b> {t(blocksToday === 1 ? 'focus.blockOne' : 'focus.blockMany')}</span>
+      <span className="sep">·</span>
+      <span className="metric" title={t('focus.dailyQuest')}>
+        <QuestPips fill={progress.pipFill} size={13} ariaLabel={t('focus.questProgress', { count: progress.pips.filter(Boolean).length })} />
+      </span>
+    </div>
+
+    <GuidanceNudges items={items} entries={modeEntries} onReturn={(item, minutes) => start({ mode: 'focus', focusMode, taskId: item.id,
+      title: plainTitle(item.content), lane: laneOf(item), plannedMin: minutes })} />
+
+    <section className={`fv-stage${active ? ' is-running' : ''}`}>
+      <div className="fv-scene">
+        <FocusScene fill hideTimer progress={active ? elapsed / (active.plannedMin * 60_000) : justLogged ? 1 : 0}
+          time={formatClock(remaining)} celebrating={Boolean(justLogged)}
           ariaLabel={t('focus.sceneLabel', { time: formatClock(remaining) })} />
-        {/* Blocks start from the queue; here only the running block's controls. */}
-        {active && <div className="fx-actions fx-center">
-          {active.pausedAt === null
-            ? <button className="fx-btn fx-btn--secondary" onClick={pause}>{t('focus.pause')}</button>
-            : <button className="fx-btn fx-btn--primary" onClick={resume}>{t('focus.resume')}</button>}
-          <button className="fx-btn fx-btn--ghost" onClick={() => void stop()}>{t('focus.stop')}</button>
-        </div>}
-        {!active && mode === 'unwind' && <div className="fx-actions fx-center">
-          <button className="fx-btn fx-btn--primary" onClick={() => startFor(null, '', 'unwind', prefs.breakMin)}>{t('focus.start')}</button>
-        </div>}
-        {justLogged && <div className="fx-complete">
-          <p className="fx-complete-lead">{t('focus.completeLead')}</p>
-          <p className="fx-complete-title">✓ {t('focus.blockLogged')} · {justLogged.taskId && useStore.getState().snapshot.items[justLogged.taskId]
-            ? <button onClick={() => onOpen(justLogged.taskId!)} dangerouslySetInnerHTML={{ __html: renderTitle(justLogged.title) }} />
-            : <span dangerouslySetInnerHTML={{ __html: renderTitle(justLogged.title) }} />}</p>
-          <div className="fx-quality">
-            <span className="fx-label">{t('focus.quality')}</span><span className="fx-label fx-muted">{t('focus.optional')}</span>
-            <Rating value={justLogged.rating} onChange={(value) => void rate(value)} />
-            <span className="fx-quality-ask">{t('focus.howFelt')}</span>
-          </div>
-          <p className="fx-label fx-center">{t('focus.continueSame')}</p>
-          <div className="fx-actions fx-center">
-            {continueLengths(prefs.blockLengths, lastPlannedMin).map((minutes, index) => <button key={minutes} className={index === 0 ? 'fx-btn fx-btn--primary' : 'fx-btn fx-btn--secondary'} onClick={() => start({ mode: 'focus', focusMode: justLogged.mode, taskId: justLogged.taskId, title: plainTitle(justLogged.title), lane: justLogged.lane, plannedMin: minutes })}>{formatDuration(minutes, locale)}</button>)}
-            <button className="fx-btn fx-btn--secondary" onClick={() => { dismiss(); setSelectedId(null); setQuery(''); setLane(null); }}>{t('focus.newTask')}</button>
-            <button className="fx-btn fx-btn--secondary" onClick={() => start({ mode: 'unwind', focusMode, taskId: null, title: t('focus.unwind'), lane: null, plannedMin: prefs.breakMin })}>{t('focus.takeBreak', { minutes: prefs.breakMin })}</button>
-          </div>
-        </div>}
-        <div className="fx-hint">
-          <button className="fx-link" onClick={openSidecar}>↗ {t('focus.openSidecar')}</button>
-          <button className="fx-link" onClick={() => setPreview(true)}>✦ {t('focus.previewFireworks')}</button>
-          <span>{t('focus.hint')}</span>
-        </div>
+      </div>
+      {bar}
+    </section>
+
+    <div className="fv-cols">
+      <section className="fv-list">
+        <div className="fv-head"><h2 className="gname">{t('focus.upNext')}</h2><span className="gcount">{queue.length}</span></div>
+        {queue.length === 0
+          ? <p className="fv-empty">{t('focus.upNextEmpty')}</p>
+          : <div className="fv-tasks">{queue.map((item) => <div key={item.id} className="taskwrap fv-taskwrap">
+            <TaskRow item={item} childrenOf={childrenOf} onOpen={onOpen} />
+            {pinned.includes(item.id) && <button type="button" className="iconbtn fv-unpin" aria-label={t('focus.removeQueue', { title: plainTitle(item.content) })}
+              title={t('focus.removeQueue', { title: plainTitle(item.content) })} onClick={() => saveQueue(pinned.filter((id) => id !== item.id))}><X size={14} aria-hidden="true" /></button>}
+          </div>)}</div>}
       </section>
-    </main><aside className="fx-rail"><section className="fx-card">
-      <p className="fx-eyebrow">{t('focus.queueEyebrow')}</p><h2 className="fx-h2">{t('focus.chooseNext')}</h2>
-      <label className="fx-label">{t('focus.task')}</label>
-      <TaskSearch items={items} value={query} selectedId={selectedId} placeholder={t('focus.addWork')}
-        onChange={(value) => { setQuery(value); setSelectedId(null); }} onSelect={choose}
-        onCreate={() => { void create(); }} />
-      <span className="fx-label">{t('focus.timeRequired')}</span>
-      <div className="fx-chips">{prefs.blockLengths.map((minutes) => <button key={minutes} className="fx-chip" aria-pressed={length === minutes} onClick={() => setEstimate(minutes)}>{formatDuration(minutes, locale)}</button>)}</div>
-      <span className="fx-label">{t('focus.lane')}</span>
-      <div className="fx-chips">{settings.lanes.map((name) => <button key={name} className="fx-chip" aria-pressed={chosenLane === name} onClick={() => setLaneForTask(name)}>{name}</button>)}</div>
-      <div className="fx-actions"><button className="fx-btn fx-btn--primary" disabled={busy || Boolean(active) || (!selected && !query.trim())} onClick={() => void startTask()}>▶ {t('focus.startTask')}</button>
-        <button className="fx-btn fx-btn--outline" disabled={busy || (!selected && !query.trim())} onClick={() => void addToQueue()}>{t('focus.addQueue')}</button></div>
-      <div className="fx-ready"><span className="fx-label">{t('focus.ready')}</span><span className="fx-badge">{queue.length}</span></div>
-      <ul className="fx-queue">{queue.map((item) => {
-        const taskLane = settings.lanes.find((name) => item.labels.some((label) => label.toLowerCase() === name.toLowerCase()));
-        return <li key={item.id} className="fx-queue-item"><i className="fx-mark" aria-hidden="true" />
-          <div className="fx-queue-text"><button className="fx-queue-title" style={taskColorStyle(prefs.taskColors?.[item.id])} onClick={() => onOpen(item.id)} dangerouslySetInnerHTML={{ __html: renderTitle(item.content) }} />
-            <span className="fx-queue-meta">{[estimateOf(item) !== null ? formatDuration(estimateOf(item)!, locale) : null, taskLane].filter(Boolean).join(' · ')}</span></div>
-          <button className="fx-icon-btn" disabled={Boolean(active)} aria-label={t('focus.startTaskNamed', { title: plainTitle(item.content) })} onClick={() => startFor(item, item.content, 'focus', length)}>▶</button>
-          {pinned.includes(item.id) && <button className="fx-icon-btn" aria-label={t('focus.removeQueue', { title: plainTitle(item.content) })} onClick={() => saveQueue(pinned.filter((id) => id !== item.id))}>×</button>}
-        </li>;
-      })}</ul>
-    </section></aside></div>
 
-    <section className="fx-current fx-card">
-      <div><p className="fx-eyebrow">{t('focus.currentFocus')}</p><h2 className="fx-h2">{t('focus.nameWork')}</h2></div>
-      <div className="fx-current-field"><span className="fx-label">{t('focus.task')}</span>
-        {active?.taskId || selected
-          ? <button className="fx-current-title" onClick={() => onOpen((active?.taskId ?? selected?.id)!)} dangerouslySetInnerHTML={{ __html: renderTitle(active?.title ?? selected?.content ?? '') }} />
-          : <span className="fx-current-title fx-muted" dangerouslySetInnerHTML={{ __html: renderTitle(active?.title ?? (query.trim() || t('focus.taskPlaceholder'))) }} />}
-      </div>
-      <div className="fx-current-field"><span className="fx-label">{t('focus.lane')}</span>
-        <div className="fx-chips">{settings.lanes.map((name) => <button key={name} className="fx-chip" disabled={Boolean(active)}
-          aria-pressed={(active ? active.lane : chosenLane) === name} onClick={() => setLaneForTask(name)}>{name}</button>)}</div>
-      </div>
-    </section>
-
-    <section className="fx-section"><div className="fx-section-head"><div><p className="fx-eyebrow">{t('focus.attentionEyebrow')}</p><h2 className="fx-h2">{t('focus.attentionTrail')}</h2></div>
-      <button className="fx-btn fx-btn--small" onClick={() => setManualOpen(true)}>{t('focus.logPast')}</button></div>
-      <ul className="fx-trail">{recent.map((entry) => <li key={entryKey(entry)} className="fx-trail-item">
-        <i className="fx-mark" aria-hidden="true" />
-        <div className="fx-trail-text">{entry.taskId && useStore.getState().snapshot.items[entry.taskId]
-          ? <button className="fx-trail-title" onClick={() => onOpen(entry.taskId!)} dangerouslySetInnerHTML={{ __html: renderTitle(entry.title) }} />
-          : <strong className="fx-trail-title" dangerouslySetInnerHTML={{ __html: renderTitle(entry.title) }} />}
-        <span className="fx-trail-meta">{[entry.lane, new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(entry.start))].filter(Boolean).join(' · ')}</span></div>
-        <span className="fx-trail-mins">{formatDuration(entry.minutes, locale)}{entry.rating ? ` · ${entry.rating}★` : ''}</span>
-        <div className="fx-trail-tools"><Rating value={entry.rating} onChange={(value) => void editEntry(entryKey(entry), { rating: value })} />
-        <button className="fx-icon-btn" aria-label={t('focus.deleteEntry', { title: plainTitle(entry.title) })} onClick={async () => {
-          if (await confirm({ title: t('focus.deletePrompt'), destructive: true })) void deleteEntry(entryKey(entry));
-        }}>×</button></div>
-      </li>)}</ul>
-    </section>
-    <PlanBlock items={items} lengths={prefs.blockLengths} onOpen={onOpen} />
+      <section className="fv-list">
+        <div className="fv-head"><h2 className="gname">{t('focus.recent')}</h2></div>
+        {recent.length === 0
+          ? <p className="fv-empty">{t('focus.recentEmpty')}</p>
+          : <ul className="fv-log">{recent.map((entry) => <li key={entryKey(entry)} className="fv-log-row">
+            <div className="fv-log-text">
+              {title(entry.title, entry.taskId, 'fv-log-title')}
+              <span className="meta fv-log-meta">
+                <time dateTime={entry.start}>{whenLabel(entry.start, locale, t)}</time>
+                {entry.lane && <span className="tag">{entry.lane}</span>}
+                <Rating value={entry.rating} onChange={(value) => void editEntry(entryKey(entry), { rating: value })} />
+              </span>
+            </div>
+            <span className="fv-log-mins">{formatDuration(entry.minutes, locale)}</span>
+            <button type="button" className="iconbtn fv-log-del" aria-label={t('focus.deleteEntry', { title: plainTitle(entry.title) })}
+              title={t('focus.deleteEntry', { title: plainTitle(entry.title) })} onClick={async () => {
+                if (await confirm({ title: t('focus.deletePrompt'), destructive: true })) void deleteEntry(entryKey(entry));
+              }}><X size={14} aria-hidden="true" /></button>
+          </li>)}</ul>}
+      </section>
+    </div>
     {manualOpen && <ManualDialog items={items} lanes={settings.lanes} focusMode={focusMode} onClose={() => setManualOpen(false)} onSave={logManual} />}
   </div>;
 }

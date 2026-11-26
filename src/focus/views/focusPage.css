@@ -1,0 +1,245 @@
+/* ==========================================================================
+   The Focus page, in the app's own design language: its tokens, buttons,
+   chips and task rows. Only the pixel scene keeps its own look.
+   ========================================================================== */
+
+/* The stage: the scene, and under it the one control that matters now. */
+.fv-stage {
+  margin-bottom: var(--s6);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  overflow: visible;
+}
+.fv-scene {
+  height: clamp(220px, 28vw, 340px);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  overflow: hidden;
+}
+.fv-scene .px-panel { height: 100%; border: 0; box-shadow: none; }
+
+.fv-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s4);
+  padding: var(--s4) 20px;
+  border-top: 1px solid var(--border);
+}
+.fv-bar--idle { flex-direction: column; align-items: stretch; }
+.fv-grow { flex: 1 1 0; }
+
+/* What will you work on? — a quiet, large field, like the composer's title. */
+.fv-pick { position: relative; display: flex; align-items: center; gap: var(--s2); }
+.fv-pick .fx-field { flex: 1; }
+.fv-pick .fx-field input {
+  width: 100%;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-16);
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+.fv-pick .fx-field input:focus { outline: none; }
+.fv-pick .fx-field input::placeholder { color: var(--faint); font-weight: 500; }
+.fv-opts { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); }
+
+/* The task list under a task field, here and in the log dialog. */
+:is(.fv, .fv-form) .fx-field { position: relative; }
+:is(.fv, .fv-form) .fx-suggest {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--sh-md);
+}
+:is(.fv, .fv-form) .fx-suggest > li button {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-size: var(--fs-13);
+  text-align: left;
+}
+:is(.fv, .fv-form) .fx-suggest > li.is-active button,
+:is(.fv, .fv-form) .fx-suggest > li:hover button { background: var(--hover); }
+:is(.fv, .fv-form) .fx-suggest-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:is(.fv, .fv-form) .fx-suggest-time { flex: 0 0 auto; color: var(--faint); font-size: var(--fs-12); font-variant-numeric: tabular-nums; }
+.fv-form .fx-field input { width: 100%; }
+.fv-form .fx-field input:not(.textfield) {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-ctl);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-13);
+}
+.fv-form .fx-field input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+.fv-form { display: grid; gap: var(--s4); }
+.fv-form-row { display: grid; grid-template-columns: 1.3fr 1fr 0.8fr; gap: var(--s3); }
+
+/* Running and done: what it is on the left, the time, then the controls. */
+.fv-now { flex: 1 1 220px; min-width: 0; display: grid; gap: 2px; }
+.fv-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: var(--fs-12);
+  font-weight: 600;
+}
+.fv-kicker--ok { color: var(--ok); }
+.fv-now-title {
+  overflow: hidden;
+  color: var(--text);
+  font-size: var(--fs-16);
+  font-weight: 600;
+  letter-spacing: -.01em;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+button.fv-now-title:hover { text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
+.fv-time {
+  color: var(--text);
+  font-size: 44px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.035em;
+  line-height: 1;
+}
+.fv-ctl { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); }
+.fv-ctl-label { margin-right: 2px; color: var(--muted); font-size: var(--fs-12); font-weight: 600; }
+.fv-feel { display: flex; align-items: center; gap: var(--s2); color: var(--muted); font-size: var(--fs-13); }
+.fv-bar--done .fv-ctl { flex-basis: 100%; }
+
+.fv-stars { display: inline-flex; }
+.fv-stars button {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-xs);
+  color: var(--border-strong);
+  font-size: 15px;
+  line-height: 1;
+}
+.fv-stars button:hover, .fv-stars:hover button:has(~ button:hover) { color: var(--c2); }
+.fv-stars button[aria-pressed="true"] { color: var(--c2); }
+
+/* Up next and Recent, side by side on a wide page. */
+.fv-cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+.fv-head {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 0 4px;
+  border-bottom: 1px solid var(--border);
+}
+.fv-empty { padding: var(--s4) 4px; color: var(--muted); font-size: var(--fs-13); }
+.fv-taskwrap { position: relative; }
+.fv-unpin { position: absolute; top: 14px; left: -36px; opacity: 0; }
+.fv-taskwrap:hover .fv-unpin, .fv-unpin:focus-visible { opacity: 1; }
+
+.fv-log { margin: 0; padding: 0; list-style: none; }
+.fv-log-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 28px;
+  align-items: center;
+  gap: var(--s3);
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.fv-log-text { min-width: 0; }
+.fv-log-title {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text);
+  font-size: var(--fs-14);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+button.fv-log-title:hover { text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
+.fv-log-meta { margin-top: 4px; }
+.fv-log-meta time { font-variant-numeric: tabular-nums; }
+.fv-log-mins { color: var(--muted); font-size: var(--fs-13); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fv-log-row .fv-stars button { width: 16px; height: 18px; font-size: 13px; }
+/* Unrated stars and delete wait for the pointer, so the list reads as a log. */
+.fv-log-row:not(:hover):not(:focus-within) .fv-stars button[aria-pressed="false"],
+.fv-log-row:not(:hover):not(:focus-within) .fv-log-del { opacity: 0; }
+.fv-log-del { width: 28px; height: 28px; }
+
+/* The reminders, behind the bell. */
+.fv-popwrap { position: relative; }
+.fv-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  width: min(340px, calc(100vw - 32px));
+  padding: var(--s4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--sh-md);
+}
+.fv-pop .fx-card { display: grid; gap: 6px; }
+.fv-pop .fx-label { margin-bottom: 4px; font-size: var(--fs-14); font-weight: 700; }
+.fv-pop .fx-toggle { display: flex; align-items: flex-start; gap: var(--s2); padding: 4px 0; font-size: var(--fs-13); line-height: 1.4; }
+.fv-pop .fx-toggle input { margin-top: 2px; accent-color: var(--accent); }
+.fv-pop :is(.fx-hint, .fx-plan-note) { margin-top: 4px; color: var(--faint); font-size: var(--fs-12); line-height: 1.45; }
+
+/* The gentle nudges, as the app's washed notes. */
+.fv .fx-nudges { display: grid; gap: var(--s2); margin-bottom: var(--s4); }
+.fv .fx-nudge { padding: 14px var(--s4); border-radius: var(--r-lg); background: var(--accent-wash); }
+.fv .fx-eyebrow { color: var(--accent-dark); font-size: var(--fs-12); font-weight: 700; }
+.fv .fx-nudge-text { margin: 4px 0 10px; font-size: var(--fs-13); line-height: 1.5; }
+.fv .fx-actions { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.fv .fx-btn {
+  min-height: 30px;
+  padding: 0 11px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--r-ctl);
+  background: var(--btn-soft);
+  font-size: var(--fs-12);
+  font-weight: 600;
+}
+.fv .fx-btn:hover { background: var(--btn-soft-hover); }
+.fv .fx-btn--primary { color: var(--on-accent, #fff); background: var(--accent); }
+.fv .fx-btn--primary:hover { background: var(--accent-dark); }
+.fv .fx-btn--ghost { background: transparent; }
+
+@media (max-width: 900px) {
+  .fv-cols { grid-template-columns: minmax(0, 1fr); gap: var(--s6); }
+  .fv-unpin { left: auto; right: 4px; }
+}
+@media (max-width: 640px) {
+  .fv-time { font-size: 36px; }
+  .fv-form-row { grid-template-columns: 1fr 1fr; }
+  .fv .fv-btn-label { display: none; }
+  .fv .pactions .btn { width: 34px; padding: 0; }
+  .fv-opts .btn.primary { flex: 1 1 100%; }
+  .fv-bar--run .fv-ctl { flex: 1; justify-content: flex-end; }
+}
+
+/* A title that opens its task is a button: no inset, so it lines up with the text around it. */
+.fv-now-title, .fv-log-title { padding: 0; }
