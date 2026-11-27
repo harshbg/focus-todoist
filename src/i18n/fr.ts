@@ -466,6 +466,8 @@ export const fr: Record<TranslationKey, string> = {
   'nav.search': 'Rechercher',
   'nav.addTask': 'Ajouter une tâche',
   'nav.feedback': 'Signaler un bug ou une idée',
+  'nav.feedbackQuick': 'Signaler un bug ou donner son avis',
+  'nav.feedbackQuickHint': 'Message rapide',
   'nav.whatsNew': 'Nouveautés',
   'install.title': 'Installer l’app',
   'install.name': 'Deep Work with Todoist',

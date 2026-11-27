@@ -597,7 +597,7 @@ export function Sidebar({
             </button>
             <button onClick={() => { setMenuOpen(false); window.open(FEEDBACK_URL, '_blank', 'noopener,noreferrer'); }}>
               <Icon name="bug" />
-              {t('nav.feedback')}
+              <span className="account-feedback-copy"><span>{t('nav.feedbackQuick')}</span><small>{t('nav.feedbackQuickHint')}</small></span>
             </button>
             <hr />
             <button onClick={() => window.open('https://app.todoist.com', '_blank', 'noopener')}>

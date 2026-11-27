@@ -8,7 +8,7 @@
  * translated string.
  */
 export const APP_NAME = 'Deep Work with Todoist';
-export const VERSION = '2.37.0';
+export const VERSION = '2.38.0';
 export const AUTHOR = 'Harsh Gupta';
 /* A copy served with the app, so the About section's photo shows at once. */
 export const AUTHOR_AVATAR_URL = `${import.meta.env.BASE_URL}author.png`;

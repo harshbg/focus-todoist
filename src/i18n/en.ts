@@ -464,6 +464,8 @@ export const en = {
   'nav.search': 'Search',
   'nav.addTask': 'Add task',
   'nav.feedback': 'Report a bug or an idea',
+  'nav.feedbackQuick': 'Report a bug or feedback',
+  'nav.feedbackQuickHint': 'Quick message',
   'nav.whatsNew': 'What’s new',
   'install.title': 'Install the app',
   'install.name': 'Deep Work with Todoist',
