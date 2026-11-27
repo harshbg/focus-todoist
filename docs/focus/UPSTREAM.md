@@ -33,6 +33,10 @@ Read `AGENTS.md` first.
      out upstream's `PRIVACY_EMAIL`, `LINKEDIN_URL`, `X_URL`, `COFFEE_URL`:
      the privacy note links to `FEEDBACK_URL` instead. The `MAC_APP_*`
      constants keep pointing at upstream (its Mac app is upstream's).
+   - **No survey.** Upstream's `SurveyBanner`, the account-menu "Tell me how
+     you use Enhanced" entry, the visit-day counter in `App.tsx` and the
+     `nav.survey*` strings and changelog line stay out: the form is the upstream
+     author's. The `survey*` fields in `prefs.ts` may stay; nothing reads them.
    - **No hire note, no coffee link.** Upstream's `HireNote` component, the
      `hireNote` / `setHireNote` store fields and every `hireNoteOpen` use stay
      out; `e2e/hire-note.spec.ts` stays deleted. Remove them wherever upstream
