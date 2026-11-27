@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptySnapshot, type Item, type Project, type Section, type Snapshot } from '@/domain/types';
 import {
-  itemMode, newTaskPlacement, projectModes, scopeItems, scopeSnapshot,
+  itemMode, newTaskPlacement, projectModes, scopeItems, scopeSnapshot, treeMode,
   WORK_LABEL, WORK_PROJECT_NAME, workProjectIds,
 } from './mode';
 
@@ -142,6 +142,22 @@ describe('scopeItems', () => {
   it('scopes items keyed by id to the requested mode', () => {
     expect(scopeItems(items, 'work', workProjects)).toEqual({ t1: items.t1, t2: items.t2 });
     expect(scopeItems(items, 'personal', workProjects)).toEqual({ t3: items.t3 });
+  });
+
+  it('keeps a subtask with its Work parent, even without the work label', () => {
+    // As the composer used to create them: the parent labelled work in the Inbox, its subtasks not.
+    const tree: Record<string, Item> = {
+      parent: item('parent', 'inbox', { labels: [WORK_LABEL] }),
+      child: item('child', 'inbox', { parent_id: 'parent' }),
+      grandchild: item('grandchild', 'inbox', { parent_id: 'child' }),
+      home: item('home', 'inbox'),
+    };
+    expect(Object.keys(scopeItems(tree, 'work', workProjects)).sort()).toEqual(['child', 'grandchild', 'parent']);
+    expect(Object.keys(scopeItems(tree, 'personal', workProjects))).toEqual(['home']);
+    expect(treeMode(tree.grandchild, tree, workProjects)).toBe('work');
+    // A loop in bad data still ends.
+    const loop = { a: item('a', 'inbox', { parent_id: 'b' }), b: item('b', 'inbox', { parent_id: 'a' }) };
+    expect(treeMode(loop.a, loop, workProjects)).toBe('personal');
   });
 });
 

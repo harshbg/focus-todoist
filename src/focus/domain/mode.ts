@@ -56,9 +56,22 @@ export function projectModes(project: Project, workProjects: ReadonlySet<string>
   return modes;
 }
 
-/** `items` keyed by id, keeping only those in `mode`. */
+/**
+ * A task's mode within its tree: Work when it or any task above it is Work, so
+ * a subtask always shows with its parent, whatever labels it was created with.
+ */
+export function treeMode(item: Item, items: Record<string, Item>, workProjects: ReadonlySet<string>): Mode {
+  const seen = new Set<string>();
+  for (let current: Item | undefined = item; current && !seen.has(current.id); current = current.parent_id ? items[current.parent_id] : undefined) {
+    seen.add(current.id);
+    if (itemMode(current, workProjects) === 'work') return 'work';
+  }
+  return 'personal';
+}
+
+/** `items` keyed by id, keeping only those in `mode`; a subtask goes where its parent does. */
 export function scopeItems(items: Record<string, Item>, mode: Mode, workProjects: ReadonlySet<string>): Record<string, Item> {
-  return Object.fromEntries(Object.entries(items).filter(([, item]) => itemMode(item, workProjects) === mode));
+  return Object.fromEntries(Object.entries(items).filter(([, item]) => treeMode(item, items, workProjects) === mode));
 }
 
 /** The snapshot as `mode` sees it: items scoped, projects limited to those shown in that mode (sections follow their project). */

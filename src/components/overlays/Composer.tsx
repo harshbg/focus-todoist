@@ -487,7 +487,8 @@ export function Composer({
       return {
         content: read.content.trim() || line,
         ...(read.priority ? { priority: toTodoistPriority(read.priority) } : {}),
-        ...(read.labels.length > 0 ? { labels: read.labels } : {}),
+        /* Deep Work: a subtask takes the work label its parent gets, so the tree stays in one mode. */
+        ...(read.labels.length > 0 || placement.addLabels.length > 0 ? { labels: mergeLabels(read.labels, placement.addLabels) } : {}),
         ...(read.minutes === null ? {} : { estimateMinutes: read.minutes }),
         ...(read.recurrence
           ? { due: { string: read.recurrence.string, lang: read.recurrence.lang, is_recurring: true } }
